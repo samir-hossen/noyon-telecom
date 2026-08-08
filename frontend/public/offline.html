@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>You're offline — Noyon Telecom</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root {
+        --ink: #16181c;
+        --paper: #ffffff;
+        --berry: #f5720c;
+        --gold: #3a3f47;
+        --line: rgba(20, 20, 22, 0.12);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        padding: 24px;
+        text-align: center;
+      }
+      .card {
+        max-width: 420px;
+      }
+      .icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        border-radius: 14px;
+        background: var(--berry);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon svg { width: 32px; height: 32px; stroke: #fff; }
+      h1 { font-size: 1.3rem; margin: 0 0 10px; font-family: 'Poppins', sans-serif; }
+      p { color: var(--gold); line-height: 1.55; margin: 0 0 22px; }
+      button {
+        background: var(--berry);
+        color: #fff;
+        border: none;
+        padding: 12px 26px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover { filter: brightness(0.95); }
+      .hint { margin-top: 16px; font-size: 0.8rem; color: #8a8f98; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 9a16 16 0 0 1 22 0M5 12.5a11 11 0 0 1 14 0M8.5 16a6 6 0 0 1 7 0" />
+          <circle cx="12" cy="20" r="1" fill="#fff" stroke="none" />
+        </svg>
+      </div>
+      <h1>You're offline</h1>
+      <p>
+        We couldn't reach Noyon Telecom right now. Check your connection —
+        any pages you've already visited (catalog, cart) may still work
+        from cache.
+      </p>
+      <button onclick="location.reload()">Try again</button>
+      <div class="hint">Noyon Telecom — Wholesale Mobile Phone Spare Parts</div>
+    </div>
+  </body>
+</html>
