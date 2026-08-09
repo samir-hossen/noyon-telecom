@@ -1,43 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
+import { useLanguage } from '../context/LanguageContext';
 
+// Text fields are translation keys (see i18n/translations.js hero.slideN.*),
+// not literal strings — img/alt/to stay as-is since they're asset paths and
+// routes, not user-facing copy. Previously every field here was a hardcoded
+// English string with no useLanguage()/t() wiring at all, so switching the
+// site to Bangla left the entire hero banner (and its "100% Original / Fast
+// Delivery / Warranty Assured" badges) stuck in English while every other
+// section of the homepage correctly switched — the same bug already fixed
+// once in FeatureStrip.jsx, still present here.
 const SLIDES = [
   {
-    eyebrow: 'Wholesale only — dealers & repair shops',
-    titleTop: 'Genuine parts,',
-    titleEm: 'trusted',
-    titleRest: 'nationwide.',
-    sub: "Bangladesh's wholesale importer & distributor of mobile phone spare parts. Original-quality displays, batteries, and components — stocked for bulk order.",
+    eyebrowKey: 'hero.slide1.eyebrow',
+    titleTopKey: 'hero.slide1.titleTop',
+    titleEmKey: 'hero.slide1.titleEm',
+    titleRestKey: 'hero.slide1.titleRest',
+    subKey: 'hero.slide1.sub',
     img: '/images/hero/hero-parts.svg',
     alt: 'Mobile phone display and spare parts on a workbench',
-    stripe: 'Quality guaranteed, every unit tested.',
-    cta1: { label: 'Shop all parts', to: '/shop' },
-    cta2: { label: 'Explore displays', to: '/shop?category=Display' },
+    stripeKey: 'hero.slide1.stripe',
+    cta1: { labelKey: 'hero.slide1.cta1', to: '/shop' },
+    cta2: { labelKey: 'hero.slide1.cta2', to: '/shop?category=Display' },
   },
   {
-    eyebrow: 'Dealer pricing',
-    titleTop: 'Better margins,',
-    titleEm: 'better',
-    titleRest: 'stock.',
-    sub: 'Tiered bulk pricing, MOQ-based ordering, and dedicated dealer support — register free and get approved fast.',
+    eyebrowKey: 'hero.slide2.eyebrow',
+    titleTopKey: 'hero.slide2.titleTop',
+    titleEmKey: 'hero.slide2.titleEm',
+    titleRestKey: 'hero.slide2.titleRest',
+    subKey: 'hero.slide2.sub',
     img: '/images/hero/hero-batteries.svg',
     alt: 'Mobile phone batteries stacked for wholesale',
-    stripe: 'Built for dealers, not retail shoppers.',
-    cta1: { label: 'Become a dealer', to: '/register' },
-    cta2: { label: 'View best sellers', to: '/shop?sort=rating' },
+    stripeKey: 'hero.slide2.stripe',
+    cta1: { labelKey: 'hero.slide2.cta1', to: '/register' },
+    cta2: { labelKey: 'hero.slide2.cta2', to: '/shop?sort=rating' },
   },
   {
-    eyebrow: 'Fresh imports weekly',
-    titleTop: 'New stock,',
-    titleEm: 'every',
-    titleRest: 'week.',
-    sub: 'Displays, camera modules, charging ports and more — fresh imports landing regularly across all major brands.',
+    eyebrowKey: 'hero.slide3.eyebrow',
+    titleTopKey: 'hero.slide3.titleTop',
+    titleEmKey: 'hero.slide3.titleEm',
+    titleRestKey: 'hero.slide3.titleRest',
+    subKey: 'hero.slide3.sub',
     img: '/images/hero/hero-camera.svg',
     alt: 'Mobile phone camera module component',
-    stripe: 'Order via web, WhatsApp, or phone.',
-    cta1: { label: 'Shop new arrivals', to: '/shop' },
-    cta2: { label: 'WhatsApp us to order', to: 'https://wa.me/8801560047377' },
+    stripeKey: 'hero.slide3.stripe',
+    cta1: { labelKey: 'hero.slide3.cta1', to: '/shop' },
+    cta2: { labelKey: 'hero.slide3.cta2', to: 'https://wa.me/8801560047377' },
   },
 ];
 
@@ -52,6 +61,7 @@ const AUTO_MS = 5000;
 // below is a last-resort safety net in case an asset path is ever wrong.
 
 export default function HeroCarousel() {
+  const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef(null);
@@ -92,31 +102,31 @@ export default function HeroCarousel() {
         {SLIDES.map((s, i) => (
           <div className="hero-grid" key={i} aria-hidden={i !== index}>
             <div className="hero-copy">
-              <span className="eyebrow">{s.eyebrow}</span>
+              <span className="eyebrow">{t(s.eyebrowKey)}</span>
               <h1 className="hero-title">
-                {s.titleTop}
+                {t(s.titleTopKey)}
                 <br />
-                <em>{s.titleEm}</em> {s.titleRest}
+                <em>{t(s.titleEmKey)}</em> {t(s.titleRestKey)}
               </h1>
-              <p className="hero-sub">{s.sub}</p>
+              <p className="hero-sub">{t(s.subKey)}</p>
               <div className="hero-badges">
                 <span className="hero-badge">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 4 6v6c0 4.5 3.2 7.7 8 9 4.8-1.3 8-4.5 8-9V6l-8-3Z" strokeLinejoin="round" /></svg>
-                  100% Original
+                  {t('hero.badge.original')}
                 </span>
                 <span className="hero-badge">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 7h13v9H2z" strokeLinejoin="round" /><path d="M15 10h4l3 3v3h-7z" strokeLinejoin="round" /><circle cx="6.5" cy="18" r="1.5" /><circle cx="17.5" cy="18" r="1.5" /></svg>
-                  Fast Delivery
+                  {t('hero.badge.delivery')}
                 </span>
                 <span className="hero-badge">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 3 4 6v6c0 4.5 3.2 7.7 8 9 4.8-1.3 8-4.5 8-9V6l-8-3Z" strokeLinejoin="round" /></svg>
-                  Warranty Assured
+                  {t('hero.badge.warranty')}
                 </span>
               </div>
               <div className="hero-actions">
-                <Link to={s.cta1.to} className="btn btn-berry">{s.cta1.label}</Link>
+                <Link to={s.cta1.to} className="btn btn-berry">{t(s.cta1.labelKey)}</Link>
                 <Link to={s.cta2.to} className="btn btn-outline" style={{ borderColor: 'var(--paper)', color: 'var(--paper)' }}>
-                  {s.cta2.label}
+                  {t(s.cta2.labelKey)}
                 </Link>
               </div>
             </div>
@@ -131,7 +141,7 @@ export default function HeroCarousel() {
                 fetchPriority={i === 0 ? 'high' : 'auto'}
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
               />
-              <div className="hero-stripe">{s.stripe}</div>
+              <div className="hero-stripe">{t(s.stripeKey)}</div>
             </div>
           </div>
         ))}

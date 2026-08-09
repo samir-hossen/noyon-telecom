@@ -1,8 +1,10 @@
+import { useLanguage } from '../context/LanguageContext';
+
 const FEATURES = [
   {
     key: 'delivery',
-    title: 'Fast Delivery',
-    sub: 'Inside Dhaka 24h',
+    titleKey: 'home.trustDeliveryTitle',
+    subKey: 'home.trustDeliverySub',
     color: '#e60023',
     bg: '#fde8ea',
     icon: (
@@ -16,8 +18,8 @@ const FEATURES = [
   },
   {
     key: 'original',
-    title: '100% Original',
-    sub: 'Genuine products',
+    titleKey: 'home.trustOriginalTitle',
+    subKey: 'home.trustOriginalSub',
     color: '#2563eb',
     bg: '#e6edfd',
     icon: (
@@ -33,8 +35,8 @@ const FEATURES = [
     // all say 9 AM–8 PM / Sat–Thu) — this badge previously claimed "24/7
     // Support", which doesn't match reality and could reasonably annoy a
     // customer who tries the hotline outside those hours expecting it.
-    title: 'Dedicated Support',
-    sub: '9 AM–8 PM, every day',
+    titleKey: 'home.trustSupportTitle',
+    subKey: 'home.trustSupportSub',
     color: '#7c3aed',
     bg: '#efe7fd',
     icon: (
@@ -48,8 +50,8 @@ const FEATURES = [
   },
   {
     key: 'cod',
-    title: 'Cash on Delivery',
-    sub: 'Pay when you get',
+    titleKey: 'home.trustCodTitle',
+    subKey: 'home.trustCodSub',
     color: '#16a34a',
     bg: '#e4f6ea',
     icon: (
@@ -63,8 +65,13 @@ const FEATURES = [
 ];
 
 // Trust-signal strip shown right under the hero — new addition, purely
-// presentational, no data/logic dependency.
+// presentational, no data/logic dependency. Titles/subtitles previously
+// hardcoded in English regardless of the site's language toggle, so a
+// Bangla-mode visitor saw this strip in English while everything below it
+// (part finder, category headings) correctly switched to Bangla — routed
+// through useLanguage()/translations.js like the rest of the page now.
 export default function FeatureStrip() {
+  const { t } = useLanguage();
   return (
     <div className="feature-strip">
       {FEATURES.map((f) => (
@@ -73,8 +80,8 @@ export default function FeatureStrip() {
             {f.icon}
           </span>
           <div>
-            <strong>{f.title}</strong>
-            <span>{f.sub}</span>
+            <strong>{t(f.titleKey)}</strong>
+            <span>{t(f.subKey)}</span>
           </div>
         </div>
       ))}
