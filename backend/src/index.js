@@ -26,3 +26,15 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Noyon Telecom API listening on http://localhost:${PORT}`);
 });
+
+// One-off data fix, run at boot rather than via a separate Shell/job command
+// (Render's free tier has no Shell access) — clears the old hotlinked
+// Unsplash placeholder image, which now 404s, from any product still using
+// it. Self-limiting: matches zero rows once already applied, so it's safe
+// to leave running on every future boot too.
+import('./fixBrokenPlaceholderImages.js')
+  .then(({ fixBrokenPlaceholderImages }) => fixBrokenPlaceholderImages())
+  .then((fixed) => {
+    if (fixed > 0) console.log(`Boot: cleared broken Unsplash placeholder from ${fixed} product(s).`);
+  })
+  .catch((err) => console.error('Boot: fixBrokenPlaceholderImages failed (non-fatal):', err.message));
