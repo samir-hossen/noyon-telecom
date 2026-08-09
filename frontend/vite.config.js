@@ -35,10 +35,23 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Don't let the app shell go stale: HTML/navigation always prefers
-        // the network so dealers see current prices/stock, falling back to
-        // cache only when actually offline.
-        navigateFallback: '/offline.html',
+        // Was previously set to '/offline.html'. vite-plugin-pwa registers
+        // navigateFallback as a cache-only NavigationRoute BEFORE any
+        // runtimeCaching entries (confirmed by inspecting the generated
+        // dist/sw.js), so it unconditionally wins every navigation request
+        // without ever attempting a network fetch. Since only "/" is
+        // actually precached for an SPA like this one, that meant every
+        // direct visit or refresh on any other route (e.g. /shop,
+        // /admin/login) showed "You're offline" even on a completely
+        // normal connection — a runtimeCaching rule for navigation
+        // requests can't fix this, since it's registered after and never
+        // gets reached. 'index.html' (vite-plugin-pwa's own default,
+        // restored explicitly here for clarity) is what an SPA is actually
+        // supposed to fall back to: any navigation not otherwise precached
+        // instantly serves the cached app shell, and React Router then
+        // renders the right page client-side from the URL — this is also
+        // what makes navigation "work offline" in the first place.
+        navigateFallback: 'index.html',
         runtimeCaching: [
           {
             // Product/category/price data changes constantly — always try
