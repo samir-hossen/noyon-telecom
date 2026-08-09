@@ -1,0 +1,120 @@
+services:
+  # Backend API (Node/Express)
+  - type: web
+    name: noyon-telecom-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: noyon-telecom-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: TOTP_ISSUER
+        value: Noyon Telecom
+      # Fill these in from the Render dashboard after the frontend URL is known.
+      - key: CORS_ORIGIN
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      # Email
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: STORE_CONTACT_EMAIL
+        sync: false
+      # Cloudinary (product image storage — required so photos survive redeploys)
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      # SSLCommerz (online payment)
+      - key: SSLCOMMERZ_STORE_ID
+        sync: false
+      - key: SSLCOMMERZ_STORE_PASSWORD
+        sync: false
+      - key: SSLCOMMERZ_IS_LIVE
+        value: "false"
+      # Optional — reCAPTCHA, SMS, Meta CAPI, Sentry
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: SMS_API_KEY
+        sync: false
+      - key: SMS_SENDER_ID
+        sync: false
+      - key: META_PIXEL_ID
+        sync: false
+      - key: META_CAPI_ACCESS_TOKEN
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      # Seed script (only used if you run `npm run seed` manually via Render shell)
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: SEED_DEALER_EMAIL
+        sync: false
+      - key: SEED_DEALER_PASSWORD
+        sync: false
+
+  # Frontend (Vite React static site)
+  - type: web
+    name: noyon-telecom-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Point this at the backend URL Render assigns above, e.g.
+      # https://noyon-telecom-backend.onrender.com/api
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_RECAPTCHA_SITE_KEY
+        sync: false
+      - key: VITE_GA_ID
+        sync: false
+      - key: VITE_GOOGLE_ADS_ID
+        sync: false
+      - key: VITE_GOOGLE_ADS_CONVERSION_LABEL
+        sync: false
+      - key: VITE_META_PIXEL_ID
+        sync: false
+      - key: VITE_TIKTOK_PIXEL_ID
+        sync: false
+      - key: VITE_SENTRY_DSN
+        sync: false
+
+databases:
+  - name: noyon-telecom-db
+    plan: free
+    postgresMajorVersion: 16
