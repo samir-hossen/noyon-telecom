@@ -56,6 +56,7 @@ export default function Admin() {
   const [orderTotalPages, setOrderTotalPages] = useState(1);
   const [orderTotal, setOrderTotal] = useState(0);
   const [orderStatusFilter, setOrderStatusFilter] = useState('');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [productPage, setProductPage] = useState(1);
   const [productTotalPages, setProductTotalPages] = useState(1);
   const [productTotal, setProductTotal] = useState(0);
@@ -994,6 +995,80 @@ export default function Admin() {
                   <span>{o.items.length} item(s)</span>
                   <span>{formatPrice(o.total)}</span>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ marginTop: 10 }}
+                  onClick={() => setExpandedOrderId(expandedOrderId === o.id ? null : o.id)}
+                >
+                  {expandedOrderId === o.id ? 'Hide details' : 'View details'}
+                </button>
+
+                {expandedOrderId === o.id && (
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, fontSize: '0.85rem' }}>
+                      <div>
+                        <strong>Ship to</strong>
+                        <div style={{ color: 'var(--muted)' }}>
+                          {o.shipping?.name}<br />
+                          {o.shipping?.phone}<br />
+                          {o.shipping?.email}<br />
+                          {o.shipping?.address}, {o.shipping?.city}
+                        </div>
+                      </div>
+                      <div>
+                        <strong>Payment</strong>
+                        <div style={{ color: 'var(--muted)' }}>
+                          Method: {o.paymentMethod === 'cod' ? 'Cash on delivery' : o.paymentMethod}<br />
+                          {o.couponCode && <>Coupon: {o.couponCode}<br /></>}
+                          {o.transactionId && <>Transaction ID: {o.transactionId}<br /></>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {o.items.map((i) => (
+                      <div className="mini-item" key={i.productId}>
+                        <img
+                          src={resolveImg(i.img)}
+                          alt={i.name}
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600 }}>{i.name}</div>
+                          <div style={{ color: 'var(--muted)' }}>Qty {i.qty} &times; {formatPrice(i.price)}</div>
+                        </div>
+                        <div style={{ fontWeight: 700 }}>{formatPrice(i.price * i.qty)}</div>
+                      </div>
+                    ))}
+
+                    <div className="summary-row">
+                      <span>Subtotal</span>
+                      <span>{formatPrice(o.subtotal)}</span>
+                    </div>
+                    {o.discount > 0 && (
+                      <div className="summary-row">
+                        <span>Discount</span>
+                        <span>-{formatPrice(o.discount)}</span>
+                      </div>
+                    )}
+                    <div className="summary-row">
+                      <span>Shipping</span>
+                      <span>{formatPrice(o.shippingFee)}</span>
+                    </div>
+                    {o.tax > 0 && (
+                      <div className="summary-row">
+                        <span>Tax</span>
+                        <span>{formatPrice(o.tax)}</span>
+                      </div>
+                    )}
+                    <div className="summary-row total">
+                      <span>Total</span>
+                      <span>{formatPrice(o.total)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
