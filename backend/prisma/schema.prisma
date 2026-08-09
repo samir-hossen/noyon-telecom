@@ -1,0 +1,330 @@
+// Prisma schema — PostgreSQL
+// Run `npx prisma migrate dev --name init` after setting DATABASE_URL in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  customer
+  dealer
+  admin
+}
+
+enum DealerStatus {
+  pending
+  approved
+  rejected
+}
+
+enum OrderStatus {
+  processing
+  paid
+  shipped
+  delivered
+  cancelled
+}
+
+enum CouponType {
+  percent
+  fixed
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(customer)
+  emailVerified Boolean  @default(false)
+
+  // Wholesale/dealer account fields — only populated when role = dealer.
+  businessName          String?
+  phone                 String?
+  address               String?
+  dealerStatus          DealerStatus?
+  // Extra discount applied on top of dealerPrice for this specific account
+  // (e.g. long-term dealer negotiated a better rate). 0 = standard dealer pricing.
+  dealerDiscountPercent Float          @default(0)
+  // Optional trade license / shop registration document, uploaded at signup
+  // for admin verification before approval. Not required to register, but
+  // speeds up approval and is shown to the reviewing admin.
+  tradeLicenseUrl       String?
+  dealerVerifiedAt      DateTime?
+
+  twoFAEnabled  Boolean  @default(false)
+  twoFASecret   String?
+  // Holds the freshly generated secret between "/2fa/setup" and the user
+  // confirming a valid code in "/2fa/enable" — never activated until then.
+  twoFASecretPending String?
+  createdAt     DateTime @default(now())
+
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  reviews       Review[]
+  orders        Order[]
+  auditLogs     AuditLog[]
+  emailTokens   EmailVerificationToken[]
+  resetTokens   PasswordResetToken[]
+  pendingAuths  PendingAuth[]
+  quotes        Quote[]
+
+  @@index([role])
+  @@index([dealerStatus])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  desc        String
+  categories  Json
+  category    String
+  images      Json
+  img         String
+  price       Float
+  compareAt   Float?
+  stock       Int      @default(0)
+  rating      Float    @default(0)
+  reviewCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  // Admin gets a low-stock alert once `stock` falls at or below this.
+  lowStockThreshold Int @default(5)
+  // False = draft/not-yet-priced — hidden from every customer-facing route
+  // (listing, search, home sections, product detail, sitemap, product
+  // feed) but still fully visible/editable in the Admin dashboard. Added
+  // so a bulk import of real inventory (e.g. a compatibility list without
+  // final prices yet) can land in the catalog immediately without ever
+  // showing a customer a ৳0 product. Defaults to true so every
+  // already-existing product stays visible with no migration side effects.
+  published   Boolean  @default(true)
+
+  // ---- Wholesale spare-parts fields ----
+  sku    String? @unique
+  // Phone brand this part is for/compatible with (Apple, Samsung, Xiaomi, ...).
+  brand  String?
+  // Specific phone models this part fits, e.g. ["iPhone 13", "iPhone 13 Pro"].
+  compatibleModels Json?
+  // Minimum order quantity for wholesale purchase.
+  moq        Int    @default(1)
+  // Standard wholesale/dealer unit price (retail `price` above stays as the
+  // reference/MRP shown to non-dealers). Falls back to `price` when unset.
+  dealerPrice Float?
+  // Tiered bulk pricing, e.g. [{ "minQty": 10, "price": 450 }, { "minQty": 50, "price": 420 }].
+  bulkPricing Json?
+  warranty    String?
+
+  reviews       Review[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
+
+  @@index([category])
+  @@index([brand])
+  @@index([sku])
+  @@index([stock])
+  @@index([published])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName  String
+  rating    Int
+  comment   String
+  // Up to 4 customer-uploaded photo URLs (Cloudinary or local /uploads path,
+  // same storage as product images — see utils/upload.js). Stored as a JSON
+  // array rather than a separate table since a review's photos are never
+  // queried independently of the review itself.
+  images    Json     @default("[]")
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@unique([productId, userId])
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  qty       Int
+
+  @@unique([userId, productId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  guestEmail    String?
+  shipping      Json
+  paymentMethod String
+  couponCode    String?
+  subtotal      Float
+  discount      Float       @default(0)
+  shippingFee   Float       @default(0)
+  tax           Float       @default(0)
+  total         Float
+  status        OrderStatus @default(processing)
+  // SSLCommerz transaction reference (set at payment-init time) and the
+  // gateway's own validation id (set once the IPN/validation call confirms
+  // the payment). Both null for cash-on-delivery orders.
+  transactionId String?
+  gatewayValId  String?
+  createdAt     DateTime    @default(now())
+
+  items OrderItem[]
+
+  @@index([userId])
+  // Powers the admin orders filter (by status) and the analytics dashboard's
+  // "revenue by day" range query — without this, both degrade to a full
+  // table scan once order volume grows past a few thousand rows.
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String
+  img       String
+  price     Float
+  qty       Int
+
+  // orderId: joined on every order lookup/cascade-delete. productId: the
+  // join key for the admin "top selling products" report.
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Coupon {
+  id                    String     @id @default(cuid())
+  code                  String     @unique
+  type                  CouponType
+  value                 Float
+  minSubtotal           Float      @default(0)
+  active                Boolean    @default(true)
+  // All three nullable/optional and default to "no limit" — an existing
+  // coupon that predates this migration behaves exactly as it did before
+  // (unlimited uses, never expires) until an admin explicitly sets one.
+  usageLimit            Int?
+  usageLimitPerCustomer Int?
+  expiresAt             DateTime?
+  createdAt             DateTime   @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  adminName String
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([tokenHash])
+}
+
+// A password check succeeded but 2FA is enabled — this row bridges the gap
+// until the 6-digit code is verified, so no session cookie is issued early.
+model PendingAuth {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+// Footer newsletter signup — separate from ContactMessage since this is a
+// standing opt-in list (checked for dupes on the unique email), not a
+// one-off inbound message.
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+enum QuoteStatus {
+  pending
+  responded
+  closed
+}
+
+// Request-for-Quotation: a dealer/customer asks for a formal wholesale quote
+// on a list of items+quantities, distinct from a placed Order — pricing is
+// negotiated before checkout, common for large or custom bulk requests.
+model Quote {
+  id          String      @id @default(cuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  name        String
+  email       String
+  phone       String
+  businessName String?
+  // Snapshot of requested items: [{ productId, name, sku, qty }], kept as JSON
+  // so the quote still makes sense even if a product is edited/removed later.
+  items       Json
+  message     String?
+  status      QuoteStatus @default(pending)
+  adminNote   String?
+  quotedTotal Float?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([status])
+  @@index([userId])
+}

@@ -1,0 +1,31 @@
+-- Speeds up the Shop/Admin category filter, which queries
+-- `categories @> '["SomeCategory"]'` (Prisma's `array_contains` on the
+-- JSON(b) `categories` column — see products.routes.js and
+-- admin.routes.js). Previously this had no dedicated index, so every
+-- category filter degraded to a full table scan once the catalog grew
+-- past a few thousand rows (measured directly: ~26ms seq scan at
+-- 100,000 synthetic rows for a single category, filtering out ~91% of
+-- the table just to paginate 12 results).
+--
+-- jsonb_path_ops (rather than the default jsonb_ops) is used because the
+-- only operator this column is ever queried with is `@>` (containment) —
+-- jsonb_path_ops indexes are both smaller and faster for that specific
+-- operator, at the cost of not supporting key-existence operators (`?`,
+-- `?|`, `?&`), which this codebase does not use on `categories`.
+--
+-- Note (see EXPLAIN ANALYZE results in the audit): on a uniformly
+-- distributed synthetic dataset the planner sometimes still prefers a
+-- sequential scan for a single low-selectivity category (~8-9% of rows
+-- matching) purely on Postgres's default cost constants — this is a
+-- correct, cost-based decision, not evidence the index is unused. The
+-- index is picked up automatically (verified) as soon as a query is even
+-- moderately selective, e.g. combined with a brand filter, or on a
+-- realistic (non-uniform) real-world catalog distribution. Either way the
+-- index never makes a query slower and should stay in place; if it's ever
+-- found to sit unused in production (`pg_stat_user_indexes`), that is the
+-- moment to reconsider it, not before.
+--
+-- IF NOT EXISTS makes this migration safe to re-run, matching the pattern
+-- used by 20260802000000_product_search_trgm_index.
+CREATE INDEX IF NOT EXISTS idx_product_categories_gin
+  ON "Product" USING gin (categories jsonb_path_ops);

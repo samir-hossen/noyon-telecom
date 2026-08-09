@@ -1,0 +1,50 @@
+{
+  "name": "noyon-telecom-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Noyon Telecom — Express + PostgreSQL (Prisma) REST API for the wholesale storefront.",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed.js",
+    "import:display-prices": "node src/importDisplayPrices.js",
+    "import:compatibility-lists": "node src/importCompatibilityLists.js",
+    "publish:all-drafts": "node src/publishAllDrafts.js",
+    "sync:search": "node src/syncMeilisearch.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:generate": "prisma generate",
+    "test": "node --test src/**/*.test.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.5.1",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "meilisearch": "^0.60.0",
+    "multer": "^2.2.0",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^9.0.3",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.9.0",
+    "prisma": "^6.1.0",
+    "supertest": "^7.2.2"
+  }
+}

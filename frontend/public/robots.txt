@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/login
+Disallow: /checkout
+Disallow: /cart
+Disallow: /orders
+Disallow: /dealer
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+
+Sitemap: https://www.yourdomain.com/api/sitemap-index.xml

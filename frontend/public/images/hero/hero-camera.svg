@@ -1,0 +1,63 @@
+<svg viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t3">
+  <title id="t3">Mobile phone camera module component</title>
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1a1c21"/>
+      <stop offset="1" stop-color="#0c0d10"/>
+    </linearGradient>
+    <radialGradient id="lensGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e60023" stop-opacity="0.55"/>
+      <stop offset="0.7" stop-color="#e60023" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#e60023" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="lensGlass" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#5b6c8a"/>
+      <stop offset="0.5" stop-color="#1c2230"/>
+      <stop offset="1" stop-color="#05060a"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="900" fill="url(#bg3)"/>
+  <rect x="0" y="720" width="1200" height="180" fill="#111318"/>
+  <rect x="0" y="720" width="1200" height="6" fill="#e60023" opacity="0.55"/>
+
+  <!-- big glow behind lens -->
+  <circle cx="640" cy="420" r="360" fill="url(#lensGlow)"/>
+
+  <!-- camera module housing -->
+  <g transform="translate(430,190)">
+    <rect x="0" y="0" width="420" height="420" rx="46" fill="#15171c" stroke="#3a3f4a" stroke-width="4"/>
+    <rect x="18" y="18" width="384" height="384" rx="34" fill="#0e0f12" stroke="#e60023" stroke-width="2" opacity="0.55"/>
+
+    <!-- main lens -->
+    <circle cx="210" cy="210" r="150" fill="url(#lensGlass)" stroke="#4a4f5c" stroke-width="6"/>
+    <circle cx="210" cy="210" r="150" fill="none" stroke="#e60023" stroke-width="3" opacity="0.6"/>
+    <circle cx="175" cy="175" r="34" fill="#ffffff" opacity="0.10"/>
+    <circle cx="210" cy="210" r="60" fill="none" stroke="#7d8291" stroke-width="2" opacity="0.5"/>
+
+    <!-- flash -->
+    <circle cx="360" cy="60" r="24" fill="#e6a800" opacity="0.9"/>
+    <circle cx="360" cy="60" r="24" fill="none" stroke="#fff" stroke-width="2" opacity="0.3"/>
+
+    <!-- sensor dot -->
+    <circle cx="60" cy="360" r="16" fill="#e60023"/>
+  </g>
+
+  <!-- flex ribbon cable -->
+  <path d="M430 400 q-120 20 -160 140 t-140 120" stroke="#e60023" stroke-width="5" fill="none" opacity="0.55" stroke-linecap="round"/>
+  <circle cx="130" cy="660" r="14" fill="#e60023" opacity="0.75"/>
+
+  <!-- small secondary module top-left -->
+  <g transform="translate(120,140) rotate(-10)">
+    <rect x="0" y="0" width="140" height="140" rx="24" fill="#181a1f" stroke="#3a3f4a" stroke-width="3"/>
+    <circle cx="70" cy="70" r="46" fill="url(#lensGlass)" stroke="#4a4f5c" stroke-width="4"/>
+  </g>
+
+  <!-- import boxes bottom right -->
+  <g transform="translate(900,560)" stroke="#3a3f4a" stroke-width="3" fill="none" opacity="0.7">
+    <rect x="0" y="60" width="110" height="90" rx="8"/>
+    <path d="M0 90 L55 60 L110 90" />
+    <rect x="130" y="30" width="110" height="120" rx="8" stroke="#e60023"/>
+    <path d="M130 66 L185 30 L240 66" stroke="#e60023"/>
+  </g>
+</svg>
