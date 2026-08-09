@@ -38,3 +38,13 @@ import('./fixBrokenPlaceholderImages.js')
     if (fixed > 0) console.log(`Boot: cleared broken Unsplash placeholder from ${fixed} product(s).`);
   })
   .catch((err) => console.error('Boot: fixBrokenPlaceholderImages failed (non-fatal):', err.message));
+
+// Same reasoning as above: guarantees a working admin login exists without
+// needing Shell/one-off-job access. See ensureOwnerAdmin.js for details —
+// idempotent, so safe to leave running on every future boot.
+import('./ensureOwnerAdmin.js')
+  .then(({ ensureOwnerAdmin }) => ensureOwnerAdmin())
+  .then((created) => {
+    if (created) console.log('Boot: created owner admin account.');
+  })
+  .catch((err) => console.error('Boot: ensureOwnerAdmin failed (non-fatal):', err.message));
