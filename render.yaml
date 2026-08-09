@@ -1,7 +1,11 @@
 services:
-  # Backend API (Node/Express)
+  # Backend API (Node/Express) — matches the already-live "noyon-telecom-api"
+  # service (https://noyon-telecom-api.onrender.com). This file documents
+  # the live setup for reference; it is NOT wired up as a synced Render
+  # Blueprint, so editing it has no effect on the running services unless
+  # you explicitly connect a Blueprint to this repo in the Render dashboard.
   - type: web
-    name: noyon-telecom-backend
+    name: noyon-telecom-api
     runtime: node
     plan: free
     rootDir: backend
@@ -13,10 +17,12 @@ services:
         value: production
       - key: PORT
         value: 4000
+      # This project uses an external managed Postgres (Neon/Supabase), not
+      # Render's own Postgres — paste that connection string in via the
+      # Render dashboard rather than provisioning a new `databases:` entry
+      # here, which would create a second, empty database.
       - key: DATABASE_URL
-        fromDatabase:
-          name: noyon-telecom-db
-          property: connectionString
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -82,9 +88,10 @@ services:
       - key: SEED_DEALER_PASSWORD
         sync: false
 
-  # Frontend (Vite React static site)
+  # Frontend (Vite React static site) — matches the already-live
+  # "noyon-telecom-web" service (https://noyon-telecom-web.onrender.com).
   - type: web
-    name: noyon-telecom-frontend
+    name: noyon-telecom-web
     runtime: static
     plan: free
     rootDir: frontend
@@ -95,8 +102,7 @@ services:
         source: /*
         destination: /index.html
     envVars:
-      # Point this at the backend URL Render assigns above, e.g.
-      # https://noyon-telecom-backend.onrender.com/api
+      # https://noyon-telecom-api.onrender.com/api
       - key: VITE_API_URL
         sync: false
       - key: VITE_RECAPTCHA_SITE_KEY
@@ -113,8 +119,3 @@ services:
         sync: false
       - key: VITE_SENTRY_DSN
         sync: false
-
-databases:
-  - name: noyon-telecom-db
-    plan: free
-    postgresMajorVersion: 16
