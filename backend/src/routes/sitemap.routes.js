@@ -15,6 +15,14 @@ if (process.env.NODE_ENV === 'production' && !process.env.SITE_URL) {
   throw new Error('SITE_URL must be set in production (see backend/.env.example) — refusing to generate sitemaps with a placeholder domain.');
 }
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
+// /api/sitemap-products.xml below is served by THIS backend, not the
+// frontend — it needs the backend's own public URL, not SITE_URL (which
+// points at the frontend). Using SITE_URL here previously made the sitemap
+// index advertise a URL that 404s (the frontend static host has no /api
+// route at all), which Search Console would only surface weeks later as a
+// failed sitemap fetch. Same env var payment.routes.js already uses for
+// this backend's own public URL.
+const API_URL = (process.env.API_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/$/, '');
 
 function escapeXml(s) {
   return String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
@@ -39,7 +47,7 @@ router.get('/sitemap-index.xml', (req, res) => {
     <lastmod>${lastmod}</lastmod>
   </sitemap>
   <sitemap>
-    <loc>${SITE_URL}/api/sitemap-products.xml</loc>
+    <loc>${API_URL}/api/sitemap-products.xml</loc>
     <lastmod>${lastmod}</lastmod>
   </sitemap>
 </sitemapindex>`);

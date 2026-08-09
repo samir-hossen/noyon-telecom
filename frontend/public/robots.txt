@@ -12,4 +12,4 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify-email
 
-Sitemap: https://www.yourdomain.com/api/sitemap-index.xml
+Sitemap: https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
