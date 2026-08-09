@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import prisma from '../prismaClient.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
@@ -16,6 +17,50 @@ const router = Router();
 router.use(requireAuth, requireAdmin);
 
 const ORDER_STATUSES = ['processing', 'paid', 'shipped', 'delivered', 'cancelled'];
+
+// ---------- Admin accounts ----------
+// Before this, the only way to create an admin account was a one-off
+// script run directly against the database (there's no public /register
+// path to it — see auth.routes.js, which only ever creates
+// customer/dealer accounts). This lets any existing admin add another one
+// from the Admin panel instead.
+const ADMIN_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isStrongAdminPassword(pw) {
+  return typeof pw === 'string' && pw.length >= 8 && /[A-Za-z]/.test(pw) && /[0-9]/.test(pw);
+}
+
+router.get('/admins', async (req, res, next) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true, name: true, email: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json({ admins });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/admins', requireCsrf, async (req, res, next) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !ADMIN_EMAIL_RE.test(email || '') || !isStrongAdminPassword(password)) {
+      return res.status(400).json({ error: 'Please fill in all fields correctly. Password needs 8+ characters with a letter and number.' });
+    }
+    const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (existing) return res.status(409).json({ error: 'An account with that email already exists.' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const admin = await prisma.user.create({
+      data: { name, email: email.toLowerCase(), passwordHash, role: 'admin', emailVerified: true },
+    });
+    await logAdminAction(req.user, 'admin.create', { newAdminEmail: admin.email });
+    res.status(201).json({ id: admin.id, name: admin.name, email: admin.email, createdAt: admin.createdAt });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ---------- Products ----------
 

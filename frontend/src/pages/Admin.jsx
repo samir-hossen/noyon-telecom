@@ -41,6 +41,10 @@ export default function Admin() {
   const [twoFACode, setTwoFACode] = useState('');
   const [twoFAError, setTwoFAError] = useState('');
 
+  const [admins, setAdmins] = useState([]);
+  const [newAdminForm, setNewAdminForm] = useState({ name: '', email: '', password: '' });
+  const [newAdminError, setNewAdminError] = useState('');
+
   const [auditLogs, setAuditLogs] = useState([]);
 
   const [dealers, setDealers] = useState([]);
@@ -117,6 +121,9 @@ export default function Admin() {
   function loadMe() {
     api.get('/auth/me').then((d) => setTwoFA({ enabled: !!d.user.twoFAEnabled })).catch((err) => showToast(err.message, 'error'));
   }
+  function loadAdmins() {
+    api.get('/admin/admins').then((d) => setAdmins(d.admins)).catch((err) => showToast(err.message, 'error'));
+  }
   function loadAuditLogs() {
     api.get('/admin/audit-logs').then((d) => setAuditLogs(d.logs)).catch((err) => showToast(err.message, 'error'));
   }
@@ -147,6 +154,7 @@ export default function Admin() {
     loadDealers();
     loadQuotes();
     loadLowStock();
+    loadAdmins();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -498,6 +506,20 @@ export default function Admin() {
       showToast('Two-factor authentication enabled', 'success');
     } catch (err) {
       setTwoFAError(err.message);
+    }
+  }
+
+  async function onCreateAdmin(e) {
+    e.preventDefault();
+    setNewAdminError('');
+    try {
+      await api.post('/admin/admins', newAdminForm);
+      setNewAdminForm({ name: '', email: '', password: '' });
+      loadAdmins();
+      loadAuditLogs();
+      showToast('Admin account created', 'success');
+    } catch (err) {
+      setNewAdminError(err.message);
     }
   }
 
@@ -1400,6 +1422,47 @@ export default function Admin() {
                 <button className="btn btn-berry" disabled={twoFACode.length !== 6}>Confirm and enable</button>
               </form>
             )}
+          </div>
+
+          <div className="form-panel wide" style={{ marginTop: 24 }}>
+            <h3 style={{ marginBottom: 10 }}>Admin accounts</h3>
+            <p style={{ color: 'var(--muted)', marginBottom: 12, fontSize: '0.85rem' }}>
+              Anyone with an admin account has full access to orders, products, and store settings — only add people you trust.
+            </p>
+            {admins.length > 0 && (
+              <ul style={{ listStyle: 'none', padding: 0, marginBottom: 16 }}>
+                {admins.map((a) => (
+                  <li key={a.id} style={{ padding: '6px 0', borderBottom: '1px solid var(--line)', fontSize: '0.9rem' }}>
+                    <strong>{a.name}</strong> — {a.email}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <h4 style={{ marginBottom: 10 }}>Add a new admin</h4>
+            {newAdminError && <div className="form-error">{newAdminError}</div>}
+            <form onSubmit={onCreateAdmin}>
+              <div className="field">
+                <label>Name</label>
+                <input required value={newAdminForm.name} onChange={(e) => setNewAdminForm((f) => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div className="field">
+                <label>Email</label>
+                <input required type="email" value={newAdminForm.email} onChange={(e) => setNewAdminForm((f) => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className="field">
+                <label>Password</label>
+                <input
+                  required
+                  type="password"
+                  minLength={8}
+                  value={newAdminForm.password}
+                  onChange={(e) => setNewAdminForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="8+ characters, with a letter and number"
+                />
+              </div>
+              <button className="btn btn-berry">Create admin account</button>
+            </form>
           </div>
         </div>
       )}
