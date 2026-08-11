@@ -54,11 +54,15 @@ const FEATURES = [
     subKey: 'home.trustCodSub',
     color: '#16a34a',
     bg: '#e4f6ea',
+    // Banknote icon (rect + center seal). The previous version of this
+    // icon had an extra arc above the rectangle — that's a camera's
+    // viewfinder hump, not part of a cash icon, so it rendered as a
+    // camera next to "Cash on Delivery" instead of money.
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <rect x="2.5" y="6" width="19" height="13" rx="2" />
-        <circle cx="12" cy="12.5" r="2.6" />
-        <path d="M6 6V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1" strokeLinecap="round" />
+        <rect x="2" y="6" width="20" height="12" rx="2" />
+        <circle cx="12" cy="12" r="2.4" />
+        <path d="M6 12h.01M18 12h.01" strokeLinecap="round" />
       </svg>
     ),
   },
