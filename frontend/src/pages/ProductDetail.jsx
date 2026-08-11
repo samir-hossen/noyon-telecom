@@ -111,7 +111,7 @@ export default function ProductDetail() {
 
   usePageMeta(
     product?.name,
-    product ? `${product.name} — ${product.desc ? product.desc.slice(0, 140) : `Shop ${product.category} at Noyon Telecom.`}` : undefined,
+    product ? `${product.name} — ${product.desc ? product.desc.slice(0, 140) : t('pd.metaFallback', null, { category: product.category })}` : undefined,
     // Only pass a real image URL — resolveImg() falls back to an inline SVG
     // data: URI when a product has no photo yet (see utils/fallbackImage.js),
     // which is exactly right for an <img> tag but wrong here: Facebook/
@@ -169,9 +169,9 @@ export default function ProductDetail() {
       <div className="container">
         <div className="empty-state">
           <div className="icon">📦</div>
-          <h3>Can't load this product</h3>
+          <h3>{t('pd.cantLoad')}</h3>
           <p style={{ marginBottom: 24 }}>{loadError}</p>
-          <Link to="/shop" className="btn btn-primary">Back to shop</Link>
+          <Link to="/shop" className="btn btn-primary">{t('checkout.backToShop')}</Link>
         </div>
       </div>
     );
@@ -211,14 +211,14 @@ export default function ProductDetail() {
     if (!user) return navigate('/login');
     await addToCart(product.id, qty);
     setAdded(true);
-    showToast('Added to cart', 'success');
+    showToast(t('shop.addedToCart'), 'success');
   }
 
   async function handleAddRelated(productId) {
     if (!user) return navigate('/login');
     try {
       await addToCart(productId, 1);
-      showToast('Added to cart', 'success');
+      showToast(t('shop.addedToCart'), 'success');
     } catch (e) {
       showToast(e.message, 'error');
     }
@@ -227,7 +227,7 @@ export default function ProductDetail() {
   async function handleWishlist() {
     if (!user) return navigate('/login');
     const nowSaved = await toggle(product.id, product);
-    showToast(nowSaved ? 'Saved to wishlist' : 'Removed from wishlist', 'success');
+    showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
   }
 
   const REVIEW_PHOTO_LIMIT = 4;
@@ -241,17 +241,17 @@ export default function ProductDetail() {
     setReviewError('');
     const room = REVIEW_PHOTO_LIMIT - reviewPhotos.length;
     if (room <= 0) {
-      setReviewError(`You can attach up to ${REVIEW_PHOTO_LIMIT} photos.`);
+      setReviewError(t('pd.photoLimitError', null, { limit: REVIEW_PHOTO_LIMIT }));
       return;
     }
     const accepted = [];
     for (const f of files) {
       if (!['image/png', 'image/jpeg', 'image/webp'].includes(f.type)) {
-        setReviewError('Photos must be PNG, JPEG, or WebP.');
+        setReviewError(t('pd.photoTypeError'));
         continue;
       }
       if (f.size > REVIEW_PHOTO_MAX_MB * 1024 * 1024) {
-        setReviewError(`Each photo must be under ${REVIEW_PHOTO_MAX_MB}MB.`);
+        setReviewError(t('pd.photoSizeError', null, { mb: REVIEW_PHOTO_MAX_MB }));
         continue;
       }
       accepted.push(f);
@@ -286,7 +286,7 @@ export default function ProductDetail() {
       reviewPhotoPreviews.forEach((url) => URL.revokeObjectURL(url));
       setReviewPhotos([]);
       setReviewPhotoPreviews([]);
-      showToast('Thanks for your review!', 'success');
+      showToast(t('pd.reviewThanks'), 'success');
     } catch (err) {
       setReviewError(err.message);
     } finally {
@@ -301,8 +301,8 @@ export default function ProductDetail() {
   return (
     <div className="container">
       <nav className="breadcrumb-trail" aria-label="Breadcrumb">
-        <Link to="/">Home</Link> <span>/</span>{' '}
-        <Link to="/shop">Shop</Link> <span>/</span>{' '}
+        <Link to="/">{t('pd.breadcrumbHome')}</Link> <span>/</span>{' '}
+        <Link to="/shop">{t('pd.breadcrumbShop')}</Link> <span>/</span>{' '}
         <Link to={`/shop?category=${encodeURIComponent(product.category)}`}>{product.category}</Link> <span>/</span>{' '}
         <span aria-current="page">{product.name}</span>
       </nav>
@@ -325,7 +325,7 @@ export default function ProductDetail() {
                   key={i}
                   type="button"
                   onClick={() => setActiveImg(i)}
-                  aria-label={`View image ${i + 1}`}
+                  aria-label={t('pd.viewImage', null, { n: i + 1 })}
                   className={`pd-thumb ${i === activeImg ? 'active' : ''}`}
                 >
                   <img
@@ -353,14 +353,14 @@ export default function ProductDetail() {
             <button
               className={`wishlist-heart-lg ${saved ? 'active' : ''}`}
               onClick={handleWishlist}
-              aria-label={saved ? 'Remove from wishlist' : 'Add to wishlist'}
+              aria-label={saved ? t('card.removeFromWishlist') : t('card.addToWishlist')}
             >
               {saved ? '♥' : '♡'}
             </button>
           </div>
           {product.reviewCount > 0 && (
             <div className="pd-rating-summary">
-              ★ {product.rating} <span>· {product.reviewCount} review{product.reviewCount !== 1 ? 's' : ''}</span>
+              ★ {product.rating} <span>· {t(product.reviewCount !== 1 ? 'pd.reviewCountPlural' : 'pd.reviewCount', null, { count: product.reviewCount })}</span>
             </div>
           )}
 
@@ -375,14 +375,14 @@ export default function ProductDetail() {
           </div>
           {user?.role !== 'dealer' && (
             <p className="pd-dealer-hint">
-              <Link to="/register">{t('nav.becomeDealer')}</Link> to unlock wholesale pricing on this item.
+              <Link to="/register">{t('nav.becomeDealer')}</Link> {t('pd.dealerHintPost')}
             </p>
           )}
 
           <div className="pd-specs">
             {product.sku && <div><span>{t('product.sku')}</span><strong>{product.sku}</strong></div>}
-            {product.brand && <div><span>Brand</span><strong>{product.brand}</strong></div>}
-            <div><span>{t('product.moq')}</span><strong>{product.moq || 1} unit{(product.moq || 1) !== 1 ? 's' : ''}</strong></div>
+            {product.brand && <div><span>{t('pd.brand')}</span><strong>{product.brand}</strong></div>}
+            <div><span>{t('product.moq')}</span><strong>{product.moq || 1} {(product.moq || 1) !== 1 ? t('pd.units') : t('pd.unit')}</strong></div>
             {product.warranty && <div><span>{t('product.warranty')}</span><strong>{product.warranty}</strong></div>}
           </div>
 
@@ -402,7 +402,7 @@ export default function ProductDetail() {
               <span className="pd-compat-label">{t('product.bulkPricing')}</span>
               <table>
                 <thead>
-                  <tr><th>Quantity</th><th>Price / unit</th></tr>
+                  <tr><th>{t('pd.quantityHeader')}</th><th>{t('pd.pricePerUnitHeader')}</th></tr>
                 </thead>
                 <tbody>
                   <tr><td>{product.moq || 1}+</td><td>{formatPrice(product.price)}</td></tr>
@@ -417,7 +417,7 @@ export default function ProductDetail() {
           <p className="pd-desc">{product.desc}</p>
 
           <div className="pd-qty">
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Quantity (MOQ {product.moq || 1})</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('pd.quantityLabel', null, { moq: product.moq || 1 })}</span>
             <div className="qty-control">
               <button onClick={() => setQty((q) => Math.max(product.moq || 1, q - 1))}>−</button>
               <input
@@ -442,21 +442,21 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <p className="pd-stock">{product.stock > 0 ? `${product.stock} ${t('product.inStock').toLowerCase()} — ships in 2–4 days` : t('product.outOfStock')}</p>
+          <p className="pd-stock">{product.stock > 0 ? t('pd.inStockNote', null, { stock: product.stock }) : t('product.outOfStock')}</p>
 
           <button className="btn btn-berry btn-block" disabled={product.stock === 0} onClick={handleAdd}>
-            {added ? 'Added to cart ✓' : t('product.addToCart')}
+            {added ? t('pd.addedToCart') : t('product.addToCart')}
           </button>
           {added && (
             <p style={{ marginTop: 14, fontSize: '0.88rem' }}>
-              <Link to="/cart" style={{ fontWeight: 600, color: 'var(--berry)' }}>View cart →</Link>
+              <Link to="/cart" style={{ fontWeight: 600, color: 'var(--berry)' }}>{t('pd.viewCart')}</Link>
             </p>
           )}
 
           <div className="pd-action-row">
             <a
               className="btn btn-outline pd-whatsapp-btn"
-              href={`https://wa.me/8801560047377?text=${encodeURIComponent(`Hi, I'm interested in ordering: ${product.name}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
+              href={`https://wa.me/8801560047377?text=${encodeURIComponent(`${t('pd.whatsappMessage', null, { name: product.name })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
               target="_blank"
               rel="noreferrer"
               onClick={() => trackRequestQuote(product)}
@@ -472,23 +472,23 @@ export default function ProductDetail() {
           </div>
 
           <div className="pd-meta">
-            <div>Wholesale &amp; dealer pricing available</div>
-            <div>{product.warranty || 'Warranty terms vary by category'}</div>
-            <div>Bulk order? Contact us on WhatsApp for a custom quote</div>
+            <div>{t('pd.wholesaleAvailable')}</div>
+            <div>{product.warranty || t('pd.warrantyVaries')}</div>
+            <div>{t('pd.bulkOrderNote')}</div>
           </div>
         </div>
       </div>
 
       <section className="section" style={{ borderTop: '1px solid var(--line)', maxWidth: 700 }}>
         <h2 className="section-title" style={{ marginBottom: 24 }}>
-          Customer <em>reviews</em>
+          {t('pd.customerReviewsTop')} <em>{t('pd.customerReviewsEm')}</em>
         </h2>
 
         {user ? (
           <form onSubmit={handleReviewSubmit} className="review-form">
             {reviewError && <div className="form-error">{reviewError}</div>}
             <div className="field">
-              <label>Your rating</label>
+              <label>{t('pd.yourRating')}</label>
               <div className="star-picker">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
@@ -503,22 +503,22 @@ export default function ProductDetail() {
               </div>
             </div>
             <div className="field">
-              <label>Your review</label>
+              <label>{t('pd.yourReview')}</label>
               <textarea
                 required
                 rows={3}
-                placeholder="What did you think of this product?"
+                placeholder={t('pd.reviewPlaceholder')}
                 value={reviewForm.comment}
                 onChange={(e) => setReviewForm((f) => ({ ...f, comment: e.target.value }))}
               />
             </div>
             <div className="field">
-              <label>Add photos (optional)</label>
+              <label>{t('pd.addPhotosOptional')}</label>
               <div className="review-photo-row">
                 {reviewPhotoPreviews.map((src, i) => (
                   <div className="review-photo-thumb" key={src}>
                     <img src={src} alt={`Attached photo ${i + 1}`} />
-                    <button type="button" onClick={() => removeReviewPhoto(i)} aria-label="Remove photo">✕</button>
+                    <button type="button" onClick={() => removeReviewPhoto(i)} aria-label={t('pd.removePhoto')}>✕</button>
                   </div>
                 ))}
                 {reviewPhotos.length < REVIEW_PHOTO_LIMIT && (
@@ -529,21 +529,21 @@ export default function ProductDetail() {
                 )}
               </div>
               <span style={{ fontSize: '0.76rem', color: 'var(--muted)' }}>
-                Up to {REVIEW_PHOTO_LIMIT} photos, {REVIEW_PHOTO_MAX_MB}MB each — show us the actual part you received.
+                {t('pd.photoLimitNote', null, { limit: REVIEW_PHOTO_LIMIT, mb: REVIEW_PHOTO_MAX_MB })}
               </span>
             </div>
             <button className="btn btn-primary" disabled={reviewBusy}>
-              {reviewBusy ? 'Submitting…' : 'Submit review'}
+              {reviewBusy ? t('pd.submittingReview') : t('pd.submitReview')}
             </button>
           </form>
         ) : (
           <p style={{ marginBottom: 24, fontSize: '0.9rem' }}>
-            <Link to="/login" style={{ fontWeight: 600, color: 'var(--berry)' }}>Sign in</Link> to leave a review.
+            <Link to="/login" style={{ fontWeight: 600, color: 'var(--berry)' }}>{t('nav.signIn')}</Link> {t('pd.signInToReviewPost')}
           </p>
         )}
 
         {reviews.length === 0 ? (
-          <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>No reviews yet — be the first to share your thoughts.</p>
+          <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{t('pd.noReviewsYet')}</p>
         ) : (
           <div style={{ marginTop: 20 }}>
             {reviews.map((r) => (
@@ -586,10 +586,10 @@ export default function ProductDetail() {
         <section className="section" style={{ borderTop: '1px solid var(--line)' }}>
           <div className="section-head">
             <h2 className="section-title">
-              You may also <em>like</em>
+              {t('pd.mayAlsoLikeTop')} <em>{t('pd.mayAlsoLikeEm')}</em>
             </h2>
             <Link to={`/shop?category=${encodeURIComponent(product.category)}`} className="section-link">
-              View all in {product.category} →
+              {t('pd.viewAllInCategory', null, { category: product.category })}
             </Link>
           </div>
           <div className="grid">

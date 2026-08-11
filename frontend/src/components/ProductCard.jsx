@@ -5,9 +5,11 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ProductCard({ product, onAdd }) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const isApprovedDealer = user?.role === 'dealer' && user?.dealerStatus === 'approved';
   // Backend returns `retailPrice` (MRP) alongside a viewer-aware `price` —
   // for approved dealers that's their wholesale rate, which is lower than
@@ -31,12 +33,12 @@ export default function ProductCard({ product, onAdd }) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Please sign in to save items', 'error');
+      showToast(t('card.signInToSave'), 'error');
       navigate('/login');
       return;
     }
     const nowSaved = await toggle(product.id, product);
-    showToast(nowSaved ? 'Saved to wishlist' : 'Removed from wishlist', 'success');
+    showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
   }
 
   return (
@@ -44,18 +46,18 @@ export default function ProductCard({ product, onAdd }) {
       <Link to={`/product/${product.id}`}>
         <div className="card-img">
           {outOfStock ? (
-            <span className="card-tag" style={{ background: 'var(--muted)' }}>Sold out</span>
+            <span className="card-tag" style={{ background: 'var(--muted)' }}>{t('card.soldOut')}</span>
           ) : priceUnavailable ? (
-            <span className="card-tag" style={{ background: 'var(--muted)' }}>Contact for price</span>
+            <span className="card-tag" style={{ background: 'var(--muted)' }}>{t('card.contactForPrice')}</span>
           ) : dealerSaving ? (
-            <span className="card-tag" style={{ background: 'var(--ink)' }}>Dealer price</span>
+            <span className="card-tag" style={{ background: 'var(--ink)' }}>{t('product.dealerPrice')}</span>
           ) : (
-            onSale && <span className="card-tag">Sale</span>
+            onSale && <span className="card-tag">{t('card.sale')}</span>
           )}
           <button
             className={`wishlist-heart ${saved ? 'active' : ''}`}
             onClick={handleWishlist}
-            aria-label={saved ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-label={saved ? t('card.removeFromWishlist') : t('card.addToWishlist')}
           >
             {saved ? '♥' : '♡'}
           </button>
@@ -72,7 +74,7 @@ export default function ProductCard({ product, onAdd }) {
         )}
         <div className="card-price">
           {priceUnavailable ? (
-            <span className="now" style={{ color: 'var(--muted)', fontSize: '0.94rem' }}>Price on request</span>
+            <span className="now" style={{ color: 'var(--muted)', fontSize: '0.94rem' }}>{t('card.priceOnRequest')}</span>
           ) : (
             <>
               <span className="now">{formatPrice(product.price)}</span>
@@ -82,7 +84,7 @@ export default function ProductCard({ product, onAdd }) {
           )}
         </div>
         <button className="card-cta" onClick={() => onAdd(product.id)} disabled={unorderable} style={unorderable ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
-          {outOfStock ? 'Sold out' : priceUnavailable ? 'Unavailable' : 'Add to cart'}
+          {outOfStock ? t('card.soldOut') : priceUnavailable ? t('card.unavailable') : t('product.addToCart')}
         </button>
       </div>
     </div>

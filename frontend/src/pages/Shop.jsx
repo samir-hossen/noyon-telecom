@@ -7,6 +7,7 @@ import { usePageMeta } from '../hooks/usePageTitle';
 import ProductCard from '../components/ProductCard.jsx';
 import { trackSearch } from '../ecommerce.js';
 import { buildPageWindow } from '../utils/pagination.js';
+import { useLanguage } from '../context/LanguageContext';
 
 const PAGE_SIZE = 12;
 
@@ -21,6 +22,7 @@ export default function Shop() {
   const { addToCart } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const category = params.get('category') || 'All';
   const brand = params.get('brand') || 'All';
@@ -30,10 +32,10 @@ export default function Shop() {
   const [searchInput, setSearchInput] = useState(search);
 
   usePageMeta(
-    search ? `Search results for "${search}"` : category !== 'All' ? category : 'Shop',
+    search ? t('shop.searchResultsTitle', null, { search }) : category !== 'All' ? category : t('shop.pageTitleDefault'),
     category !== 'All'
-      ? `Shop ${category} parts at Noyon Telecom — wholesale pricing, MOQ ordering, bulk discounts.`
-      : "Browse the full Noyon Telecom catalog: displays, batteries, back glass, charging ports and more.",
+      ? t('shop.pageMetaCategory', null, { category })
+      : t('shop.pageMetaDefault'),
     undefined,
     // Canonicalize away sort/page/search noise — only category (and brand)
     // meaningfully changes what content is shown, so that's all that
@@ -91,10 +93,10 @@ export default function Shop() {
   async function handleAdd(id) {
     try {
       await addToCart(id, 1);
-      showToast('Added to cart', 'success');
+      showToast(t('shop.addedToCart'), 'success');
     } catch (e) {
       if (e.message.toLowerCase().includes('authenticated')) {
-        showToast('Please sign in to add items to your cart', 'error');
+        showToast(t('shop.signInToAddCart'), 'error');
         navigate('/login');
       } else {
         showToast(e.message, 'error');
@@ -126,17 +128,17 @@ export default function Shop() {
   return (
     <div className="container">
       <div className="page-header">
-        <span className="eyebrow">Full collection</span>
+        <span className="eyebrow">{t('shop.eyebrow')}</span>
         <h1 className="page-title">
-          {search ? `Results for "${search}"` : category !== 'All' ? category : brand !== 'All' ? `${brand} Parts` : (
-            <>Shop <em>everything</em></>
+          {search ? t('shop.resultsForPre', null, { search }) : category !== 'All' ? category : brand !== 'All' ? `${brand} ${t('shop.partsSuffix')}` : (
+            <>{t('shop.shopTitleTop')} <em>{t('shop.shopTitleEm')}</em></>
           )}
         </h1>
       </div>
 
       <div className="cat-strip" style={{ marginBottom: 12 }}>
         <button className={`cat-pill ${category === 'All' ? 'active' : ''}`} onClick={() => setFilter('category', '')}>
-          All
+          {t('shop.allCategories')}
         </button>
         {categories.map((c) => (
           <button key={c} className={`cat-pill ${category === c ? 'active' : ''}`} onClick={() => setFilter('category', c)}>
@@ -148,7 +150,7 @@ export default function Shop() {
       {brands.length > 0 && (
         <div className="cat-strip" style={{ marginBottom: 20 }}>
           <button className={`cat-pill ${brand === 'All' ? 'active' : ''}`} onClick={() => setFilter('brand', '')}>
-            All brands
+            {t('shop.allBrands')}
           </button>
           {brands.map((b) => (
             <button key={b} className={`cat-pill ${brand === b ? 'active' : ''}`} onClick={() => setFilter('brand', b)}>
@@ -160,23 +162,23 @@ export default function Shop() {
 
       <div className="sticky-search-bar">
         <div className="shop-toolbar">
-          <span className="shop-result-count">{loading ? 'Searching…' : `${total} product${total === 1 ? '' : 's'}`}</span>
+          <span className="shop-result-count">{loading ? t('shop.searching') : `${total} ${total === 1 ? t('shop.product') : t('shop.products')}`}</span>
           <div className="shop-toolbar-controls">
             <div className="shop-search-input">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" strokeLinecap="round" /></svg>
               <input
                 type="text"
-                placeholder="Search within results…"
+                placeholder={t('shop.searchPlaceholder')}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                aria-label="Search within results"
+                aria-label={t('shop.searchAriaLabel')}
               />
             </div>
             <select className="select" value={sort} onChange={(e) => setFilter('sort', e.target.value)}>
-              <option value="">Sort: Featured</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Top Rated</option>
+              <option value="">{t('shop.sortFeatured')}</option>
+              <option value="price-asc">{t('shop.sortPriceAsc')}</option>
+              <option value="price-desc">{t('shop.sortPriceDesc')}</option>
+              <option value="rating">{t('shop.sortTopRated')}</option>
             </select>
           </div>
         </div>
@@ -198,10 +200,10 @@ export default function Shop() {
       ) : products.length === 0 ? (
         <div className="empty-state">
           <div className="icon">🔍</div>
-          <h3>No products found</h3>
-          <p>Try a different search term or category — or browse the full catalog instead.</p>
+          <h3>{t('shop.noProductsTitle')}</h3>
+          <p>{t('shop.noProductsSub')}</p>
           <button className="btn btn-primary" onClick={() => { setSearchInput(''); setParams({}); }}>
-            Clear filters
+            {t('shop.clearFilters')}
           </button>
         </div>
       ) : (
@@ -214,7 +216,7 @@ export default function Shop() {
 
       {!loading && totalPages > 1 && (
         <div className="pagination">
-          <button className="page-btn" disabled={page <= 1} onClick={() => goToPage(page - 1)} aria-label="Previous page">←</button>
+          <button className="page-btn" disabled={page <= 1} onClick={() => goToPage(page - 1)} aria-label={t('shop.prevPage')}>←</button>
           {pageWindow().map((p, i) =>
             p === '…' ? (
               <span key={`e${i}`} className="page-ellipsis">…</span>
@@ -228,7 +230,7 @@ export default function Shop() {
               </button>
             )
           )}
-          <button className="page-btn" disabled={page >= totalPages} onClick={() => goToPage(page + 1)} aria-label="Next page">→</button>
+          <button className="page-btn" disabled={page >= totalPages} onClick={() => goToPage(page + 1)} aria-label={t('shop.nextPage')}>→</button>
         </div>
       )}
     </div>
