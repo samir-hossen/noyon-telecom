@@ -4,7 +4,15 @@ import { FALLBACK_IMG } from './utils/fallbackImage';
 // In production, the frontend is usually deployed separately from the
 // backend, so set VITE_API_URL to the backend's full URL (e.g.
 // https://your-backend.onrender.com/api) as a build-time environment variable.
-const BASE = import.meta.env.VITE_API_URL || '/api';
+// .trim() guards against a trailing newline/whitespace ending up in the
+// VITE_API_URL env var (an easy copy-paste artifact when pasting into a
+// hosting dashboard's env var field) - fetch() silently tolerates it
+// (browsers strip stray control characters when normalizing a URL), but
+// resolveImg()'s regex-based string replace below runs on the raw string
+// before any of that normalization, so a trailing "\n" there made its
+// `$` anchor fail to match and left "/api" un-stripped from local /uploads
+// image URLs, 404ing every locally-stored (non-Cloudinary) product photo.
+const BASE = (import.meta.env.VITE_API_URL || '/api').trim();
 
 // Uploaded product images are served from the backend (e.g. /uploads/xyz.png).
 // In local dev, Vite's proxy handles this automatically. In production, when

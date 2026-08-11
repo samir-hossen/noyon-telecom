@@ -15,10 +15,16 @@ const ICONS = {
       <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  // Grid icon (matches CategoryGrid.jsx's "View All Categories" tile) —
+  // this used to be the exact same bag icon as `bag` below, so "All Parts"
+  // and "Cart" were visually identical in this icon-first tab bar and only
+  // distinguishable by their text label.
   shop: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path d="M6 8h12l1 12H5L6 8Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 8V6a3 3 0 0 1 6 0v2" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1.4" strokeLinejoin="round" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.4" strokeLinejoin="round" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.4" strokeLinejoin="round" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.4" strokeLinejoin="round" />
     </svg>
   ),
   heart: (
