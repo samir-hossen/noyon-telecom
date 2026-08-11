@@ -45,7 +45,10 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; overscroll-behavior-y: none; }
+/* overscroll-behavior-y was previously `none`, which also disables the
+   browser's native "pull down at the top to reload" gesture on mobile —
+   `contain` keeps the page from scroll-chaining without blocking that. */
+html { scroll-behavior: smooth; overscroll-behavior-y: contain; }
 html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
 body {
   background: var(--paper);
@@ -59,10 +62,22 @@ a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--berry); outline-offset: 2px; border-radius: 4px; }
 
+/* All text sizing site-wide is in rem (spacing/layout is px, unaffected),
+   so scaling the root font-size here shrinks every heading/label/button
+   proportionally on small phones without touching individual rules. */
+@media (max-width: 560px) {
+  html { font-size: 93.75%; } /* 16px -> 15px base */
+}
+
 /* Fade/slide-in helper used across redesigned sections */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* PullToRefresh.jsx's spinner */
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
 }
 .section, .card, .category-tile, .deal-card { animation: fade-up 0.5s var(--ease) both; }
 
