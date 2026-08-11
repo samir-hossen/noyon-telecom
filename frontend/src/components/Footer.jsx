@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
+import { useLanguage } from '../context/LanguageContext';
 
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
@@ -46,13 +47,14 @@ export default function Footer() {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
+  const { t } = useLanguage();
 
   async function onSubscribe(e) {
     e.preventDefault();
     setBusy(true);
     try {
       await api.post('/newsletter', { email });
-      showToast("You're on the list!", 'success');
+      showToast(t('footer.subscribedSuccess'), 'success');
       setEmail('');
     } catch (err) {
       showToast(err.message, 'error');
@@ -71,21 +73,21 @@ export default function Footer() {
               <circle cx="12" cy="9" r="2.5" />
             </svg>
           </span>
-          <h3 className="store-address-heading">Shop &amp; Instant Service Address</h3>
+          <h3 className="store-address-heading">{t('footer.instantServiceAddress')}</h3>
           <p className="store-address-text">
             ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০
           </p>
           <p className="store-address-phone">
-            <a href="tel:+8801560047377">☎ Call: 01560-047377</a>
+            <a href="tel:+8801560047377">☎ {t('footer.call')} 01560-047377</a>
           </p>
 
           <div className="store-address-links">
-            <Link to="/about">About Us</Link>
-            <Link to="/privacy-policy">Privacy Policy</Link>
-            <Link to="/refund-policy">Warranty Policy</Link>
-            <Link to="/terms">Order &amp; Delivery Policy</Link>
-            <Link to="/refund-policy">Return &amp; Refund Policy</Link>
-            <Link to="/contact">Contact Us</Link>
+            <Link to="/about">{t('footer.aboutUs')}</Link>
+            <Link to="/privacy-policy">{t('footer.privacyPolicy')}</Link>
+            <Link to="/refund-policy">{t('footer.warrantyPolicy')}</Link>
+            <Link to="/terms">{t('footer.orderDeliveryPolicy')}</Link>
+            <Link to="/refund-policy">{t('footer.returnRefundPolicy')}</Link>
+            <Link to="/contact">{t('footer.contactUs')}</Link>
           </div>
         </div>
       </div>
@@ -97,34 +99,34 @@ export default function Footer() {
               <img src="/logo-mark.png" alt="" className="footer-logo-mark" />
               Noyon Telecom
             </div>
-            <p style={{ maxWidth: 260 }}>Bangladesh's wholesale importer & distributor of mobile phone spare parts — for dealers, shops and service centers. We don't sell retail.</p>
+            <p style={{ maxWidth: 260 }}>{t('footer.tagline')}</p>
             <p style={{ marginTop: 12 }}>
-              <a href="tel:+8801560047377">📞 Hotline: 01560-047377</a>
+              <a href="tel:+8801560047377">📞 {t('footer.hotline')} 01560-047377</a>
             </p>
             <p>
-              <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer">💬 WhatsApp Us to Order</a>
+              <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer">💬 {t('footer.whatsappUsToOrder')}</a>
             </p>
           </div>
           <div>
-            <h4>Shop by Category</h4>
-            <p><Link to="/shop?category=Display">Display</Link></p>
-            <p><Link to="/shop?category=Battery">Battery</Link></p>
-            <p><Link to="/shop?category=Charging Port">Charging Port</Link></p>
-            <p><Link to="/shop?category=Back Glass">Back Glass</Link></p>
-            <p><Link to="/shop">All parts →</Link></p>
+            <h4>{t('footer.shopByCategory')}</h4>
+            <p><Link to="/shop?category=Display">{t('nav.display')}</Link></p>
+            <p><Link to="/shop?category=Battery">{t('nav.battery')}</Link></p>
+            <p><Link to="/shop?category=Charging Port">{t('nav.chargingPort')}</Link></p>
+            <p><Link to="/shop?category=Back Glass">{t('nav.backGlass')}</Link></p>
+            <p><Link to="/shop">{t('footer.allPartsArrow')}</Link></p>
           </div>
           <div>
-            <h4>Support</h4>
-            <p><Link to="/orders">Track an order</Link></p>
-            <p><Link to="/about">About us</Link></p>
-            <p><Link to="/request-quote">Request a bulk quote</Link></p>
-            <p><Link to="/refund-policy">Warranty & returns</Link></p>
-            <p><Link to="/contact">Contact us</Link></p>
-            <p><Link to="/register">Become a dealer</Link></p>
+            <h4>{t('footer.support')}</h4>
+            <p><Link to="/orders">{t('footer.trackOrder')}</Link></p>
+            <p><Link to="/about">{t('footer.aboutUs')}</Link></p>
+            <p><Link to="/request-quote">{t('footer.requestBulkQuote')}</Link></p>
+            <p><Link to="/refund-policy">{t('footer.warrantyReturns')}</Link></p>
+            <p><Link to="/contact">{t('footer.contactUsLower')}</Link></p>
+            <p><Link to="/register">{t('nav.becomeDealer')}</Link></p>
           </div>
           <div>
-            <h4>Stay in the loop</h4>
-            <p>New stock arrivals and dealer offers, straight to your inbox.</p>
+            <h4>{t('home.newsletter')}</h4>
+            <p>{t('home.newsletterSub')}</p>
             <form onSubmit={onSubscribe} className="newsletter-form">
               <input
                 type="email"
@@ -134,7 +136,7 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
               />
               <button className="btn btn-berry" disabled={busy} style={{ padding: '10px 18px' }}>
-                {busy ? '…' : 'Join'}
+                {busy ? '…' : t('footer.join')}
               </button>
             </form>
           </div>
@@ -148,22 +150,22 @@ export default function Footer() {
           <div className="trust-badge">
             <ShieldIcon />
             <div>
-              <strong>Trade License</strong>
+              <strong>{t('footer.tradeLicense')}</strong>
               <span>No. [[ EDIT: TRAD/XXX/XXXXX/2024 ]]</span>
             </div>
           </div>
           <div className="trust-badge">
             <DocIcon />
             <div>
-              <strong>Business ID (BIN)</strong>
+              <strong>{t('footer.businessId')}</strong>
               <span>[[ EDIT: 000000000-0000 ]]</span>
             </div>
           </div>
           <div className="trust-badge">
             <LockIcon />
             <div>
-              <strong>Secure Checkout</strong>
-              <span>SSL-encrypted · SSLCommerz</span>
+              <strong>{t('footer.secureCheckout')}</strong>
+              <span>{t('footer.sslEncrypted')}</span>
             </div>
           </div>
           {/* [[ EDIT: Trustpilot link only works once you've claimed a
@@ -179,16 +181,16 @@ export default function Footer() {
           >
             <StarIcon />
             <div>
-              <strong>Reviewed on Trustpilot</strong>
-              <span>See customer reviews →</span>
+              <strong>{t('footer.reviewedOnTrustpilot')}</strong>
+              <span>{t('footer.seeCustomerReviews')}</span>
             </div>
           </a>
         </div>
 
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Noyon Telecom — All Rights Reserved</span>
+          <span>© {new Date().getFullYear()} Noyon Telecom — {t('common.footer.rights')}</span>
           <span className="footer-legal-links">
-            <Link to="/privacy-policy">Privacy</Link> · <Link to="/terms">Terms</Link> · <Link to="/refund-policy">Refunds</Link> · <Link to="/admin/login">Admin</Link>
+            <Link to="/privacy-policy">{t('footer.privacy')}</Link> · <Link to="/terms">{t('footer.terms')}</Link> · <Link to="/refund-policy">{t('footer.refunds')}</Link> · <Link to="/admin/login">{t('nav.admin')}</Link>
           </span>
         </div>
       </div>

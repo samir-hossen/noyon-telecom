@@ -11,12 +11,12 @@ import { formatPrice } from '../utils/currency';
 // Mega menu grouping of the full parts taxonomy — keeps the flat category
 // list from products.routes.js organized into scannable columns.
 const MEGA_MENU_GROUPS = [
-  { title: 'Screen & Display', categories: ['Display', 'OLED', 'LCD', 'Touch'] },
-  { title: 'Power & Charging', categories: ['Battery', 'Charging Port', 'IC'] },
-  { title: 'Body & Housing', categories: ['Back Glass', 'Housing', 'Frame', 'Buttons'] },
-  { title: 'Camera & Audio', categories: ['Camera', 'Speaker', 'Microphone'] },
-  { title: 'Logic & Security', categories: ['Flex', 'Logic Board', 'Motherboard', 'CPU', 'Fingerprint', 'Face ID'] },
-  { title: 'Tools & Accessories', categories: ['SIM Tray', 'Repair Tools', 'Accessories'] },
+  { titleKey: 'nav.megaGroup.screenDisplay', categories: ['Display', 'OLED', 'LCD', 'Touch'] },
+  { titleKey: 'nav.megaGroup.powerCharging', categories: ['Battery', 'Charging Port', 'IC'] },
+  { titleKey: 'nav.megaGroup.bodyHousing', categories: ['Back Glass', 'Housing', 'Frame', 'Buttons'] },
+  { titleKey: 'nav.megaGroup.cameraAudio', categories: ['Camera', 'Speaker', 'Microphone'] },
+  { titleKey: 'nav.megaGroup.logicSecurity', categories: ['Flex', 'Logic Board', 'Motherboard', 'CPU', 'Fingerprint', 'Face ID'] },
+  { titleKey: 'nav.megaGroup.toolsAccessories', categories: ['SIM Tray', 'Repair Tools', 'Accessories'] },
 ];
 
 const BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
@@ -98,7 +98,7 @@ export default function Navbar() {
           <span><a href="tel:+8801560047377">📞 {t('nav.hotline')}: 01560-047377 (9 AM–8 PM)</a></span>
           <div className="nav-topbar-right">
             <Link to="/orders">{t('nav.trackOrder')}</Link>
-            <button className="lang-switch" onClick={toggleLang} aria-label="Switch language">
+            <button className="lang-switch" onClick={toggleLang} aria-label={t('nav.switchLanguage')}>
               {lang === 'en' ? '🇺🇸 English' : '🇧🇩 বাংলা'}
               <span className="lang-switch-alt">{lang === 'en' ? '| বাংলা' : '| English'}</span>
             </button>
@@ -109,7 +109,7 @@ export default function Navbar() {
       <div className="container nav-top">
         <button
           className={`hamburger nav-hamburger ${menuOpen ? 'open' : ''}`}
-          aria-label="Toggle menu"
+          aria-label={t('nav.toggleMenu')}
           onClick={() => setMenuOpen((o) => !o)}
         >
           <span></span>
@@ -158,7 +158,7 @@ export default function Navbar() {
                     navigate(`/shop?search=${encodeURIComponent(q)}`);
                   }}
                 >
-                  View all results for "{q}" →
+                  {t('nav.viewAllResultsFor', null, { query: q })}
                 </button>
               </div>
             )}
@@ -221,13 +221,13 @@ export default function Navbar() {
               aria-expanded={megaOpen}
               onClick={() => setMegaOpen((o) => !o)}
             >
-              ☰ All Categories
+              ☰ {t('nav.allCategoriesBtn')}
             </button>
             {megaOpen && (
               <div className="mega-menu" role="menu">
                 {MEGA_MENU_GROUPS.map((group) => (
-                  <div className="mega-menu-col" key={group.title} role="group" aria-label={group.title}>
-                    <h4>{group.title}</h4>
+                  <div className="mega-menu-col" key={group.titleKey} role="group" aria-label={t(group.titleKey)}>
+                    <h4>{t(group.titleKey)}</h4>
                     {group.categories.map((c) => (
                       <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`} onClick={() => setMegaOpen(false)} role="menuitem">
                         {c}
@@ -280,12 +280,12 @@ export default function Navbar() {
           <div className="mobile-menu-account">
             {user ? (
               <>
-                <Link to="/orders" onClick={closeMenu} className="btn btn-outline btn-block">My orders</Link>
+                <Link to="/orders" onClick={closeMenu} className="btn btn-outline btn-block">{t('nav.myOrders')}</Link>
                 {user.role === 'dealer' && (
                   <Link to="/dealer" onClick={closeMenu} className="btn btn-outline btn-block">{t('dealer.dashboard')}</Link>
                 )}
                 {user.role === 'admin' && (
-                  <Link to="/admin" onClick={closeMenu} className="btn btn-outline btn-block">Admin panel</Link>
+                  <Link to="/admin" onClick={closeMenu} className="btn btn-outline btn-block">{t('nav.adminPanel')}</Link>
                 )}
                 <button
                   className="btn btn-primary btn-block"

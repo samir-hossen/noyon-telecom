@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 
 const CHANNELS = [
   {
@@ -38,12 +39,13 @@ const CHANNELS = [
 
 export default function SupportWidget() {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div className="support-widget">
       {open && (
         <div className="support-menu">
-          <div className="support-menu-title">Need help? Chat with us</div>
+          <div className="support-menu-title">{t('support.menuTitle')}</div>
           {CHANNELS.map((c) => (
             <a
               key={c.key}
@@ -60,8 +62,8 @@ export default function SupportWidget() {
         </div>
       )}
       <div className="support-fab-row">
-        {!open && <span className="support-fab-label">Chat with us</span>}
-        <button className={`support-fab ${open ? 'open' : ''}`} onClick={() => setOpen((o) => !o)} aria-label="Contact support">
+        {!open && <span className="support-fab-label">{t('support.chatWithUs')}</span>}
+        <button className={`support-fab ${open ? 'open' : ''}`} onClick={() => setOpen((o) => !o)} aria-label={t('support.contactSupport')}>
           {open ? (
             '✕'
           ) : (
