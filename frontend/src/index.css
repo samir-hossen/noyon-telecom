@@ -1649,20 +1649,24 @@ button { font-family: inherit; cursor: pointer; }
 .part-finder-form option { color: #111; }
 .part-finder-form button { white-space: nowrap; }
 @media (max-width: 780px) {
-  .part-finder-form { grid-template-columns: 1fr 1fr; }
+  .part-finder-form { grid-template-columns: 1fr 1fr; gap: 9px; }
+  .part-finder { padding: 16px 18px; }
+  .part-finder-title { font-size: 1rem; margin: 0 0 12px; }
+  .part-finder-form select { padding: 10px 12px; font-size: 0.8rem; }
+  .part-finder-form button { padding: 10px 12px; font-size: 0.8rem; }
 }
 @media (max-width: 480px) {
-  .part-finder-form { grid-template-columns: 1fr; gap: 7px; }
-  .part-finder { padding: 12px 14px; margin-top: 12px; border-radius: 12px; }
-  .part-finder-title { font-size: 0.86rem; margin: 0 0 8px; }
+  .part-finder-form { grid-template-columns: 1fr; gap: 6px; }
+  .part-finder { padding: 10px 12px; margin-top: 10px; border-radius: 12px; }
+  .part-finder-title { font-size: 0.78rem; margin: 0 0 6px; }
   .part-finder-form select {
-    padding: 8px 10px;
-    font-size: 0.78rem;
+    padding: 7px 9px;
+    font-size: 0.72rem;
     border-radius: 8px;
   }
   .part-finder-form button {
-    padding: 9px 14px;
-    font-size: 0.82rem;
+    padding: 8px 12px;
+    font-size: 0.74rem;
   }
 }
 
