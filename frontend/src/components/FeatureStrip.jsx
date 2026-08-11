@@ -60,7 +60,7 @@ const FEATURES = [
     // currency shown everywhere else on the site.
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22">
-        <text x="12" y="17.5" textAnchor="middle" fontSize="17" fontWeight="700" fill="currentColor">৳</text>
+        <text x="12" y="12" textAnchor="middle" dominantBaseline="central" fontSize="17" fontWeight="700" fill="currentColor">৳</text>
       </svg>
     ),
   },
