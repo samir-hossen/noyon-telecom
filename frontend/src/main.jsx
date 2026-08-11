@@ -13,6 +13,17 @@ import { initAnalytics, initErrorTracking, initGlobalErrorTracking } from './ana
 import { initMetaPixel, initTikTokPixel } from './pixels.js';
 import './index.css';
 
+// Browsers restore the previous scroll position on reload by default
+// ("auto") — for a client-rendered app that content isn't painted yet at
+// that moment, so the restore lands wherever the page's height happens to
+// be mid-render (often near the bottom, since the page is still short
+// before data/images load in), not where the user actually was. Taking
+// manual control and explicitly starting at the top avoids that.
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+
 initAnalytics();
 initMetaPixel();
 initTikTokPixel();
