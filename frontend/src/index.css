@@ -1891,7 +1891,13 @@ button { font-family: inherit; cursor: pointer; }
   flex-shrink: 0;
 }
 .feature-strip-item strong { display: block; font-size: 0.88rem; font-weight: 700; }
-.feature-strip-item span { display: block; font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
+/* Scoped to "> div span" (the subtitle span, nested inside the trailing
+   div), NOT a bare "span" — a bare selector here also matches
+   .feature-strip-icon (it's a <span> too, holding the icon), and its
+   higher specificity (0,1,1) than .feature-strip-icon's (0,1,0) was
+   silently overriding that span's `display: flex` with `display: block`,
+   which broke icon centering for all four badges in this row. */
+.feature-strip-item > div span { display: block; font-size: 0.76rem; color: var(--muted); margin-top: 2px; }
 @media (max-width: 860px) {
   .feature-strip { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .feature-strip-item { flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; gap: 8px; width: 100%; }
@@ -1903,7 +1909,7 @@ button { font-family: inherit; cursor: pointer; }
   .feature-strip-icon svg { width: 18px; height: 18px; }
   .feature-strip-item { gap: 6px; }
   .feature-strip-item strong { font-size: 0.64rem; line-height: 1.2; }
-  .feature-strip-item span { font-size: 0.54rem; line-height: 1.15; margin-top: 1px; }
+  .feature-strip-item > div span { font-size: 0.54rem; line-height: 1.15; margin-top: 1px; }
 }
 
 /* ---------- Homepage dark trust bar ---------- */
@@ -1928,7 +1934,10 @@ button { font-family: inherit; cursor: pointer; }
   flex-shrink: 0;
 }
 .home-trust-item strong { display: block; font-size: 0.86rem; font-weight: 700; }
-.home-trust-item span { display: block; font-size: 0.74rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+/* Scoped past the icon span the same way as .feature-strip-item above —
+   see that comment for why a bare "span" selector here was breaking
+   .home-trust-icon's flex centering. */
+.home-trust-item > div span { display: block; font-size: 0.74rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
 @media (max-width: 860px) { .home-trust-bar { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) {
   .home-trust-bar { padding: 16px 14px; gap: 14px 10px; }
@@ -1936,7 +1945,7 @@ button { font-family: inherit; cursor: pointer; }
   .home-trust-icon svg { width: 16px; height: 16px; }
   .home-trust-item { gap: 9px; }
   .home-trust-item strong { font-size: 0.78rem; }
-  .home-trust-item span { font-size: 0.66rem; }
+  .home-trust-item > div span { font-size: 0.66rem; }
 }
 
 /* ==========================================================================
