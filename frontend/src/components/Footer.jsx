@@ -7,25 +7,6 @@ import { useLanguage } from '../context/LanguageContext';
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
 // (license, security), not endorsements from a third party.
-function ShieldIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M12 3l7 3v5.5c0 4.6-3 8.3-7 9.5-4-1.2-7-4.9-7-9.5V6l7-3Z" />
-      <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function DocIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M7 3h7l4 4v14H7V3Z" />
-      <path d="M14 3v4h4" />
-      <path d="M9.5 12h5M9.5 15.5h5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function LockIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -142,25 +123,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* [[ EDIT: replace the placeholder numbers below with your real Trade
-            License and BIN once issued/renewed — a wrong or fake number here
-            is worse than showing nothing, since a dealer who checks and finds
-            it doesn't match stops trusting the rest of the site too. ]] */}
         <div className="trust-bar">
-          <div className="trust-badge">
-            <ShieldIcon />
-            <div>
-              <strong>{t('footer.tradeLicense')}</strong>
-              <span>No. [[ EDIT: TRAD/XXX/XXXXX/2024 ]]</span>
-            </div>
-          </div>
-          <div className="trust-badge">
-            <DocIcon />
-            <div>
-              <strong>{t('footer.businessId')}</strong>
-              <span>[[ EDIT: 000000000-0000 ]]</span>
-            </div>
-          </div>
           <div className="trust-badge">
             <LockIcon />
             <div>
