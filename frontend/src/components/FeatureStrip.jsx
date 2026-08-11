@@ -54,15 +54,13 @@ const FEATURES = [
     subKey: 'home.trustCodSub',
     color: '#16a34a',
     bg: '#e4f6ea',
-    // Banknote icon (rect + center seal). The previous version of this
-    // icon had an extra arc above the rectangle — that's a camera's
-    // viewfinder hump, not part of a cash icon, so it rendered as a
-    // camera next to "Cash on Delivery" instead of money.
+    // A rect+circle "banknote" outline still read as a camera (body +
+    // lens) at this icon's small render size — swapped for the Taka sign
+    // itself, which can't be mistaken for anything else and matches the
+    // currency shown everywhere else on the site.
     icon: (
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <rect x="2" y="6" width="20" height="12" rx="2" />
-        <circle cx="12" cy="12" r="2.4" />
-        <path d="M6 12h.01M18 12h.01" strokeLinecap="round" />
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <text x="12" y="17.5" textAnchor="middle" fontSize="17" fontWeight="700" fill="currentColor">৳</text>
       </svg>
     ),
   },
