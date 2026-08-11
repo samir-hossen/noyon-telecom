@@ -60,7 +60,7 @@ export default function Invoice() {
           <div>
             <div className="invoice-brand">Noyon <span>Telecom</span></div>
             <p>Wholesale Mobile Phone Spare Parts Importer &amp; Distributor</p>
-            <p>Bashundhara City, Panthapath, Dhaka, Bangladesh</p>
+            <p>৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০</p>
             <p>Hotline: 01560-047377 · support@noyontelecom.com</p>
           </div>
           <div className="invoice-meta">

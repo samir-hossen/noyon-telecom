@@ -44,7 +44,7 @@ export default function Contact() {
           <h3>{t('contact.contactDetails')}</h3>
           <p><strong>{t('contact.email')}</strong> mdsamirhossen180@gmail.com</p>
           <p><strong>{t('contact.phone')}</strong> +880 1560-047377</p>
-          <p><strong>{t('contact.address')}</strong> House 12, Road 5, Kafrul, Dhaka, Bangladesh</p>
+          <p><strong>{t('contact.address')}</strong> ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০</p>
           <p><strong>{t('contact.hours')}</strong> {t('contact.hoursValue')}</p>
           <p style={{ marginTop: 20, fontSize: '0.8rem', color: '#9a8f8a' }}>
             {t('contact.preferChat')}
