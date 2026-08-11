@@ -54,13 +54,16 @@ const FEATURES = [
     subKey: 'home.trustCodSub',
     color: '#16a34a',
     bg: '#e4f6ea',
-    // A rect+circle "banknote" outline still read as a camera (body +
-    // lens) at this icon's small render size — swapped for the Taka sign
-    // itself, which can't be mistaken for anything else and matches the
-    // currency shown everywhere else on the site.
+    // Two stacked bills, drawn as plain paths (same style as the other
+    // three icons in this row) — no circle (that's what read as a camera
+    // lens before) and no font-rendered text (a <text> glyph's centering
+    // depends on the font actually available on the viewer's device/
+    // browser, which isn't guaranteed to match what renders in a test
+    // environment). A pure vector shape centers identically everywhere.
     icon: (
-      <svg viewBox="0 0 24 24" width="22" height="22">
-        <text x="12" y="12" textAnchor="middle" dominantBaseline="central" fontSize="17" fontWeight="700" fill="currentColor">৳</text>
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="8" width="15" height="10" rx="2" />
+        <rect x="7" y="5" width="15" height="10" rx="2" />
       </svg>
     ),
   },
