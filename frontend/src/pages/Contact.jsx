@@ -3,9 +3,11 @@ import { api, getRecaptchaToken } from '../api';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackRequestQuote } from '../ecommerce.js';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Contact() {
-  usePageMeta('Contact Us', 'Get in touch with the Noyon Telecom team for support, orders, or general questions.');
+  const { t } = useLanguage();
+  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'));
   const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [busy, setBusy] = useState(false);
@@ -19,7 +21,7 @@ export default function Contact() {
       const recaptchaToken = await getRecaptchaToken('contact');
       await api.post('/contact', { ...form, recaptchaToken });
       trackRequestQuote();
-      showToast("Message sent — we'll get back to you soon!", 'success');
+      showToast(t('contact.messageSent'), 'success');
       setForm({ name: '', email: '', message: '' });
     } catch (err) {
       setError(err.message);
@@ -31,40 +33,40 @@ export default function Contact() {
   return (
     <div className="container">
       <div className="page-header">
-        <span className="eyebrow">We're here to help</span>
+        <span className="eyebrow">{t('contact.eyebrow')}</span>
         <h1 className="page-title">
-          Get in <em>touch</em>
+          {t('contact.titleTop')} <em>{t('contact.titleEm')}</em>
         </h1>
       </div>
 
       <div className="contact-grid">
         <div className="contact-info">
-          <h3>Contact details</h3>
-          <p><strong>Email:</strong> mdsamirhossen180@gmail.com</p>
-          <p><strong>Phone:</strong> +880 1560-047377</p>
-          <p><strong>Address:</strong> House 12, Road 5, Kafrul, Dhaka, Bangladesh</p>
-          <p><strong>Hours:</strong> Sat–Thu, 10am–7pm</p>
+          <h3>{t('contact.contactDetails')}</h3>
+          <p><strong>{t('contact.email')}</strong> mdsamirhossen180@gmail.com</p>
+          <p><strong>{t('contact.phone')}</strong> +880 1560-047377</p>
+          <p><strong>{t('contact.address')}</strong> House 12, Road 5, Kafrul, Dhaka, Bangladesh</p>
+          <p><strong>{t('contact.hours')}</strong> {t('contact.hoursValue')}</p>
           <p style={{ marginTop: 20, fontSize: '0.8rem', color: '#9a8f8a' }}>
-            Prefer chat? Use the support button in the corner of the screen for WhatsApp, Messenger, or Telegram.
+            {t('contact.preferChat')}
           </p>
         </div>
 
         <form onSubmit={onSubmit} className="form-panel wide">
           {error && <div className="form-error">{error}</div>}
           <div className="field">
-            <label htmlFor="contact-name">Your name</label>
+            <label htmlFor="contact-name">{t('contact.yourName')}</label>
             <input id="contact-name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div className="field">
-            <label htmlFor="contact-email">Email</label>
+            <label htmlFor="contact-email">{t('auth.email')}</label>
             <input id="contact-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div className="field">
-            <label htmlFor="contact-message">Message</label>
-            <textarea id="contact-message" required rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="How can we help?" />
+            <label htmlFor="contact-message">{t('contact.message')}</label>
+            <textarea id="contact-message" required rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder={t('contact.messagePlaceholder')} />
           </div>
           <button className="btn btn-berry" disabled={busy}>
-            {busy ? 'Sending…' : 'Send message'}
+            {busy ? t('contact.sending') : t('contact.sendMessage')}
           </button>
         </form>
       </div>

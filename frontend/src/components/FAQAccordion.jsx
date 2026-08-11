@@ -5,11 +5,11 @@ import { useLanguage } from '../context/LanguageContext';
 // data — one source of truth, so the schema can never drift out of sync
 // with what's actually shown on the page (which Google would flag).
 export const FAQS = [
-  { q: 'Do you sell to individual retail customers?', a: 'No — Noyon Telecom is a wholesale-only importer & distributor. We sell exclusively to dealers, mobile repair shops, service centers, and distributors.' },
-  { q: 'How do I get dealer pricing?', a: 'Register a free dealer account from the "Become a Dealer" link. Once approved (usually within 24 hours), dealer pricing and bulk discounts automatically apply to your account.' },
-  { q: "What's the minimum order quantity (MOQ)?", a: 'MOQ varies by product and is shown on every product page. Many accessories and small parts have an MOQ of 5–10 units; larger components like displays are often MOQ 1.' },
-  { q: 'Do parts come with a warranty?', a: 'Yes — warranty terms vary by product category (e.g. displays typically carry a testing warranty, batteries carry a defect warranty). Full terms are listed on each product page.' },
-  { q: 'How can I place a bulk order or request a quote?', a: 'Use the "Request Quote" button on any product page, or message us directly on WhatsApp with your parts list for a fast wholesale quotation.' },
+  { qKey: 'faq1.q', aKey: 'faq1.a' },
+  { qKey: 'faq2.q', aKey: 'faq2.a' },
+  { qKey: 'faq3.q', aKey: 'faq3.a' },
+  { qKey: 'faq4.q', aKey: 'faq4.a' },
+  { qKey: 'faq5.q', aKey: 'faq5.a' },
 ];
 
 export default function FAQAccordion() {
@@ -23,7 +23,7 @@ export default function FAQAccordion() {
       </div>
       <div className="faq-list">
         {FAQS.map((f, i) => (
-          <div className={`faq-item ${open === i ? 'open' : ''}`} key={f.q}>
+          <div className={`faq-item ${open === i ? 'open' : ''}`} key={f.qKey}>
             <button
               className="faq-question"
               onClick={() => setOpen(open === i ? -1 : i)}
@@ -31,12 +31,12 @@ export default function FAQAccordion() {
               aria-controls={`faq-answer-${i}`}
               id={`faq-question-${i}`}
             >
-              {f.q}
+              {t(f.qKey)}
               <span className="faq-toggle" aria-hidden="true">{open === i ? '−' : '+'}</span>
             </button>
             {open === i && (
               <div className="faq-answer" id={`faq-answer-${i}`} role="region" aria-labelledby={`faq-question-${i}`}>
-                {f.a}
+                {t(f.aKey)}
               </div>
             )}
           </div>

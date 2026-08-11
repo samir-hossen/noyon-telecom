@@ -6,16 +6,15 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackRequestQuote } from '../ecommerce.js';
+import { useLanguage } from '../context/LanguageContext';
 
 function emptyItem() {
   return { productId: null, name: '', sku: '', qty: 1 };
 }
 
 export default function RequestQuote() {
-  usePageMeta(
-    'Request a Bulk Quote',
-    'Request wholesale pricing for the mobile parts you need — our team will reply with a formal quotation.'
-  );
+  const { t } = useLanguage();
+  usePageMeta(t('rq.pageTitle'), t('rq.pageMeta'));
   const { user } = useAuth();
   const { items: cartItems } = useCart();
   const { showToast } = useToast();
@@ -66,7 +65,7 @@ export default function RequestQuote() {
   // instead of checking out at retail/dealer-list price.
   function loadFromCart() {
     if (!cartItems.length) {
-      showToast('Your cart is empty.', 'error');
+      showToast(t('rq.emptyCartError'), 'error');
       return;
     }
     setItems(
@@ -85,11 +84,11 @@ export default function RequestQuote() {
 
     const cleanItems = items.filter((i) => i.name.trim());
     if (!contact.name.trim() || !contact.email.trim() || !contact.phone.trim()) {
-      setError('Please fill in your name, email, and phone number.');
+      setError(t('rq.contactRequiredError'));
       return;
     }
     if (cleanItems.length === 0) {
-      setError('Add at least one part to your quote request.');
+      setError(t('rq.atLeastOnePartError'));
       return;
     }
 
@@ -109,24 +108,22 @@ export default function RequestQuote() {
     return (
       <div className="container">
         <div className="page-header">
-          <span className="eyebrow">Request received</span>
+          <span className="eyebrow">{t('rq.receivedEyebrow')}</span>
           <h1 className="page-title">
-            Thanks — we're <em>on it</em>
+            {t('rq.receivedTitleTop')} <em>{t('rq.receivedTitleEm')}</em>
           </h1>
         </div>
         <div className="form-panel wide" style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '1rem', marginBottom: 20 }}>
-            Our team will review your parts list and reply by email or phone with pricing, usually within one
-            business day. For anything urgent, message us directly on WhatsApp using the support button in the
-            corner.
+            {t('rq.receivedBody')}
           </p>
           {user ? (
             <Link to="/dealer" className="btn btn-berry">
-              View my quote history
+              {t('rq.viewQuoteHistory')}
             </Link>
           ) : (
             <Link to="/shop" className="btn btn-berry">
-              Continue browsing
+              {t('rq.continueBrowsing')}
             </Link>
           )}
         </div>
@@ -137,26 +134,25 @@ export default function RequestQuote() {
   return (
     <div className="container">
       <div className="page-header">
-        <span className="eyebrow">Wholesale &amp; bulk orders</span>
+        <span className="eyebrow">{t('rq.eyebrow')}</span>
         <h1 className="page-title">
-          Request a <em>bulk quote</em>
+          {t('rq.titleTop')} <em>{t('rq.titleEm')}</em>
         </h1>
         <p style={{ color: '#6b5f59', maxWidth: 560 }}>
-          Building a large order or need dealer pricing on several SKUs at once? List what you need below and
-          we'll send back a formal quotation — no obligation to buy.
+          {t('rq.sub')}
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="form-panel wide">
         {error && <div className="form-error">{error}</div>}
 
-        <h3 style={{ marginBottom: 12 }}>Your details</h3>
+        <h3 style={{ marginBottom: 12 }}>{t('rq.yourDetails')}</h3>
         <div className="field">
-          <label htmlFor="rq-name">Your name</label>
+          <label htmlFor="rq-name">{t('rq.yourName')}</label>
           <input id="rq-name" required value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} />
         </div>
         <div className="field">
-          <label htmlFor="rq-email">Email</label>
+          <label htmlFor="rq-email">{t('auth.email')}</label>
           <input
             id="rq-email"
             type="email"
@@ -166,7 +162,7 @@ export default function RequestQuote() {
           />
         </div>
         <div className="field">
-          <label htmlFor="rq-phone">Phone</label>
+          <label htmlFor="rq-phone">{t('checkout.phone')}</label>
           <input
             id="rq-phone"
             type="tel"
@@ -177,7 +173,7 @@ export default function RequestQuote() {
           />
         </div>
         <div className="field">
-          <label htmlFor="rq-business">Business / shop name (optional)</label>
+          <label htmlFor="rq-business">{t('rq.businessNameOptional')}</label>
           <input
             id="rq-business"
             value={contact.businessName}
@@ -185,32 +181,32 @@ export default function RequestQuote() {
           />
         </div>
 
-        <h3 style={{ margin: '24px 0 12px' }}>Parts needed</h3>
+        <h3 style={{ margin: '24px 0 12px' }}>{t('rq.partsNeeded')}</h3>
         {items.map((item, i) => (
           <div
             key={i}
             style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 12, flexWrap: 'wrap' }}
           >
             <div className="field" style={{ flex: '2 1 200px', margin: 0 }}>
-              {i === 0 && <label htmlFor={`rq-item-name-${i}`}>Part name</label>}
+              {i === 0 && <label htmlFor={`rq-item-name-${i}`}>{t('rq.partName')}</label>}
               <input
                 id={`rq-item-name-${i}`}
-                aria-label="Part name"
+                aria-label={t('rq.partName')}
                 required
-                placeholder="e.g. iPhone 13 Display"
+                placeholder={t('rq.partNamePlaceholder')}
                 value={item.name}
                 onChange={(e) => updateItem(i, { name: e.target.value })}
               />
             </div>
             <div className="field" style={{ flex: '1 1 120px', margin: 0 }}>
-              {i === 0 && <label htmlFor={`rq-item-sku-${i}`}>SKU (optional)</label>}
-              <input id={`rq-item-sku-${i}`} aria-label="SKU (optional)" value={item.sku} onChange={(e) => updateItem(i, { sku: e.target.value })} />
+              {i === 0 && <label htmlFor={`rq-item-sku-${i}`}>{t('rq.skuOptional')}</label>}
+              <input id={`rq-item-sku-${i}`} aria-label={t('rq.skuOptional')} value={item.sku} onChange={(e) => updateItem(i, { sku: e.target.value })} />
             </div>
             <div className="field" style={{ flex: '0 1 90px', margin: 0 }}>
-              {i === 0 && <label htmlFor={`rq-item-qty-${i}`}>Qty</label>}
+              {i === 0 && <label htmlFor={`rq-item-qty-${i}`}>{t('checkout.qty')}</label>}
               <input
                 id={`rq-item-qty-${i}`}
-                aria-label="Quantity"
+                aria-label={t('checkout.qty')}
                 type="number"
                 min={1}
                 value={item.qty}
@@ -218,8 +214,8 @@ export default function RequestQuote() {
               />
             </div>
             {items.length > 1 && (
-              <button type="button" className="remove-link" onClick={() => removeItem(i)} style={{ marginBottom: 10 }} aria-label={`Remove part ${i + 1}`}>
-                Remove
+              <button type="button" className="remove-link" onClick={() => removeItem(i)} style={{ marginBottom: 10 }} aria-label={t('rq.removePart', null, { n: i + 1 })}>
+                {t('cart.remove')}
               </button>
             )}
           </div>
@@ -227,22 +223,22 @@ export default function RequestQuote() {
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
           <button type="button" className="btn btn-outline" onClick={addItem}>
-            + Add another part
+            {t('rq.addAnotherPart')}
           </button>
           {cartItems.length > 0 && (
             <button type="button" className="btn btn-outline" onClick={loadFromCart}>
-              Load items from my cart
+              {t('rq.loadFromCart')}
             </button>
           )}
         </div>
 
         <div className="field">
-          <label htmlFor="rq-message">Anything else we should know? (optional)</label>
-          <textarea id="rq-message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Delivery timeline, preferred brand/quality tier, etc." />
+          <label htmlFor="rq-message">{t('rq.anythingElse')}</label>
+          <textarea id="rq-message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t('rq.messagePlaceholder')} />
         </div>
 
         <button className="btn btn-berry" disabled={busy}>
-          {busy ? 'Sending…' : 'Send quote request'}
+          {busy ? t('rq.sending') : t('rq.sendQuoteRequest')}
         </button>
       </form>
     </div>

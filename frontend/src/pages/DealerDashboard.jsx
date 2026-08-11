@@ -20,7 +20,7 @@ export default function DealerDashboard() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [licenseUploading, setLicenseUploading] = useState(false);
 
-  usePageMeta('Dealer Dashboard', 'Manage your Noyon Telecom dealer account, pricing, and purchase history.');
+  usePageMeta(t('dealerDash.pageTitle'), t('dealerDash.pageMeta'));
 
   useEffect(() => {
     // Stats cards use a cheap DB-side aggregate (accurate for a dealer's
@@ -59,7 +59,7 @@ export default function DealerDashboard() {
     try {
       const data = await api.upload('/dealer/trade-license', file);
       setUser((u) => ({ ...u, tradeLicenseUrl: data.tradeLicenseUrl }));
-      showToast('Trade license uploaded — this speeds up verification', 'success');
+      showToast(t('dealerDash.licenseUploadSuccess'), 'success');
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -78,34 +78,33 @@ export default function DealerDashboard() {
   return (
     <div className="container" style={{ padding: '40px 28px 80px' }}>
       <div className="page-header">
-        <span className="eyebrow">Dealer Account</span>
+        <span className="eyebrow">{t('dealerDash.eyebrow')}</span>
         <h1 className="page-title">{t('dealer.dashboard')}</h1>
       </div>
 
       <div className={`dealer-status-banner status-${user?.dealerStatus}`}>
         <div>
           <strong>{user?.businessName}</strong>
-          <p>Account status: <span className="dealer-status-pill">{statusLabel}</span></p>
+          <p>{t('dealerDash.accountStatus')} <span className="dealer-status-pill">{statusLabel}</span></p>
         </div>
         {user?.dealerStatus === 'pending' && (
           <p className="dealer-status-note">
-            Your application is under review. You can shop at retail pricing meanwhile — dealer pricing
-            unlocks automatically as soon as you're approved (usually within 24 hours).
+            {t('dealerDash.pendingNote')}
           </p>
         )}
         {user?.dealerStatus !== 'rejected' && (
           <div className="dealer-license-upload">
             {user?.tradeLicenseUrl ? (
               <p className="dealer-status-note">
-                📄 Trade license uploaded — <a href={user.tradeLicenseUrl} target="_blank" rel="noreferrer">view file</a>.{' '}
+                📄 {t('dealerDash.tradeLicenseUploaded')} <a href={user.tradeLicenseUrl} target="_blank" rel="noreferrer">{t('dealerDash.viewFile')}</a>.{' '}
                 <label className="dealer-license-replace">
-                  {licenseUploading ? 'Uploading…' : 'Replace'}
+                  {licenseUploading ? t('dealerDash.uploading') : t('dealerDash.replace')}
                   <input type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={licenseUploading} onChange={handleLicenseUpload} />
                 </label>
               </p>
             ) : (
               <label className="btn btn-outline" style={{ cursor: 'pointer', display: 'inline-block', marginTop: 10 }}>
-                {licenseUploading ? 'Uploading…' : '📄 Upload trade license (optional, speeds up approval)'}
+                {licenseUploading ? t('dealerDash.uploading') : `📄 ${t('dealerDash.uploadTradeLicense')}`}
                 <input type="file" accept="image/png,image/jpeg,image/webp" hidden disabled={licenseUploading} onChange={handleLicenseUpload} />
               </label>
             )}
@@ -113,60 +112,60 @@ export default function DealerDashboard() {
         )}
         {user?.dealerStatus === 'approved' && (
           <p className="dealer-status-note">
-            ✅ Dealer pricing is active on every product{user?.dealerDiscountPercent > 0
-              ? ` with an extra ${user.dealerDiscountPercent}% discount applied to your account.`
+            ✅ {t('dealerDash.approvedNoteBase')}{user?.dealerDiscountPercent > 0
+              ? ` ${t('dealerDash.approvedNoteDiscount', null, { percent: user.dealerDiscountPercent })}`
               : '.'}
           </p>
         )}
         {user?.dealerStatus === 'rejected' && (
           <p className="dealer-status-note">
-            Your dealer application wasn't approved. Contact support via WhatsApp or the{' '}
-            <Link to="/contact">contact page</Link> if you believe this is a mistake.
+            {t('dealerDash.rejectedNotePre')}{' '}
+            <Link to="/contact">{t('dealerDash.contactPage')}</Link> {t('dealerDash.rejectedNotePost')}
           </p>
         )}
       </div>
 
       <div className="stat-grid" style={{ marginTop: 28 }}>
         <div className="stat-card">
-          <div className="stat-label">Total Orders</div>
+          <div className="stat-label">{t('dealerDash.totalOrders')}</div>
           <div className="stat-value">{summary.count}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Total Purchased</div>
+          <div className="stat-label">{t('dealerDash.totalPurchased')}</div>
           <div className="stat-value">{formatPrice(totalSpent)}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Dealer Discount</div>
+          <div className="stat-label">{t('dealerDash.dealerDiscount')}</div>
           <div className="stat-value">{user?.dealerDiscountPercent || 0}%</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Business</div>
+          <div className="stat-label">{t('dealerDash.business')}</div>
           <div className="stat-value" style={{ fontSize: '1.05rem' }}>{user?.businessName || '—'}</div>
         </div>
       </div>
 
       <div className="analytics-panel" style={{ marginTop: 12 }}>
-        <h3>Purchase History</h3>
+        <h3>{t('dealerDash.purchaseHistory')}</h3>
         {loading ? (
-          <p>Loading…</p>
+          <p>{t('orders.loading')}</p>
         ) : loadError ? (
           <div className="empty-state" style={{ padding: '30px 0' }}>
-            <p>Couldn't load your purchase history: {loadError}</p>
+            <p>{t('dealerDash.cantLoadHistoryPre')} {loadError}</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="empty-state" style={{ padding: '30px 0' }}>
-            <p>No orders yet. <Link to="/shop">Start shopping wholesale parts →</Link></p>
+            <p>{t('dealerDash.noOrdersPre')} <Link to="/shop">{t('dealerDash.startShoppingWholesale')}</Link></p>
           </div>
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Order</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Status</th>
-                  <th>Total</th>
+                  <th>{t('dealerDash.orderHeader')}</th>
+                  <th>{t('dealerDash.dateHeader')}</th>
+                  <th>{t('dealerDash.itemsHeader')}</th>
+                  <th>{t('dealerDash.statusHeader')}</th>
+                  <th>{t('cart.total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,8 +173,8 @@ export default function DealerDashboard() {
                   <tr key={o.id}>
                     <td>#{o.id.slice(-8).toUpperCase()}</td>
                     <td>{new Date(o.createdAt).toLocaleDateString()}</td>
-                    <td>{o.items.length} item{o.items.length !== 1 ? 's' : ''}</td>
-                    <td><span className={`status-badge status-${o.status}`}>{o.status}</span></td>
+                    <td>{o.items.length} {o.items.length !== 1 ? t('dealerDash.items') : t('dealerDash.item')}</td>
+                    <td><span className={`status-badge status-${o.status}`}>{t(`order.status.${o.status}`, o.status)}</span></td>
                     <td>{formatPrice(o.total)}</td>
                   </tr>
                 ))}
@@ -186,7 +185,7 @@ export default function DealerDashboard() {
         {page < totalPages && (
           <div style={{ textAlign: 'center', marginTop: 14 }}>
             <button type="button" className="btn btn-outline btn-sm" onClick={loadMoreOrders} disabled={loadingMore}>
-              {loadingMore ? 'Loading…' : 'Load more orders'}
+              {loadingMore ? t('orders.loading') : t('orders.loadMore')}
             </button>
           </div>
         )}
@@ -194,8 +193,8 @@ export default function DealerDashboard() {
 
       <div className="promo-banner" style={{ marginTop: 12 }}>
         <div>
-          <strong>Need a bulk quotation or invoice?</strong>
-          <p>Message us on WhatsApp with your parts list and quantities for a fast wholesale quote and formal invoice.</p>
+          <strong>{t('dealerDash.bulkQuoteTitle')}</strong>
+          <p>{t('dealerDash.bulkQuoteSub')}</p>
         </div>
         <a
           href="https://wa.me/8801560047377?text=Hi%2C%20I%27d%20like%20a%20bulk%20quotation"

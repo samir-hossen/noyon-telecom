@@ -39,12 +39,12 @@ export default function FlashSale({ products, onAdd }) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      showToast('Please sign in to save items', 'error');
+      showToast(t('card.signInToSave'), 'error');
       navigate('/login');
       return;
     }
     const nowSaved = await toggle(product.id, product);
-    showToast(nowSaved ? 'Saved to wishlist' : 'Removed from wishlist', 'success');
+    showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
   }
 
   const hrs = Math.max(0, Math.floor(remaining / 3600000));
@@ -59,20 +59,20 @@ export default function FlashSale({ products, onAdd }) {
             <h2 className="section-title">⚡ {t('home.flashSale')}</h2>
             <p className="flash-sale-sub">{t('home.flashSaleSub')}</p>
           </div>
-          <div className="flash-sale-timer" aria-label={`Sale ends in ${pad(hrs)} hours ${pad(mins)} minutes ${pad(secs)} seconds`}>
+          <div className="flash-sale-timer" aria-label={t('flashSale.saleEndsIn', null, { h: pad(hrs), m: pad(mins), s: pad(secs) })}>
             <div className="flash-sale-timer-col" aria-hidden="true">
               <div className="flash-sale-timer-box"><strong>{pad(hrs)}</strong></div>
-              <span>Hrs</span>
+              <span>{t('flashSale.hrs')}</span>
             </div>
             <span className="flash-sale-timer-sep">:</span>
             <div className="flash-sale-timer-col" aria-hidden="true">
               <div className="flash-sale-timer-box"><strong>{pad(mins)}</strong></div>
-              <span>Mins</span>
+              <span>{t('flashSale.mins')}</span>
             </div>
             <span className="flash-sale-timer-sep">:</span>
             <div className="flash-sale-timer-col" aria-hidden="true">
               <div className="flash-sale-timer-box"><strong>{pad(secs)}</strong></div>
-              <span>Secs</span>
+              <span>{t('flashSale.secs')}</span>
             </div>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function FlashSale({ products, onAdd }) {
                   type="button"
                   className={`deal-heart ${ids?.has(p.id) ? 'active' : ''}`}
                   onClick={(e) => handleWishlist(e, p)}
-                  aria-label={ids?.has(p.id) ? `Remove ${p.name} from wishlist` : `Save ${p.name} for later`}
+                  aria-label={ids?.has(p.id) ? t('flashSale.removeFromWishlist', null, { name: p.name }) : t('flashSale.saveForLater', null, { name: p.name })}
                 >
                   {ids?.has(p.id) ? '♥' : '♡'}
                 </button>
@@ -107,7 +107,7 @@ export default function FlashSale({ products, onAdd }) {
                   </div>
                   <div className="deal-cta-row">
                     <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>MOQ {p.moq || 1}</span>
-                    <button type="button" className="deal-cta" onClick={() => onAdd(p.id)} aria-label={`Add ${p.name} to cart`}>
+                    <button type="button" className="deal-cta" onClick={() => onAdd(p.id)} aria-label={t('flashSale.addToCartAria', null, { name: p.name })}>
                       <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M6 8h12l1 12H5L6 8Z" strokeLinejoin="round" />
                         <path d="M9 8V6a3 3 0 0 1 6 0v2" strokeLinecap="round" strokeLinejoin="round" />

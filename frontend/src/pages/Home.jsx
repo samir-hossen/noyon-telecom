@@ -36,8 +36,8 @@ export default function Home() {
         '@type': 'FAQPage',
         mainEntity: FAQS.map((f) => ({
           '@type': 'Question',
-          name: f.q,
-          acceptedAnswer: { '@type': 'Answer', text: f.a },
+          name: t(f.qKey),
+          acceptedAnswer: { '@type': 'Answer', text: t(f.aKey) },
         })),
       },
     }
