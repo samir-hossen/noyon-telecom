@@ -5,6 +5,7 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackPurchase } from '../ecommerce.js';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function OrderConfirmation() {
   const { id } = useParams();
@@ -15,8 +16,9 @@ export default function OrderConfirmation() {
   // a successful payment doesn't need a query flag since order.status
   // already flips to "paid" once the gateway confirms it.
   const paymentIssue = searchParams.get('payment');
+  const { t } = useLanguage();
 
-  usePageMeta('Order Confirmed', 'Your order has been placed successfully.');
+  usePageMeta(t('orderConf.pageTitle'), t('orderConf.pageMeta'));
 
   useEffect(() => {
     setError('');
@@ -51,11 +53,11 @@ export default function OrderConfirmation() {
       <div className="container" style={{ padding: '60px 28px 100px' }}>
         <div className="form-panel" style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: '2.4rem', marginBottom: 10 }}>🧾</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', marginBottom: 10 }}>Can't load this order</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', marginBottom: 10 }}>{t('orderConf.cantLoad')}</h2>
           <p style={{ color: 'var(--muted)', marginBottom: 20 }}>{error}</p>
           <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
-            If you just placed this order, your payment/order itself is fine — this is only a page-load issue.
-            Check <Link to="/orders">your orders</Link>, or contact us if it keeps happening.
+            {t('orderConf.cantLoadNote1')}
+            {' '}{t('orderConf.cantLoadCheckPre')} <Link to="/orders">{t('orderConf.cantLoadOrdersLink')}</Link>{t('orderConf.cantLoadCheckPost')}
           </p>
         </div>
       </div>
@@ -96,24 +98,24 @@ export default function OrderConfirmation() {
           <>
             <div style={{ fontSize: '2.6rem', marginBottom: 10 }}>⚠️</div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: 8 }}>
-              Payment {paymentIssue === 'cancelled' ? 'cancelled' : 'failed'}
+              {paymentIssue === 'cancelled' ? t('orderConf.paymentCancelledTitle') : t('orderConf.paymentFailedTitle')}
             </h2>
             <p style={{ color: 'var(--muted)', marginBottom: 26 }}>
-              Your order <strong>#{shortOrderId}</strong> was created but the payment didn't go through. No charge was made — you can try
-              paying again from your <Link to="/orders">orders page</Link>, or contact us for help.
+              {t('orderConf.paymentIssuePre', null, { id: shortOrderId })}
+              {' '}<Link to="/orders">{t('orderConf.paymentIssueLink')}</Link>{t('orderConf.paymentIssuePost')}
             </p>
           </>
         ) : (
           <>
             <div style={{ fontSize: '2.6rem', marginBottom: 10 }}>✓</div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: 8 }}>Order confirmed</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: 8 }}>{t('orderConf.confirmedTitle')}</h2>
             <p style={{ color: 'var(--muted)', marginBottom: 26 }}>
-              Thank you! Your order <strong>#{shortOrderId}</strong> has been placed
+              {t('orderConf.thankYouPre', null, { id: shortOrderId })}
               {order.paymentMethod === 'cod'
-                ? ' — pay on delivery.'
+                ? t('orderConf.codSuffix')
                 : order.status === 'paid'
-                ? ' and payment received.'
-                : ' — finalizing your payment confirmation.'}
+                ? t('orderConf.paidSuffix')
+                : t('orderConf.pendingSuffix')}
             </p>
           </>
         )}
@@ -124,33 +126,33 @@ export default function OrderConfirmation() {
               <img src={resolveImg(i.img)} alt={i.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{i.name}</div>
-                <div style={{ color: 'var(--muted)' }}>Qty {i.qty}</div>
+                <div style={{ color: 'var(--muted)' }}>{t('checkout.qty')} {i.qty}</div>
               </div>
               <div style={{ fontWeight: 700 }}>{formatPrice(i.price * i.qty)}</div>
             </div>
           ))}
           <div className="summary-row total">
-            <span>Total paid</span>
+            <span>{t('orderConf.totalPaid')}</span>
             <span>{formatPrice(order.total)}</span>
           </div>
         </div>
 
         {!order.userId && (
           <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: 18 }}>
-            A confirmation has been sent to {order.guestEmail || order.shipping?.email}. Bookmark this page or save your order number to track it later —
-            or <Link to="/register">create an account</Link> next time to see all your orders in one place.
+            {t('orderConf.guestSentPre', null, { email: order.guestEmail || order.shipping?.email })}
+            {' '}{t('common.or')} <Link to="/register">{t('orderConf.guestCreateAccountLink')}</Link> {t('orderConf.guestSentPost')}
           </p>
         )}
 
         <div style={{ display: 'flex', gap: 12, marginTop: 26, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/shop" className="btn btn-outline">Continue shopping</Link>
+          <Link to="/shop" className="btn btn-outline">{t('orderConf.continueShopping')}</Link>
           <Link
             to={`/invoice/${order.id}${searchParams.get('email') ? `?email=${encodeURIComponent(searchParams.get('email'))}` : ''}`}
             className="btn btn-outline"
           >
-            🧾 Print Invoice
+            🧾 {t('orderConf.printInvoice')}
           </Link>
-          {order.userId && <Link to="/orders" className="btn btn-primary">View my orders</Link>}
+          {order.userId && <Link to="/orders" className="btn btn-primary">{t('orderConf.viewMyOrders')}</Link>}
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { useLanguage } from '../context/LanguageContext';
 
 // A dedicated print stylesheet turns this into a clean PDF via the browser's
 // native "Print → Save as PDF" — no extra PDF-generation dependency needed,
@@ -14,8 +15,9 @@ export default function Invoice() {
   const [searchParams] = useSearchParams();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState('');
+  const { t } = useLanguage();
 
-  usePageMeta('Invoice', 'Printable invoice for your Noyon Telecom order.');
+  usePageMeta(t('invoice.pageTitle'), t('invoice.pageMeta'));
 
   useEffect(() => {
     // Guest orders require the email they checked out with as proof of
@@ -32,7 +34,7 @@ export default function Invoice() {
       <div className="container" style={{ padding: '60px 28px' }}>
         <div className="empty-state">
           <div className="icon">🧾</div>
-          <h3>Can't load this invoice</h3>
+          <h3>{t('invoice.cantLoad')}</h3>
           <p>{error}</p>
         </div>
       </div>
@@ -40,7 +42,7 @@ export default function Invoice() {
   }
 
   if (!order) {
-    return <div className="container" style={{ padding: '60px 28px' }}>Loading invoice…</div>;
+    return <div className="container" style={{ padding: '60px 28px' }}>{t('invoice.loading')}</div>;
   }
 
   const ship = order.shipping || {};
@@ -49,8 +51,8 @@ export default function Invoice() {
   return (
     <div className="invoice-page">
       <div className="invoice-toolbar no-print">
-        <Link to={`/order-confirmation/${order.id}`} className="btn btn-outline">← Back</Link>
-        <button className="btn btn-primary" onClick={() => window.print()}>🖨️ Print / Save as PDF</button>
+        <Link to={`/order-confirmation/${order.id}`} className="btn btn-outline">← {t('invoice.back')}</Link>
+        <button className="btn btn-primary" onClick={() => window.print()}>🖨️ {t('invoice.printSave')}</button>
       </div>
 
       <div className="invoice-sheet">
@@ -62,36 +64,36 @@ export default function Invoice() {
             <p>Hotline: 01560-047377 · support@noyontelecom.com</p>
           </div>
           <div className="invoice-meta">
-            <h1>INVOICE</h1>
-            <p><strong>Invoice No:</strong> {invoiceNo}</p>
-            <p><strong>Order ID:</strong> #{order.id}</p>
-            <p><strong>Date:</strong> {new Date(order.createdAt).toLocaleDateString('en-GB')}</p>
-            <p><strong>Status:</strong> {order.status}</p>
+            <h1>{t('invoice.heading')}</h1>
+            <p><strong>{t('invoice.invoiceNo')}</strong> {invoiceNo}</p>
+            <p><strong>{t('invoice.orderId')}</strong> #{order.id}</p>
+            <p><strong>{t('invoice.date')}</strong> {new Date(order.createdAt).toLocaleDateString('en-GB')}</p>
+            <p><strong>{t('invoice.status')}</strong> {t(`order.status.${order.status}`, order.status)}</p>
           </div>
         </div>
 
         <div className="invoice-parties">
           <div>
-            <span className="invoice-label">Bill To</span>
-            <p><strong>{ship.name || 'Customer'}</strong></p>
+            <span className="invoice-label">{t('invoice.billTo')}</span>
+            <p><strong>{ship.name || t('invoice.customer')}</strong></p>
             <p>{ship.address}{ship.city ? `, ${ship.city}` : ''}</p>
             <p>{ship.phone}</p>
             <p>{ship.email || order.guestEmail}</p>
           </div>
           <div>
-            <span className="invoice-label">Payment</span>
-            <p>{order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}</p>
-            {order.transactionId && <p>Txn: {order.transactionId}</p>}
+            <span className="invoice-label">{t('invoice.payment')}</span>
+            <p>{order.paymentMethod === 'cod' ? t('invoice.codLabel') : t('invoice.onlinePayment')}</p>
+            {order.transactionId && <p>{t('invoice.txn')} {order.transactionId}</p>}
           </div>
         </div>
 
         <table className="invoice-table">
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th style={{ textAlign: 'right' }}>Amount</th>
+              <th>{t('invoice.itemHeader')}</th>
+              <th>{t('invoice.qtyHeader')}</th>
+              <th>{t('invoice.unitPrice')}</th>
+              <th style={{ textAlign: 'right' }}>{t('invoice.amount')}</th>
             </tr>
           </thead>
           <tbody>
@@ -112,16 +114,16 @@ export default function Invoice() {
         </table>
 
         <div className="invoice-totals">
-          <div><span>Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
-          {order.discount > 0 && <div><span>Discount</span><span>−{formatPrice(order.discount)}</span></div>}
-          <div><span>Shipping</span><span>{formatPrice(order.shippingFee)}</span></div>
-          {order.tax > 0 && <div><span>Tax</span><span>{formatPrice(order.tax)}</span></div>}
-          <div className="invoice-grand-total"><span>Total</span><span>{formatPrice(order.total)}</span></div>
+          <div><span>{t('cart.subtotal')}</span><span>{formatPrice(order.subtotal)}</span></div>
+          {order.discount > 0 && <div><span>{t('checkout.discount')}</span><span>−{formatPrice(order.discount)}</span></div>}
+          <div><span>{t('cart.shipping')}</span><span>{formatPrice(order.shippingFee)}</span></div>
+          {order.tax > 0 && <div><span>{t('checkout.tax')}</span><span>{formatPrice(order.tax)}</span></div>}
+          <div className="invoice-grand-total"><span>{t('cart.total')}</span><span>{formatPrice(order.total)}</span></div>
         </div>
 
         <div className="invoice-footer">
-          <p>Thank you for your business with Noyon Telecom. For wholesale/dealer support, contact us via WhatsApp or the hotline above.</p>
-          <p className="invoice-generated">This is a system-generated invoice.</p>
+          <p>{t('invoice.thankYou')}</p>
+          <p className="invoice-generated">{t('invoice.generated')}</p>
         </div>
       </div>
     </div>

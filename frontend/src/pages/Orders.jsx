@@ -4,12 +4,14 @@ import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { useLanguage } from '../context/LanguageContext';
 
 const TRACK_STEPS = ['processing', 'shipped', 'delivered'];
 
 function OrderTracker({ status }) {
+  const { t } = useLanguage();
   if (status === 'cancelled') {
-    return <div style={{ fontSize: '0.8rem', color: '#b3261e', marginBottom: 14 }}>This order was cancelled.</div>;
+    return <div style={{ fontSize: '0.8rem', color: '#b3261e', marginBottom: 14 }}>{t('orders.cancelledNote')}</div>;
   }
   const currentIdx = Math.max(0, TRACK_STEPS.indexOf(status === 'paid' ? 'processing' : status));
   return (
@@ -32,8 +34,8 @@ function OrderTracker({ status }) {
             >
               {i < currentIdx ? '✓' : i + 1}
             </div>
-            <span style={{ fontSize: '0.7rem', marginTop: 4, textTransform: 'capitalize', color: i <= currentIdx ? '#3a2e2a' : '#a89a93' }}>
-              {step}
+            <span style={{ fontSize: '0.7rem', marginTop: 4, color: i <= currentIdx ? '#3a2e2a' : '#a89a93' }}>
+              {t(`order.status.${step}`)}
             </span>
           </div>
           {i < TRACK_STEPS.length - 1 && (
@@ -51,8 +53,9 @@ export default function Orders() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const { t } = useLanguage();
 
-  usePageMeta('Your Orders', 'View your order history, tracking status, and past purchases.');
+  usePageMeta(t('orders.pageTitle'), t('orders.pageMeta'));
 
   useEffect(() => {
     // No .catch previously — a failed request left this page stuck on the
@@ -79,9 +82,9 @@ export default function Orders() {
       <div className="container">
         <div className="empty-state">
           <div className="icon">📦</div>
-          <h3>Can't load your orders</h3>
+          <h3>{t('orders.cantLoad')}</h3>
           <p style={{ marginBottom: 24 }}>{error}</p>
-          <Link to="/" className="btn btn-primary">Back home</Link>
+          <Link to="/" className="btn btn-primary">{t('notFound.backHome')}</Link>
         </div>
       </div>
     );
@@ -112,9 +115,9 @@ export default function Orders() {
       <div className="container">
         <div className="empty-state">
           <div className="icon">📦</div>
-          <h3>No orders yet</h3>
-          <p style={{ marginBottom: 24 }}>When you place an order, it'll show up here.</p>
-          <Link to="/shop" className="btn btn-primary">Start shopping</Link>
+          <h3>{t('orders.noOrdersTitle')}</h3>
+          <p style={{ marginBottom: 24 }}>{t('orders.noOrdersSub')}</p>
+          <Link to="/shop" className="btn btn-primary">{t('cart.startShopping')}</Link>
         </div>
       </div>
     );
@@ -123,9 +126,9 @@ export default function Orders() {
   return (
     <div className="container">
       <div className="page-header">
-        <span className="eyebrow">Order history</span>
+        <span className="eyebrow">{t('orders.eyebrow')}</span>
         <h1 className="page-title">
-          My <em>orders</em>
+          {t('orders.titleTop')} <em>{t('orders.titleEm')}</em>
         </h1>
       </div>
 
@@ -134,10 +137,10 @@ export default function Orders() {
           <div className="order-card" key={o.id}>
             <div className="order-card-head">
               <div>
-                <strong>Order #{o.id.slice(-8).toUpperCase()}</strong>
+                <strong>{t('orders.orderPrefix', null, { id: o.id.slice(-8).toUpperCase() })}</strong>
                 <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{new Date(o.createdAt).toLocaleDateString()}</div>
               </div>
-              <span className={`status-badge status-${o.status}`}>{o.status}</span>
+              <span className={`status-badge status-${o.status}`}>{t(`order.status.${o.status}`, o.status)}</span>
             </div>
             <OrderTracker status={o.status} />
             {o.items.map((i) => (
@@ -145,13 +148,13 @@ export default function Orders() {
                 <img src={resolveImg(i.img)} alt={i.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600 }}>{i.name}</div>
-                  <div style={{ color: 'var(--muted)' }}>Qty {i.qty}</div>
+                  <div style={{ color: 'var(--muted)' }}>{t('checkout.qty')} {i.qty}</div>
                 </div>
                 <div style={{ fontWeight: 700 }}>{formatPrice(i.price * i.qty)}</div>
               </div>
             ))}
             <div className="summary-row total">
-              <span>Total</span>
+              <span>{t('cart.total')}</span>
               <span>{formatPrice(o.total)}</span>
             </div>
           </div>
@@ -159,7 +162,7 @@ export default function Orders() {
         {page < totalPages && (
           <div style={{ textAlign: 'center', marginTop: 10 }}>
             <button type="button" className="btn btn-outline" onClick={loadMore} disabled={loadingMore}>
-              {loadingMore ? 'Loading…' : 'Load more orders'}
+              {loadingMore ? t('orders.loading') : t('orders.loadMore')}
             </button>
           </div>
         )}

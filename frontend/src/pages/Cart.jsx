@@ -5,6 +5,7 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { useLanguage } from '../context/LanguageContext';
 
 // Quantity box that lets someone type any number directly (e.g. 10, 20)
 // instead of only clicking +/-. Keeps its own text while typing so the
@@ -45,17 +46,18 @@ function QtyInput({ qty, onChange }) {
 export default function Cart() {
   const { items, subtotal, updateQty, removeItem } = useCart();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  usePageMeta('Your Cart', 'Review items in your Noyon Telecom shopping cart before checkout.');
+  usePageMeta(t('cart.pageTitle'), t('cart.pageMeta'));
 
   if (items.length === 0) {
     return (
       <div className="container">
         <div className="empty-state">
           <div className="icon">🛍️</div>
-          <h3>Your cart is empty</h3>
-          <p style={{ marginBottom: 24 }}>Time to find something bold.</p>
-          <Link to="/shop" className="btn btn-primary">Start shopping</Link>
+          <h3>{t('cart.emptyTitle')}</h3>
+          <p style={{ marginBottom: 24 }}>{t('cart.emptySub')}</p>
+          <Link to="/shop" className="btn btn-primary">{t('cart.startShopping')}</Link>
         </div>
       </div>
     );
@@ -71,9 +73,9 @@ export default function Cart() {
   return (
     <div className="container">
       <div className="page-header">
-        <span className="eyebrow">Your bag</span>
+        <span className="eyebrow">{t('cart.eyebrow')}</span>
         <h1 className="page-title">
-          Shopping <em>cart</em>
+          {t('cart.titleTop')} <em>{t('cart.titleEm')}</em>
         </h1>
       </div>
 
@@ -89,7 +91,7 @@ export default function Cart() {
                   <div className="cart-row-name">{item.product.name}</div>
                 </Link>
                 <div className="cart-row-cat">{item.product.category}</div>
-                <button className="remove-link" onClick={() => removeItem(item.productId)}>Remove</button>
+                <button className="remove-link" onClick={() => removeItem(item.productId)}>{t('cart.remove')}</button>
               </div>
               <div className="qty-control">
                 <button onClick={() => updateQty(item.productId, item.qty - 1)}>−</button>
@@ -102,33 +104,33 @@ export default function Cart() {
         </div>
 
         <div className="summary-card">
-          <h3 className="summary-title">Order summary</h3>
+          <h3 className="summary-title">{t('cart.summaryTitle')}</h3>
           <div className="summary-row">
-            <span>Subtotal</span>
+            <span>{t('cart.subtotal')}</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
           <div className="summary-row">
-            <span>Shipping</span>
-            <span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+            <span>{t('cart.shipping')}</span>
+            <span>{shipping === 0 ? t('cart.free') : formatPrice(shipping)}</span>
           </div>
           <div className="summary-row">
-            <span>Estimated tax</span>
+            <span>{t('cart.estimatedTax')}</span>
             <span>{formatPrice(tax)}</span>
           </div>
           <div className="summary-row total">
-            <span>Total</span>
+            <span>{t('cart.total')}</span>
             <span>{formatPrice(total)}</span>
           </div>
           {subtotal < FREE_SHIPPING_THRESHOLD && (
             <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 16 }}>
-              Add {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for free shipping.
+              {t('cart.freeShippingNote', null, { amount: formatPrice(FREE_SHIPPING_THRESHOLD - subtotal) })}
             </p>
           )}
           <button className="btn btn-berry btn-block" onClick={() => navigate('/checkout')} style={{ marginTop: 10 }}>
-            Checkout
+            {t('cart.checkout')}
           </button>
           <Link to="/request-quote" className="btn btn-outline btn-block" style={{ marginTop: 10 }}>
-            Request a bulk quote instead
+            {t('cart.requestBulkQuote')}
           </Link>
         </div>
       </div>

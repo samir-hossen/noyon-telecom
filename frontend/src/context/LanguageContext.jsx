@@ -23,8 +23,20 @@ export function LanguageProvider({ children }) {
     document.documentElement.lang = lang === 'bn' ? 'bn' : 'en';
   }, [lang]);
 
+  // params supports simple {{token}} interpolation for strings that need a
+  // dynamic value (prices, counts, order numbers) — e.g.
+  // t('cart.freeShippingNote', null, { amount: formatPrice(x) }) against a
+  // dictionary entry like 'Add {{amount}} more for free shipping.'
   const t = useCallback(
-    (key, fallback) => translations[lang]?.[key] ?? translations.en[key] ?? fallback ?? key,
+    (key, fallback, params) => {
+      let str = translations[lang]?.[key] ?? translations.en[key] ?? fallback ?? key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          str = str.replace(new RegExp(`{{${k}}}`, 'g'), v);
+        }
+      }
+      return str;
+    },
     [lang]
   );
 
