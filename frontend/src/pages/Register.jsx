@@ -19,17 +19,17 @@ export default function Register() {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  usePageMeta('Create Account', 'Create a Noyon Telecom account or register as a wholesale dealer.');
+  usePageMeta(t('register.pageTitle'), t('register.pageMeta'));
 
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
-    if (password.length < 8) return setError('Password must be at least 8 characters.');
+    if (password.length < 8) return setError(t('register.passwordMinLength'));
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      return setError('Password must include at least one letter and one number.');
+      return setError(t('register.passwordComplexity'));
     }
     if (accountType === 'dealer' && (!businessName.trim() || !phone.trim())) {
-      return setError('Business name and phone number are required for a dealer account.');
+      return setError(t('register.dealerFieldsRequired'));
     }
     setBusy(true);
     try {
@@ -53,14 +53,13 @@ export default function Register() {
         <div className="form-panel" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2.4rem', marginBottom: 10 }}>✅</div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', marginBottom: 10 }}>
-            Dealer application submitted
+            {t('register.dealerAppSubmitted')}
           </h2>
           <p style={{ color: 'var(--muted)', marginBottom: 24 }}>
-            Thanks for registering as a Noyon Telecom dealer! Your account is <strong>pending approval</strong> —
-            our team typically reviews applications within 24 hours. You can browse and shop in the meantime;
-            dealer pricing will unlock automatically once approved.
+            {t('register.dealerAppPre')} <strong>{t('register.dealerAppPending')}</strong>{' '}
+            {t('register.dealerAppPost')}
           </p>
-          <Link to="/" className="btn btn-primary">Continue to homepage</Link>
+          <Link to="/" className="btn btn-primary">{t('register.continueHome')}</Link>
         </div>
       </div>
     );
@@ -70,12 +69,10 @@ export default function Register() {
     <div className="container" style={{ padding: '60px 28px 100px' }}>
       <div className="form-panel">
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>
-          {accountType === 'dealer' ? t('dealer.registerTitle') : 'Create your account'}
+          {accountType === 'dealer' ? t('dealer.registerTitle') : t('register.createAccountTitle')}
         </h2>
         <p style={{ color: 'var(--muted)', marginBottom: 20, fontSize: '0.9rem' }}>
-          {accountType === 'dealer'
-            ? 'Get wholesale dealer pricing, bulk discounts, and priority stock access.'
-            : 'Join Noyon Telecom for faster checkout and order tracking.'}
+          {accountType === 'dealer' ? t('register.dealerSub') : t('register.customerSub')}
         </p>
 
         <div className="account-type-toggle">
@@ -84,14 +81,14 @@ export default function Register() {
             className={accountType === 'customer' ? 'active' : ''}
             onClick={() => setAccountType('customer')}
           >
-            Customer Account
+            {t('register.customerToggle')}
           </button>
           <button
             type="button"
             className={accountType === 'dealer' ? 'active' : ''}
             onClick={() => setAccountType('dealer')}
           >
-            🏪 Dealer Account
+            🏪 {t('register.dealerToggle')}
           </button>
         </div>
 
@@ -99,45 +96,45 @@ export default function Register() {
 
         <form onSubmit={onSubmit}>
           <div className="field">
-            <label htmlFor="reg-name">Full name</label>
-            <input id="reg-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Rahman" />
+            <label htmlFor="reg-name">{t('checkout.fullName')}</label>
+            <input id="reg-name" required value={name} onChange={(e) => setName(e.target.value)} placeholder={t('checkout.fullNamePlaceholder')} />
           </div>
           <div className="field">
-            <label htmlFor="reg-email">Email</label>
+            <label htmlFor="reg-email">{t('auth.email')}</label>
             <input id="reg-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
           </div>
 
           {accountType === 'dealer' && (
             <>
-              <div className="form-step-label">Business details</div>
+              <div className="form-step-label">{t('register.businessDetailsStep')}</div>
               <div className="field">
                 <label htmlFor="reg-business">{t('dealer.businessName')}</label>
-                <input id="reg-business" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="e.g. Islam Mobile Care" />
+                <input id="reg-business" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder={t('register.businessNamePlaceholder')} />
               </div>
               <div className="field">
                 <label htmlFor="reg-phone">{t('dealer.phone')}</label>
                 <input id="reg-phone" required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" />
               </div>
               <div className="field">
-                <label htmlFor="reg-address">{t('dealer.address')} (optional)</label>
-                <input id="reg-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Shop address, area, city" />
+                <label htmlFor="reg-address">{t('register.addressOptional', null, { label: t('dealer.address') })}</label>
+                <input id="reg-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('register.addressPlaceholder')} />
               </div>
-              <div className="form-step-label">Set your password</div>
+              <div className="form-step-label">{t('register.setPasswordStep')}</div>
             </>
           )}
 
           <div className="field">
-            {accountType !== 'dealer' && <label htmlFor="reg-password">Password</label>}
-            {accountType === 'dealer' && <label className="sr-only" htmlFor="reg-password">Password</label>}
-            <input id="reg-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters, with a letter and number" />
+            {accountType !== 'dealer' && <label htmlFor="reg-password">{t('auth.password')}</label>}
+            {accountType === 'dealer' && <label className="sr-only" htmlFor="reg-password">{t('auth.password')}</label>}
+            <input id="reg-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('register.passwordPlaceholder')} />
           </div>
           <button className="btn btn-berry btn-block" disabled={busy}>
-            {busy ? 'Creating account…' : accountType === 'dealer' ? 'Submit dealer application' : 'Create account'}
+            {busy ? t('register.creatingAccount') : accountType === 'dealer' ? t('register.submitDealerApp') : t('register.createAccountBtn')}
           </button>
         </form>
 
         <p className="form-note">
-          Already have an account? <Link to="/login">Sign in</Link>
+          {t('register.alreadyHaveAccount')} <Link to="/login">{t('nav.signIn')}</Link>
         </p>
       </div>
     </div>

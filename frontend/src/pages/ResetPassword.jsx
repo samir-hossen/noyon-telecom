@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -13,18 +14,19 @@ export default function ResetPassword() {
   const [done, setDone] = useState(false);
   const { resetPassword } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  usePageMeta('Reset Password', 'Set a new password for your Noyon Telecom account.');
+  usePageMeta(t('resetPw.pageTitle'), t('resetPw.pageMeta'));
 
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!token) return setError('This reset link is missing its token. Please request a new one.');
-    if (password.length < 8) return setError('Password must be at least 8 characters.');
+    if (!token) return setError(t('resetPw.missingToken'));
+    if (password.length < 8) return setError(t('register.passwordMinLength'));
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      return setError('Password must include at least one letter and one number.');
+      return setError(t('register.passwordComplexity'));
     }
-    if (password !== confirm) return setError('Passwords do not match.');
+    if (password !== confirm) return setError(t('resetPw.passwordMismatch'));
 
     setBusy(true);
     try {
@@ -42,12 +44,12 @@ export default function ResetPassword() {
     return (
       <div className="container" style={{ padding: '60px 28px 100px' }}>
         <div className="form-panel">
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Invalid link</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('resetPw.invalidLink')}</h2>
           <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>
-            This password reset link is missing or malformed.
+            {t('resetPw.invalidLinkSub')}
           </p>
           <p className="form-note">
-            <Link to="/forgot-password">Request a new reset link</Link>
+            <Link to="/forgot-password">{t('resetPw.requestNewLink')}</Link>
           </p>
         </div>
       </div>
@@ -58,12 +60,12 @@ export default function ResetPassword() {
     return (
       <div className="container" style={{ padding: '60px 28px 100px' }}>
         <div className="form-panel">
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Password updated</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('resetPw.updated')}</h2>
           <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>
-            Your password has been changed. Redirecting you to sign in…
+            {t('resetPw.updatedSub')}
           </p>
           <p className="form-note">
-            <Link to="/login">Sign in now</Link>
+            <Link to="/login">{t('resetPw.signInNow')}</Link>
           </p>
         </div>
       </div>
@@ -73,14 +75,14 @@ export default function ResetPassword() {
   return (
     <div className="container" style={{ padding: '60px 28px 100px' }}>
       <div className="form-panel">
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Set a new password</h2>
-        <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>Choose a new password for your account.</p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('resetPw.title')}</h2>
+        <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>{t('resetPw.sub')}</p>
 
         {error && <div className="form-error">{error}</div>}
 
         <form onSubmit={onSubmit}>
           <div className="field">
-            <label htmlFor="rp-password">New password</label>
+            <label htmlFor="rp-password">{t('resetPw.newPassword')}</label>
             <input
               id="rp-password"
               type="password"
@@ -88,21 +90,21 @@ export default function ResetPassword() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters, with a letter and number"
+              placeholder={t('register.passwordPlaceholder')}
               autoFocus
             />
           </div>
           <div className="field">
-            <label htmlFor="rp-confirm">Confirm new password</label>
+            <label htmlFor="rp-confirm">{t('resetPw.confirmPassword')}</label>
             <input id="rp-confirm" type="password" required minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
           </div>
           <button className="btn btn-berry btn-block" disabled={busy}>
-            {busy ? 'Updating…' : 'Update password'}
+            {busy ? t('resetPw.updating') : t('resetPw.updateBtn')}
           </button>
         </form>
 
         <p className="form-note">
-          <Link to="/login">Back to sign in</Link>
+          <Link to="/login">{t('forgotPw.backToSignIn')}</Link>
         </p>
       </div>
     </div>

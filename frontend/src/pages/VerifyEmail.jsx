@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
@@ -9,8 +10,9 @@ export default function VerifyEmail() {
   const [status, setStatus] = useState(token ? 'verifying' : 'missing'); // verifying | success | error | missing
   const [error, setError] = useState('');
   const { verifyEmail } = useAuth();
+  const { t } = useLanguage();
 
-  usePageMeta('Verify Email', 'Confirm your email address for your Noyon Telecom account.');
+  usePageMeta(t('verifyEmail.pageTitle'), t('verifyEmail.pageMeta'));
 
   useEffect(() => {
     if (!token) return;
@@ -29,32 +31,32 @@ export default function VerifyEmail() {
       <div className="form-panel">
         {status === 'verifying' && (
           <>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Verifying your email…</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>One moment.</p>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('verifyEmail.verifying')}</h2>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{t('verifyEmail.oneMoment')}</p>
           </>
         )}
         {status === 'success' && (
           <>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Email verified 🎉</h2>
-            <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>Your email address is confirmed.</p>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('verifyEmail.verified')}</h2>
+            <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>{t('verifyEmail.verifiedSub')}</p>
             <p className="form-note">
-              <Link to="/">Continue shopping</Link>
+              <Link to="/">{t('verifyEmail.continueShopping')}</Link>
             </p>
           </>
         )}
         {status === 'error' && (
           <>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Verification failed</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('verifyEmail.failed')}</h2>
             <div className="form-error">{error}</div>
             <p className="form-note" style={{ marginTop: 16 }}>
-              <Link to="/login">Sign in</Link> and request a new verification email from your account.
+              <Link to="/login">{t('nav.signIn')}</Link> {t('verifyEmail.failedNotePost')}
             </p>
           </>
         )}
         {status === 'missing' && (
           <>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Invalid link</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>This verification link is missing its token.</p>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('verifyEmail.invalidLink')}</h2>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{t('verifyEmail.invalidLinkSub')}</p>
           </>
         )}
       </div>

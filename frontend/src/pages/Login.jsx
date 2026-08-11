@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,8 +14,9 @@ export default function Login() {
   const { login, verifyTwoFA } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
-  usePageMeta('Sign In', 'Sign in to your Noyon Telecom account to track orders and manage your wishlist.');
+  usePageMeta(t('nav.signIn'), t('auth.signInMeta'));
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -52,14 +54,14 @@ export default function Login() {
     return (
       <div className="container" style={{ padding: '60px 28px 100px' }}>
         <div className="form-panel">
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Two-factor code</h2>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('auth.twoFATitle')}</h2>
           <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>
-            Enter the 6-digit code from your authenticator app.
+            {t('auth.twoFASub')}
           </p>
           {error && <div className="form-error">{error}</div>}
           <form onSubmit={onVerify}>
             <div className="field">
-              <label htmlFor="twofa-code">Verification code</label>
+              <label htmlFor="twofa-code">{t('auth.verificationCode')}</label>
               <input
                 id="twofa-code"
                 required
@@ -73,7 +75,7 @@ export default function Login() {
               />
             </div>
             <button className="btn btn-berry btn-block" disabled={busy || code.length !== 6}>
-              {busy ? 'Verifying…' : 'Verify'}
+              {busy ? t('auth.verifying') : t('auth.verify')}
             </button>
           </form>
         </div>
@@ -84,30 +86,30 @@ export default function Login() {
   return (
     <div className="container" style={{ padding: '60px 28px 100px' }}>
       <div className="form-panel">
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>Welcome back</h2>
-        <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>Sign in to continue shopping.</p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: 6 }}>{t('auth.welcomeBack')}</h2>
+        <p style={{ color: 'var(--muted)', marginBottom: 26, fontSize: '0.9rem' }}>{t('auth.signInSub')}</p>
 
         {error && <div className="form-error">{error}</div>}
 
         <form onSubmit={onSubmit}>
           <div className="field">
-            <label htmlFor="login-email">Email</label>
+            <label htmlFor="login-email">{t('auth.email')}</label>
             <input id="login-email" type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
           </div>
           <div className="field">
-            <label htmlFor="login-password">Password</label>
+            <label htmlFor="login-password">{t('auth.password')}</label>
             <input id="login-password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
           </div>
           <p style={{ textAlign: 'right', marginTop: -10, marginBottom: 18 }}>
-            <Link to="/forgot-password" style={{ fontSize: '0.85rem' }}>Forgot password?</Link>
+            <Link to="/forgot-password" style={{ fontSize: '0.85rem' }}>{t('auth.forgotPassword')}</Link>
           </p>
           <button className="btn btn-berry btn-block" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? t('auth.signingIn') : t('nav.signIn')}
           </button>
         </form>
 
         <p className="form-note">
-          New here? <Link to="/register">Create an account</Link>
+          {t('auth.newHerePre')} <Link to="/register">{t('auth.createAccount')}</Link>
         </p>
       </div>
     </div>
