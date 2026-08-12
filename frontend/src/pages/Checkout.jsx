@@ -26,9 +26,16 @@ export default function Checkout() {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const discount = coupon?.discount || 0;
-  const FREE_SHIPPING_THRESHOLD = 1500;
-  const SHIPPING_FEE = 60;
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  // 150 matches the backend's DEFAULT_DELIVERY_FEE (see utils/settings.js)
+  // — used only until the real value loads below.
+  const [deliveryFee, setDeliveryFee] = useState(150);
+  useEffect(() => {
+    api
+      .get('/settings/public')
+      .then((d) => setDeliveryFee(d.deliveryFee))
+      .catch(() => {});
+  }, []);
+  const shipping = deliveryFee;
   const tax = 0; // Tax disabled — no tax is added anywhere.
   const total = +(subtotal - discount + shipping + tax).toFixed(2);
 
@@ -222,7 +229,7 @@ export default function Checkout() {
           )}
           <div className="summary-row">
             <span>{t('cart.shipping')}</span>
-            <span>{shipping === 0 ? t('cart.free') : formatPrice(shipping)}</span>
+            <span>{formatPrice(shipping)}</span>
           </div>
           <div className="summary-row">
             <span>{t('checkout.tax')}</span>

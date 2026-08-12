@@ -25,8 +25,8 @@ export function LanguageProvider({ children }) {
 
   // params supports simple {{token}} interpolation for strings that need a
   // dynamic value (prices, counts, order numbers) — e.g.
-  // t('cart.freeShippingNote', null, { amount: formatPrice(x) }) against a
-  // dictionary entry like 'Add {{amount}} more for free shipping.'
+  // t('terms.lastUpdated', null, { date: LAST_UPDATED }) against a
+  // dictionary entry like 'Last updated: {{date}}'
   const t = useCallback(
     (key, fallback, params) => {
       let str = translations[lang]?.[key] ?? translations.en[key] ?? fallback ?? key;

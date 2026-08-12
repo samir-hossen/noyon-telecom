@@ -72,6 +72,10 @@ services:
         sync: false
       - key: SMS_SENDER_ID
         sync: false
+      - key: WHATSAPP_ADMIN_PHONE
+        sync: false
+      - key: CALLMEBOT_API_KEY
+        sync: false
       - key: META_PIXEL_ID
         sync: false
       - key: META_CAPI_ACCESS_TOKEN

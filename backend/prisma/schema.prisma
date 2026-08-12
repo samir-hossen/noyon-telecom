@@ -328,3 +328,15 @@ model Quote {
   @@index([status])
   @@index([userId])
 }
+
+// Small admin-editable key/value store — currently just the flat delivery
+// fee (see utils/settings.js), which used to be a hardcoded constant in
+// orders.routes.js that required a code deploy to change. One row per
+// setting rather than a single JSON blob, so an admin action that only
+// touches one setting doesn't risk clobbering a concurrent change to
+// another.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

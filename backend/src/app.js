@@ -21,6 +21,7 @@ import feedRoutes from './routes/feed.routes.js';
 import quoteRoutes from './routes/quotes.routes.js';
 import dealerRoutes from './routes/dealer.routes.js';
 import newsletterRoutes from './routes/newsletter.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 
 const app = express();
 
@@ -107,6 +108,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/dealer', dealerRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/settings', settingsRoutes);
 // Sitemap/feed are also exposed under /api since that's this backend's only
 // public prefix; see sitemap.routes.js and robots.txt for how these get
 // surfaced at the storefront's actual root domain in production.

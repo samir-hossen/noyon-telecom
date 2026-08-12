@@ -327,10 +327,8 @@ const translations = {
     'cart.summaryTitle': 'Order summary',
     'cart.subtotal': 'Subtotal',
     'cart.shipping': 'Shipping',
-    'cart.free': 'Free',
     'cart.estimatedTax': 'Estimated tax',
     'cart.total': 'Total',
-    'cart.freeShippingNote': 'Add {{amount}} more for free shipping.',
     'cart.checkout': 'Checkout',
     'cart.requestBulkQuote': 'Request a bulk quote instead',
 
@@ -1105,10 +1103,8 @@ const translations = {
     'cart.summaryTitle': 'অর্ডার সারাংশ',
     'cart.subtotal': 'সাবটোটাল',
     'cart.shipping': 'শিপিং',
-    'cart.free': 'ফ্রি',
     'cart.estimatedTax': 'আনুমানিক ট্যাক্স',
     'cart.total': 'সর্বমোট',
-    'cart.freeShippingNote': 'ফ্রি শিপিং পেতে আরও {{amount}} যোগ করুন।',
     'cart.checkout': 'চেকআউট',
     'cart.requestBulkQuote': 'বাল্ক কোটেশনের জন্য অনুরোধ করুন',
 

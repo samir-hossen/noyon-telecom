@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { resolveImg } from '../api';
+import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
@@ -47,8 +47,19 @@ export default function Cart() {
   const { items, subtotal, updateQty, removeItem } = useCart();
   const navigate = useNavigate();
   const { t } = useLanguage();
+  // 150 matches the backend's DEFAULT_DELIVERY_FEE (see utils/settings.js)
+  // — used only until the real value loads, and as a fallback if the
+  // request fails, so the estimate is never wildly wrong either way.
+  const [deliveryFee, setDeliveryFee] = useState(150);
 
   usePageMeta(t('cart.pageTitle'), t('cart.pageMeta'));
+
+  useEffect(() => {
+    api
+      .get('/settings/public')
+      .then((d) => setDeliveryFee(d.deliveryFee))
+      .catch(() => {});
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -63,10 +74,11 @@ export default function Cart() {
     );
   }
 
-  // BDT-scale shipping: free over ৳1500, otherwise a flat courier fee.
-  const FREE_SHIPPING_THRESHOLD = 1500;
-  const SHIPPING_FEE = 60;
-  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+  // Flat delivery charge on every order — admin-editable from the Admin
+  // panel's Settings tab, not a hardcoded number (see utils/settings.js
+  // on the backend, which is the source of truth actually charged at
+  // checkout; this is only the pre-checkout estimate shown here).
+  const shipping = deliveryFee;
   const tax = 0; // Tax disabled — no tax is added anywhere.
   const total = +(subtotal + shipping + tax).toFixed(2);
 
@@ -111,7 +123,7 @@ export default function Cart() {
           </div>
           <div className="summary-row">
             <span>{t('cart.shipping')}</span>
-            <span>{shipping === 0 ? t('cart.free') : formatPrice(shipping)}</span>
+            <span>{formatPrice(shipping)}</span>
           </div>
           <div className="summary-row">
             <span>{t('cart.estimatedTax')}</span>
@@ -121,11 +133,6 @@ export default function Cart() {
             <span>{t('cart.total')}</span>
             <span>{formatPrice(total)}</span>
           </div>
-          {subtotal < FREE_SHIPPING_THRESHOLD && (
-            <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 16 }}>
-              {t('cart.freeShippingNote', null, { amount: formatPrice(FREE_SHIPPING_THRESHOLD - subtotal) })}
-            </p>
-          )}
           <button className="btn btn-berry btn-block" onClick={() => navigate('/checkout')} style={{ marginTop: 10 }}>
             {t('cart.checkout')}
           </button>

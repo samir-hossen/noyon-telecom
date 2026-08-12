@@ -11,6 +11,7 @@ import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '..
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
 import { invalidateProductCache } from '../utils/cache.js';
+import { getDeliveryFee, setDeliveryFee } from '../utils/settings.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
 
 const router = Router();
@@ -942,6 +943,27 @@ router.post('/backup/restore', requireCsrf, async (req, res, next) => {
     indexProducts(toIndex).catch((err) => console.error('Meilisearch bulk index failed:', err.message));
     res.json({ restored, attempted: products.length });
   } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/settings', async (req, res, next) => {
+  try {
+    res.json({ deliveryFee: await getDeliveryFee() });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/settings', requireCsrf, async (req, res, next) => {
+  try {
+    const { deliveryFee } = req.body;
+    if (deliveryFee === undefined) return res.status(400).json({ error: 'deliveryFee is required.' });
+    const fee = await setDeliveryFee(deliveryFee);
+    await logAdminAction(req.user, 'settings.update', { deliveryFee: fee });
+    res.json({ deliveryFee: fee });
+  } catch (err) {
+    if (err.message === 'Delivery fee must be a number.') return res.status(400).json({ error: err.message });
     next(err);
   }
 });

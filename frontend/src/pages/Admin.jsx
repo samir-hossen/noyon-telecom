@@ -47,6 +47,9 @@ export default function Admin() {
 
   const [auditLogs, setAuditLogs] = useState([]);
 
+  const [deliveryFeeInput, setDeliveryFeeInput] = useState('150');
+  const [savingDeliveryFee, setSavingDeliveryFee] = useState(false);
+
   const [dealers, setDealers] = useState([]);
   const [dealerFilter, setDealerFilter] = useState('pending');
   const [dealerPage, setDealerPage] = useState(1);
@@ -128,6 +131,9 @@ export default function Admin() {
   function loadAuditLogs() {
     api.get('/admin/audit-logs').then((d) => setAuditLogs(d.logs)).catch((err) => showToast(err.message, 'error'));
   }
+  function loadSettings() {
+    api.get('/admin/settings').then((d) => setDeliveryFeeInput(String(d.deliveryFee))).catch((err) => showToast(err.message, 'error'));
+  }
   function loadDealers(status = dealerFilter, page = 1) {
     const params = new URLSearchParams({ page, limit: 25 });
     if (status) params.set('status', status);
@@ -156,8 +162,24 @@ export default function Admin() {
     loadQuotes();
     loadLowStock();
     loadAdmins();
+    loadSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function onSaveDeliveryFee(e) {
+    e.preventDefault();
+    setSavingDeliveryFee(true);
+    try {
+      const d = await api.put('/admin/settings', { deliveryFee: Number(deliveryFeeInput) });
+      setDeliveryFeeInput(String(d.deliveryFee));
+      showToast('Delivery fee updated', 'success');
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSavingDeliveryFee(false);
+    }
+  }
 
   async function setDealerStatus(id, status) {
     try {
@@ -578,6 +600,7 @@ export default function Admin() {
         <button className={`tab ${tab === 'quotes' ? 'active' : ''}`} onClick={() => setTab('quotes')}>RFQs {quotes.length > 0 && quoteFilter === 'pending' && `(${quotes.length})`}</button>
         <button className={`tab ${tab === 'coupons' ? 'active' : ''}`} onClick={() => setTab('coupons')}>Coupons ({coupons.length})</button>
         <button className={`tab ${tab === 'data' ? 'active' : ''}`} onClick={() => setTab('data')}>Import / Export</button>
+        <button className={`tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>Settings</button>
         <button className={`tab ${tab === 'security' ? 'active' : ''}`} onClick={() => setTab('security')}>Security</button>
         <button className={`tab ${tab === 'audit' ? 'active' : ''}`} onClick={() => setTab('audit')}>Audit log</button>
       </div>
@@ -1452,6 +1475,33 @@ export default function Admin() {
         </div>
       )}
 
+      {tab === 'settings' && (
+        <div style={{ paddingBottom: 80, maxWidth: 480 }}>
+          <div className="form-panel wide">
+            <h3 style={{ marginBottom: 10 }}>Delivery charge</h3>
+            <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '0.85rem' }}>
+              Flat delivery fee charged on every order (shown as the shipping estimate in Cart/Checkout, and what's
+              actually charged at checkout). Change takes effect immediately for new orders.
+            </p>
+            <form onSubmit={onSaveDeliveryFee}>
+              <div className="field">
+                <label>Delivery fee (৳)</label>
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={deliveryFeeInput}
+                  onChange={(e) => setDeliveryFeeInput(e.target.value)}
+                />
+              </div>
+              <button className="btn btn-berry" disabled={savingDeliveryFee}>
+                {savingDeliveryFee ? 'Saving…' : 'Save'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       {tab === 'security' && (
         <div style={{ paddingBottom: 80, maxWidth: 480 }}>
           <div className="form-panel wide">

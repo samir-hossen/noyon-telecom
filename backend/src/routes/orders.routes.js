@@ -5,18 +5,14 @@ import { requireCsrf } from '../middleware/csrf.js';
 import { serializeOrder, priceForViewer } from '../utils/serialize.js';
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
+import { sendWhatsApp, buildOrderWhatsAppMessage } from '../utils/whatsapp.js';
 import { sendMetaPurchaseEvent } from '../utils/metaCapi.js';
 import { computeOrderTotals, isCouponExpired, isWithinUsageLimit } from '../utils/pricing.js';
 import { canViewOrder } from '../utils/orderAccess.js';
+import { getDeliveryFee } from '../utils/settings.js';
 
 const router = Router();
 
-// Keep these in sync with FREE_SHIPPING_THRESHOLD / SHIPPING_FEE in
-// frontend/src/pages/Cart.jsx and Checkout.jsx — the frontend only ever
-// shows an *estimate*; this is what's actually charged, so a mismatch here
-// silently overrides what the customer was quoted.
-const FREE_SHIPPING_THRESHOLD = 1500; // in BDT
-const FLAT_SHIPPING = 60; // in BDT
 const TAX_RATE = 0; // Tax disabled — no tax is added to any order.
 
 router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
@@ -47,6 +43,10 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
     if (lines.length === 0) return res.status(400).json({ error: 'Your cart is empty.' });
 
     const lowStockAlerts = [];
+    // Admin-editable (see utils/settings.js / Admin panel Settings tab),
+    // not a hardcoded constant — read once here rather than inside the
+    // transaction below since it's a cached, non-order-specific value.
+    const deliveryFee = await getDeliveryFee();
 
     // Serializable isolation (Prisma/Postgres's default is Read
     // Committed): two near-simultaneous checkout requests from the same
@@ -122,9 +122,12 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
         }
       }
 
+      // freeShippingThreshold: Infinity — no order currently qualifies for
+      // free shipping, every order is charged the flat deliveryFee. If
+      // that policy changes later, set this back to a real BDT threshold.
       const { shippingFee, tax, total } = computeOrderTotals(subtotal, discount, {
-        freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
-        flatShipping: FLAT_SHIPPING,
+        freeShippingThreshold: Infinity,
+        flatShipping: deliveryFee,
         taxRate: TAX_RATE,
       });
 
@@ -192,6 +195,13 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
       shipping.phone,
       `Noyon Telecom: Order #${shortOrderId} placed, total ৳${Math.round(order.total).toLocaleString('en-BD')}. We'll text you again once it ships.`
     ).catch((err) => console.error('Failed to send order confirmation SMS:', order.id, err.message));
+
+    // Admin-facing WhatsApp alert — full order + customer details, so
+    // fulfillment can start straight from WhatsApp without opening the
+    // Admin panel. See utils/whatsapp.js for the (free) setup steps.
+    sendWhatsApp(buildOrderWhatsAppMessage(order)).catch((err) =>
+      console.error('Failed to send order WhatsApp alert:', order.id, err.message)
+    );
 
     // Cash-on-delivery orders are "purchased" the moment they're placed (no
     // separate payment-gateway confirmation step) — fire the server-side
