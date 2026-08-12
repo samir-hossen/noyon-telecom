@@ -20,6 +20,13 @@ export default function OrderConfirmation() {
 
   usePageMeta(t('orderConf.pageTitle'), t('orderConf.pageMeta'));
 
+  // Checkout is a long, scrolled-down form on mobile; without this the
+  // browser carries that scroll position over to this much shorter page
+  // and clamps it to the new (smaller) max-scroll, landing at the bottom.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
   useEffect(() => {
     setError('');
     setOrder(null);

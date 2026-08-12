@@ -208,14 +208,12 @@ export default function ProductDetail() {
   const onSale = product.compareAt && product.compareAt > product.price;
 
   async function handleAdd() {
-    if (!user) return navigate('/login');
     await addToCart(product.id, qty);
     setAdded(true);
     showToast(t('shop.addedToCart'), 'success');
   }
 
   async function handleAddRelated(productId) {
-    if (!user) return navigate('/login');
     try {
       await addToCart(productId, 1);
       showToast(t('shop.addedToCart'), 'success');
