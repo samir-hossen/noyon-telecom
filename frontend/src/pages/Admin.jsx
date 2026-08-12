@@ -870,7 +870,7 @@ export default function Admin() {
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <label className="btn btn-outline" style={{ padding: '10px 14px', fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     {uploading ? 'Uploading…' : 'Upload photos'}
                     <input type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={onImagesSelected} style={{ display: 'none' }} />
@@ -885,7 +885,7 @@ export default function Admin() {
                 <label>Description</label>
                 <textarea required rows={3} value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} />
               </div>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button className="btn btn-berry">{editingId ? 'Save changes' : 'Create product'}</button>
                 <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button>
               </div>
@@ -1029,7 +1029,7 @@ export default function Admin() {
 
                 {expandedOrderId === o.id && (
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16, fontSize: '0.85rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 16, fontSize: '0.85rem' }}>
                       <div>
                         <strong>Ship to</strong>
                         <div style={{ color: 'var(--muted)' }}>
@@ -1237,7 +1237,7 @@ export default function Admin() {
       {tab === 'dealers' && (
         <div style={{ paddingBottom: 80 }}>
           <div className="admin-toolbar">
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {['pending', 'approved', 'rejected', ''].map((s) => (
                 <button
                   key={s || 'all'}
@@ -1343,7 +1343,7 @@ export default function Admin() {
       {tab === 'quotes' && (
         <div style={{ paddingBottom: 80 }}>
           <div className="admin-toolbar">
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {['pending', 'responded', 'closed', ''].map((s) => (
                 <button
                   key={s || 'all'}

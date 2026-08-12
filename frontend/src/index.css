@@ -1298,10 +1298,27 @@ button { font-family: inherit; cursor: pointer; }
   }
   .admin-table td:not([data-label]) { display: block; text-align: left; }
   .admin-table td:not([data-label])::before { content: none; }
+
+  .field-row { grid-template-columns: 1fr; }
+  .order-card { padding: 16px; }
+  .analytics-panel { padding: 16px; }
+  .bar-chart { height: 100px; }
+  .status-bar-row .status-name { width: 78px; font-size: 0.78rem; }
 }
-.tabs { display: flex; gap: 6px; margin-bottom: 30px; border-bottom: 1px solid var(--line); }
-.tab { padding: 12px 20px; font-weight: 600; font-size: 0.88rem; border-bottom: 2px solid transparent; }
+/* Ten tabs (Analytics/Products/Orders/Dealers/RFQs/Coupons/Import-Export/
+   Settings/Security/Audit log) don't fit a phone's width — rather than
+   wrapping (which pushes tab content down unpredictably) or silently
+   clipping past the viewport edge (the previous behavior: nothing here
+   stopped that, so every tab past whatever fit was simply unreachable on
+   mobile), this scrolls horizontally at any width where they don't fit,
+   including tablet widths, not just phones. */
+.tabs { display: flex; gap: 6px; margin-bottom: 30px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 12px 20px; font-weight: 600; font-size: 0.88rem; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
 .tab.active { border-color: var(--berry); color: var(--berry-text); }
+@media (max-width: 480px) {
+  .tab { padding: 10px 14px; font-size: 0.8rem; }
+}
 
 /* ---------- Toasts ---------- */
 .toast-stack {
