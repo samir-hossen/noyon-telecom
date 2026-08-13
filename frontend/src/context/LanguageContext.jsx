@@ -32,7 +32,12 @@ export function LanguageProvider({ children }) {
       let str = translations[lang]?.[key] ?? translations.en[key] ?? fallback ?? key;
       if (params) {
         for (const [k, v] of Object.entries(params)) {
-          str = str.replace(new RegExp(`{{${k}}}`, 'g'), v);
+          // A function replacer, not the raw string — String.prototype.replace
+          // treats a string replacement's `$&`, `$1`, etc. as special patterns,
+          // so user-controlled input (search query, guest email) containing
+          // e.g. "$&" would silently reinsert the matched {{token}} instead of
+          // the literal text. A function return value is always used verbatim.
+          str = str.replace(new RegExp(`{{${k}}}`, 'g'), () => v);
         }
       }
       return str;

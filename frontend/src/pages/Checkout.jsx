@@ -98,8 +98,21 @@ export default function Checkout() {
         // SSLCommerz needs the order to exist first (it's the transaction
         // reference), so we create it above, then start the payment session
         // and send the browser to the gateway page.
-        const { url } = await api.post(`/payment/sslcommerz/init/${data.order.id}`, { email: form.email });
-        window.location.href = url;
+        try {
+          const { url } = await api.post(`/payment/sslcommerz/init/${data.order.id}`, { email: form.email });
+          window.location.href = url;
+        } catch {
+          // The order already exists and the cart's already been cleared
+          // above, so items.length is now 0 — falling through to the outer
+          // catch's setError() would be silently hidden behind this page's
+          // own "cart is empty" early-return (line 68) with no sign an
+          // order was ever created. Route to order-confirmation's existing
+          // ?payment=failed handling instead, the same recovery path the
+          // SSLCommerz fail/cancel redirects themselves already use.
+          navigate(
+            `/order-confirmation/${data.order.id}?payment=failed${isGuestCart ? `&email=${encodeURIComponent(form.email)}` : ''}`
+          );
+        }
         return;
       }
 

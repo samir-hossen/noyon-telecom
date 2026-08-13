@@ -19,7 +19,11 @@ export function WishlistProvider({ children }) {
   }, [user]);
 
   useEffect(() => {
-    refresh();
+    // refresh() is async and throws on a failed fetch (session race, network
+    // blip) — without a catch here, that becomes an unhandled promise
+    // rejection on every mount rather than a silently-stale (but harmless)
+    // empty wishlist.
+    refresh().catch(() => {});
   }, [refresh]);
 
   const ids = new Set(products.map((p) => p.id));
