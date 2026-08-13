@@ -77,23 +77,4 @@ export function parsePagination({ page, limit } = {}, { defaultLimit = 12 } = {}
   };
 }
 
-// Which of ALL_CATEGORIES actually have at least one published product right
-// now. The Shop page's category pills previously always rendered the full
-// fixed taxonomy regardless of live inventory — most categories (OLED, LCD,
-// Touch, Battery, Housing, ...) have zero products in this catalog today, so
-// clicking those pills looked like a broken filter ("select a category, no
-// products show") when it was really just an empty category being offered
-// as if it had stock. `allCategories` is passed in (rather than imported
-// here) to avoid a circular import between this file and
-// routes/products.routes.js, which defines the canonical list.
-export async function getActiveCategories(prisma, allCategories) {
-  const rows = await prisma.$queryRaw`
-    SELECT DISTINCT jsonb_array_elements_text(categories) AS cat
-    FROM "Product"
-    WHERE published = true
-  `;
-  const active = new Set(rows.map((r) => r.cat));
-  return allCategories.filter((c) => active.has(c));
-}
-
 export { MAX_LIMIT };
