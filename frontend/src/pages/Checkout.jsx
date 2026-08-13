@@ -9,6 +9,11 @@ import { usePageMeta } from '../hooks/usePageTitle';
 import { trackBeginCheckout } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
 
+// Online gateway isn't configured yet — hide it from checkout so no one can
+// select it and land on a guaranteed-fail payment. Flip back to true once
+// the gateway is set up.
+const ONLINE_PAYMENT_ENABLED = false;
+
 export default function Checkout() {
   const { items, subtotal, refresh, clearGuestCart, isGuestCart } = useCart();
   const { user } = useAuth();
@@ -182,13 +187,15 @@ export default function Checkout() {
                 <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t('checkout.codSub')}</div>
               </div>
             </label>
-            <label className={`pay-option ${method === 'online' ? 'active' : ''}`}>
-              <input type="radio" name="payment-method" checked={method === 'online'} onChange={() => setMethod('online')} />
-              <div>
-                <strong style={{ fontSize: '0.9rem' }}>{t('checkout.onlineTitle')}</strong>
-                <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t('checkout.onlineSub')}</div>
-              </div>
-            </label>
+            {ONLINE_PAYMENT_ENABLED && (
+              <label className={`pay-option ${method === 'online' ? 'active' : ''}`}>
+                <input type="radio" name="payment-method" checked={method === 'online'} onChange={() => setMethod('online')} />
+                <div>
+                  <strong style={{ fontSize: '0.9rem' }}>{t('checkout.onlineTitle')}</strong>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t('checkout.onlineSub')}</div>
+                </div>
+              </label>
+            )}
           </div>
         </div>
 
