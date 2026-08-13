@@ -8,6 +8,7 @@ const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const MIME_EXT = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp' };
 
 // Cloudinary is optional. If CLOUDINARY_* env vars are set, uploaded
 // product images are stored on Cloudinary's CDN (fast, optimized,
@@ -30,7 +31,11 @@ if (CLOUDINARY_ENABLED) {
 }
 
 function fileFilter(req, file, cb) {
-  if (!ALLOWED.has(file.mimetype)) return cb(new Error('Only PNG, JPEG, or WebP images are allowed'));
+  if (!ALLOWED.has(file.mimetype)) {
+    const err = new Error('Only PNG, JPEG, or WebP images are allowed');
+    err.status = 400;
+    return cb(err);
+  }
   cb(null, true);
 }
 
@@ -42,7 +47,12 @@ const storage = CLOUDINARY_ENABLED
   : multer.diskStorage({
       destination: (req, file, cb) => cb(null, UPLOAD_DIR),
       filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
+        // Extension comes from the validated MIME type, never from the
+        // client-supplied `originalname` — otherwise a request can declare
+        // Content-Type: image/png (passes fileFilter) while naming the file
+        // "x.html", get saved as <uuid>.html, and have express.static serve
+        // it back as text/html (stored XSS on this origin).
+        const ext = MIME_EXT[file.mimetype];
         cb(null, `${crypto.randomUUID()}${ext}`);
       },
     });

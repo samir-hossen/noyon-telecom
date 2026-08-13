@@ -46,6 +46,13 @@ export default function AdminLogin() {
       const user = await verifyTwoFA(pendingId, code);
       if (user.role !== 'admin') {
         await logout();
+        // Without resetting these, `pendingId` stays truthy and the
+        // component keeps rendering the 2FA-code screen (see the
+        // `if (pendingId)` gate below) even though `logout()` just cleared
+        // the session — the user would be stuck there needing a page
+        // refresh to get back to the email/password form.
+        setPendingId(null);
+        setCode('');
         setError('This account does not have admin access.');
         return;
       }

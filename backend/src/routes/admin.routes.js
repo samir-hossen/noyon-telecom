@@ -68,7 +68,11 @@ router.post('/admins', requireCsrf, async (req, res, next) => {
 router.post('/products', requireCsrf, async (req, res, next) => {
   try {
     const p = req.body;
-    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || !p.price) {
+    // `category` is a non-nullable schema column; without this check a
+    // request that omits it (and has no `categories` array either) reaches
+    // `prisma.product.create` with `category: undefined` and throws an
+    // unhandled PrismaClientValidationError instead of this clean 400.
+    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || !p.price || (!p.category && !p.categories?.length)) {
       return res.status(400).json({ error: 'Missing required product fields' });
     }
     const created = await prisma.product.create({
@@ -724,6 +728,12 @@ router.post('/coupons', requireCsrf, async (req, res, next) => {
 router.put('/coupons/:id', requireCsrf, async (req, res, next) => {
   try {
     const { active, type, value, minSubtotal, usageLimit, usageLimitPerCustomer, expiresAt } = req.body;
+    // Same "value must be positive" rule the create route enforces (line
+    // 692) \u2014 without it here, PUT could push an existing coupon's value to
+    // 0 or negative, which create-time validation would have rejected.
+    if (value !== undefined && !(value > 0)) {
+      return res.status(400).json({ error: 'Please enter a valid value.' });
+    }
     if (type === 'percent' && value !== undefined && value > 100) {
       return res.status(400).json({ error: 'A percentage discount can\u2019t be more than 100%.' });
     }

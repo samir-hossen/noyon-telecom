@@ -89,27 +89,23 @@ test('upload middleware — happy paths', async (t) => {
 test('upload middleware — file-type validation still works', async (t) => {
   const app = buildApp(okHandler);
 
-  // Note: fileFilter() in upload.js rejects with a plain `new Error(...)`,
-  // not a `multer.MulterError` — so it doesn't hit errorHandler.js's
-  // `err.name === 'MulterError'` branch and falls through to a generic 500
-  // ("Something went wrong..."), not a 400 with the specific message. This
-  // is pre-existing behavior, unchanged by the multer 1.x -> 2.x upgrade —
-  // confirmed identical against multer 1.x directly. Out of scope to
-  // change here (not required for multer compatibility); these tests
-  // document the actual, unchanged behavior rather than assert a
-  // different one.
-  await t.test('rejects a disallowed MIME type — still rejected (500, unchanged pre-existing app behavior), not a crash', async () => {
+  // fileFilter() in upload.js sets `err.status = 400` on rejection, so
+  // errorHandler.js's generic `status = err.status || 500` branch returns
+  // a proper 400 with the specific "Only PNG, JPEG, or WebP..." message,
+  // instead of a generic 500 "Something went wrong".
+  await t.test('rejects a disallowed MIME type with a 400 and the specific message', async () => {
     const res = await request(app)
       .post('/single')
       .attach('image', Buffer.from('#!/bin/sh\necho hi'), { filename: 'script.sh', contentType: 'application/x-sh' });
-    assert.equal(res.status, 500);
+    assert.equal(res.status, 400);
+    assert.match(res.body.error, /PNG, JPEG, or WebP/i);
   });
 
   await t.test('rejects a PDF disguised with an image filename by real content-type — still rejected, not a crash', async () => {
     const res = await request(app)
       .post('/single')
       .attach('image', Buffer.from('%PDF-1.4 fake'), { filename: 'notreally.png', contentType: 'application/pdf' });
-    assert.equal(res.status, 500);
+    assert.equal(res.status, 400);
   });
 });
 

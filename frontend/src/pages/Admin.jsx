@@ -91,8 +91,16 @@ export default function Admin() {
     const params = new URLSearchParams({ page, limit: 50, status });
     if (search) params.set('search', search);
     api.get(`/admin/products?${params}`).then((d) => {
+      // The backend doesn't clamp an out-of-range page — deleting the last
+      // product on the last page re-requests that same (now nonexistent)
+      // page number and gets back 0 rows. Self-correct once by refetching
+      // the new last page instead of leaving the table stuck empty.
+      if (d.products.length === 0 && d.page > 1 && d.total > 0) {
+        loadProducts(d.totalPages, search, status);
+        return;
+      }
       setProducts(d.products);
-      setProductPage(page);
+      setProductPage(d.page);
       setProductTotalPages(d.totalPages);
       setProductTotal(d.total);
     }).catch((err) => showToast(err.message, 'error'));
@@ -110,6 +118,12 @@ export default function Admin() {
     const params = new URLSearchParams({ page, limit: 25 });
     if (status) params.set('status', status);
     api.get(`/admin/orders?${params}`).then((d) => {
+      // Same out-of-range-page self-correction as loadProducts above — the
+      // backend doesn't clamp the page either here.
+      if (d.orders.length === 0 && d.page > 1 && d.total > 0) {
+        loadOrders(d.totalPages, status);
+        return;
+      }
       setOrders(d.orders);
       setOrderPage(d.page);
       setOrderTotalPages(d.totalPages);
@@ -138,6 +152,12 @@ export default function Admin() {
     const params = new URLSearchParams({ page, limit: 25 });
     if (status) params.set('status', status);
     api.get(`/admin/dealers?${params}`).then((d) => {
+      // Same out-of-range-page self-correction as loadProducts above — the
+      // backend doesn't clamp the page either here.
+      if (d.dealers.length === 0 && d.page > 1 && d.total > 0) {
+        loadDealers(status, d.totalPages);
+        return;
+      }
       setDealers(d.dealers);
       setDealerPage(d.page);
       setDealerTotalPages(d.totalPages);
@@ -426,7 +446,12 @@ export default function Admin() {
         await api.post('/admin/products', payload);
         setProductSearchInput('');
         setProductSearch('');
-        loadProducts(1, ''); // new products sort first — jump to page 1 so it's visible
+        // Also clear a Drafts-only/Published-only filter — otherwise a new
+        // product whose published state doesn't match the active filter
+        // would vanish immediately after the "Product created" toast,
+        // contradicting the comment below's promise that it'll be visible.
+        setProductStatusFilter('all');
+        loadProducts(1, '', 'all'); // new products sort first — jump to page 1 so it's visible
       }
       setShowForm(false);
       loadAuditLogs();
@@ -472,8 +497,8 @@ export default function Admin() {
         type: couponForm.type,
         value: parseFloat(couponForm.value),
         minSubtotal: couponForm.minSubtotal ? parseFloat(couponForm.minSubtotal) : 0,
-        usageLimit: couponForm.usageLimit || null,
-        usageLimitPerCustomer: couponForm.usageLimitPerCustomer || null,
+        usageLimit: couponForm.usageLimit ? parseInt(couponForm.usageLimit, 10) : null,
+        usageLimitPerCustomer: couponForm.usageLimitPerCustomer ? parseInt(couponForm.usageLimitPerCustomer, 10) : null,
         expiresAt: couponForm.expiresAt || null,
       });
       setCouponForm(emptyCoupon);
