@@ -33,19 +33,31 @@ test('buildProductWhere', async (t) => {
     assert.equal(buildProductWhere({ brand: 'Apple', status: 'all' }).brand, 'Apple');
   });
 
-  await t.test('search builds an OR across name/desc/sku/brand, case-insensitive', () => {
-    const where = buildProductWhere({ search: '  iphone 13  ', status: 'all' });
-    assert.equal(where.OR.length, 4);
-    for (const clause of where.OR) {
+  await t.test('single-word search builds an OR across name/desc/sku/brand, case-insensitive', () => {
+    const where = buildProductWhere({ search: '  oled  ', status: 'all' });
+    assert.equal(where.AND.length, 1);
+    for (const clause of where.AND[0].OR) {
       const [field] = Object.keys(clause);
-      assert.equal(clause[field].contains, 'iphone 13'); // trimmed
+      assert.equal(clause[field].contains, 'oled'); // trimmed
       assert.equal(clause[field].mode, 'insensitive');
     }
   });
 
-  await t.test('blank/whitespace-only search adds no OR clause', () => {
+  await t.test('multi-word search requires each word to match somewhere (word-order independent)', () => {
+    const where = buildProductWhere({ search: 'iphone 13 screen', status: 'all' });
+    assert.equal(where.AND.length, 3);
+    assert.deepEqual(
+      where.AND.map((clause) => clause.OR[0].name.contains),
+      ['iphone', '13', 'screen']
+    );
+    for (const wordClause of where.AND) {
+      assert.equal(wordClause.OR.length, 4);
+    }
+  });
+
+  await t.test('blank/whitespace-only search adds no AND clause', () => {
     const where = buildProductWhere({ search: '   ', status: 'all' });
-    assert.equal('OR' in where, false);
+    assert.equal('AND' in where, false);
   });
 
   await t.test('category + brand + search + status combine into one where clause', () => {
@@ -54,11 +66,15 @@ test('buildProductWhere', async (t) => {
       published: true,
       categories: { array_contains: 'Display' },
       brand: 'Samsung',
-      OR: [
-        { name: { contains: 'oled', mode: 'insensitive' } },
-        { desc: { contains: 'oled', mode: 'insensitive' } },
-        { sku: { contains: 'oled', mode: 'insensitive' } },
-        { brand: { contains: 'oled', mode: 'insensitive' } },
+      AND: [
+        {
+          OR: [
+            { name: { contains: 'oled', mode: 'insensitive' } },
+            { desc: { contains: 'oled', mode: 'insensitive' } },
+            { sku: { contains: 'oled', mode: 'insensitive' } },
+            { brand: { contains: 'oled', mode: 'insensitive' } },
+          ],
+        },
       ],
     });
   });

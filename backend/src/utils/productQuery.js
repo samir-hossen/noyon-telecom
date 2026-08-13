@@ -32,12 +32,23 @@ export function buildProductWhere({ category, brand, search, status } = {}) {
 
   const q = (search || '').toString().trim();
   if (q) {
-    where.OR = [
-      { name: { contains: q, mode: 'insensitive' } },
-      { desc: { contains: q, mode: 'insensitive' } },
-      { sku: { contains: q, mode: 'insensitive' } },
-      { brand: { contains: q, mode: 'insensitive' } },
-    ];
+    // Split into words and require each word to appear *somewhere*
+    // (name/desc/sku/brand), rather than requiring the whole typed phrase
+    // to appear verbatim as one substring. That old behavior meant
+    // "iphone 13 screen" wouldn't match a product named "iPhone 13 Pro
+    // Screen" — the extra word "Pro" broke the match. Per-word AND-of-OR
+    // still uses the same trigram GIN index (idx_product_search_trgm) for
+    // each word's `contains`, so this stays index-backed and fast even as
+    // the catalog grows.
+    const words = q.split(/\s+/).filter(Boolean);
+    where.AND = words.map((w) => ({
+      OR: [
+        { name: { contains: w, mode: 'insensitive' } },
+        { desc: { contains: w, mode: 'insensitive' } },
+        { sku: { contains: w, mode: 'insensitive' } },
+        { brand: { contains: w, mode: 'insensitive' } },
+      ],
+    }));
   }
 
   return where;
@@ -64,6 +75,25 @@ export function parsePagination({ page, limit } = {}, { defaultLimit = 12 } = {}
     skip: (parsedPage - 1) * parsedLimit,
     take: parsedLimit,
   };
+}
+
+// Which of ALL_CATEGORIES actually have at least one published product right
+// now. The Shop page's category pills previously always rendered the full
+// fixed taxonomy regardless of live inventory — most categories (OLED, LCD,
+// Touch, Battery, Housing, ...) have zero products in this catalog today, so
+// clicking those pills looked like a broken filter ("select a category, no
+// products show") when it was really just an empty category being offered
+// as if it had stock. `allCategories` is passed in (rather than imported
+// here) to avoid a circular import between this file and
+// routes/products.routes.js, which defines the canonical list.
+export async function getActiveCategories(prisma, allCategories) {
+  const rows = await prisma.$queryRaw`
+    SELECT DISTINCT jsonb_array_elements_text(categories) AS cat
+    FROM "Product"
+    WHERE published = true
+  `;
+  const active = new Set(rows.map((r) => r.cat));
+  return allCategories.filter((c) => active.has(c));
 }
 
 export { MAX_LIMIT };
