@@ -49,6 +49,14 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // The mobile drawer sits over the page rather than pushing it down now,
+  // so lock background scroll while it's open — otherwise the page behind
+  // it scrolls invisibly and jumps when the drawer closes.
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [menuOpen]);
+
   function onSearch(e) {
     e.preventDefault();
     setMenuOpen(false);
@@ -259,8 +267,8 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {menuOpen && (
-        <div className="mobile-menu">
+      <div className={`mobile-menu-backdrop ${menuOpen ? 'open' : ''}`} onClick={closeMenu} aria-hidden="true" />
+      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
           <button className="lang-switch lang-switch-mobile" onClick={toggleLang}>
             {lang === 'en' ? '🇺🇸 English' : '🇧🇩 বাংলা'} <span className="lang-switch-alt">{lang === 'en' ? '/ বাংলা' : '/ English'}</span>
           </button>
@@ -304,7 +312,6 @@ export default function Navbar() {
             )}
           </div>
         </div>
-      )}
     </header>
   );
 }
