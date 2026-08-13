@@ -68,11 +68,17 @@ router.post('/admins', requireCsrf, async (req, res, next) => {
 router.post('/products', requireCsrf, async (req, res, next) => {
   try {
     const p = req.body;
+    // price is required at the schema level (non-nullable Float) but 0 is a
+    // valid, intentional value — it's the existing "not yet priced / contact
+    // us" convention (see ProductCard.jsx's priceUnavailable check), not a
+    // missing field. `!p.price` would wrongly reject it, so check presence
+    // explicitly instead of truthiness.
+    const priceProvided = p.price !== undefined && p.price !== null && p.price !== '' && Number(p.price) >= 0;
     // `category` is a non-nullable schema column; without this check a
     // request that omits it (and has no `categories` array either) reaches
     // `prisma.product.create` with `category: undefined` and throws an
     // unhandled PrismaClientValidationError instead of this clean 400.
-    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || !p.price || (!p.category && !p.categories?.length)) {
+    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || !priceProvided || (!p.category && !p.categories?.length)) {
       return res.status(400).json({ error: 'Missing required product fields' });
     }
     const created = await prisma.product.create({
@@ -262,7 +268,10 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
     // time — at 5000 rows, sequential awaits could take minutes and risk
     // hitting an HTTP/proxy timeout before the import ever finishes.
     async function importRow(r, rowNumber) {
-      if (!r.name || !r.price || !r.category) {
+      // Same "0 is a valid, intentional price" reasoning as POST /products
+      // above — a spreadsheet row can legitimately have no price yet.
+      const priceProvided = r.price !== undefined && r.price !== null && r.price !== '' && Number(r.price) >= 0;
+      if (!r.name || !priceProvided || !r.category) {
         errors.push({ row: rowNumber, error: 'Missing required field (name, price, category)' });
         return;
       }
