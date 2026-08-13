@@ -636,15 +636,21 @@ export default function Admin() {
               <p style={{ color: '#9a8f8a', fontSize: '0.86rem' }}>No revenue yet in this window.</p>
             ) : (
               <div className="bar-chart">
-                {analytics.revenueByDay.map((d) => (
-                  <div className="bar-col" key={d.date.toISOString()} title={`${d.date.toLocaleDateString()}: ${formatPrice(d.total)}`}>
-                    <div
-                      className="bar"
-                      style={{ height: `${Math.max(2, (d.total / maxDayRevenue) * 100)}%` }}
-                    />
-                    <div className="bar-label">{d.date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
-                  </div>
-                ))}
+                {analytics.revenueByDay.map((d) => {
+                  // /admin/analytics returns dates as JSON (ISO strings), not
+                  // Date instances — calling Date methods directly on d.date
+                  // threw a TypeError that crashed this whole tab.
+                  const date = new Date(d.date);
+                  return (
+                    <div className="bar-col" key={date.toISOString()} title={`${date.toLocaleDateString()}: ${formatPrice(d.total)}`}>
+                      <div
+                        className="bar"
+                        style={{ height: `${Math.max(2, (d.total / maxDayRevenue) * 100)}%` }}
+                      />
+                      <div className="bar-label">{date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
