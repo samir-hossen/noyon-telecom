@@ -22,10 +22,7 @@ export default function ResetPassword() {
     e.preventDefault();
     setError('');
     if (!token) return setError(t('resetPw.missingToken'));
-    if (password.length < 8) return setError(t('register.passwordMinLength'));
-    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      return setError(t('register.passwordComplexity'));
-    }
+    if (password.length < 6) return setError(t('register.passwordMinLength'));
     if (password !== confirm) return setError(t('resetPw.passwordMismatch'));
 
     setBusy(true);
@@ -87,7 +84,7 @@ export default function ResetPassword() {
               id="rp-password"
               type="password"
               required
-              minLength={8}
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t('register.passwordPlaceholder')}
@@ -96,7 +93,7 @@ export default function ResetPassword() {
           </div>
           <div className="field">
             <label htmlFor="rp-confirm">{t('resetPw.confirmPassword')}</label>
-            <input id="rp-confirm" type="password" required minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
+            <input id="rp-confirm" type="password" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
           </div>
           <button className="btn btn-berry btn-block" disabled={busy}>
             {busy ? t('resetPw.updating') : t('resetPw.updateBtn')}

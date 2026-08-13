@@ -24,10 +24,7 @@ export default function Register() {
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
-    if (password.length < 8) return setError(t('register.passwordMinLength'));
-    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      return setError(t('register.passwordComplexity'));
-    }
+    if (password.length < 6) return setError(t('register.passwordMinLength'));
     if (accountType === 'dealer' && (!businessName.trim() || !phone.trim())) {
       return setError(t('register.dealerFieldsRequired'));
     }
@@ -126,7 +123,7 @@ export default function Register() {
           <div className="field">
             {accountType !== 'dealer' && <label htmlFor="reg-password">{t('auth.password')}</label>}
             {accountType === 'dealer' && <label className="sr-only" htmlFor="reg-password">{t('auth.password')}</label>}
-            <input id="reg-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('register.passwordPlaceholder')} />
+            <input id="reg-password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t('register.passwordPlaceholder')} />
           </div>
           <button className="btn btn-berry btn-block" disabled={busy}>
             {busy ? t('register.creatingAccount') : accountType === 'dealer' ? t('register.submitDealerApp') : t('register.createAccountBtn')}

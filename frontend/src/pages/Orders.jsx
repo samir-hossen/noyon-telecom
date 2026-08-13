@@ -5,6 +5,7 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 const TRACK_STEPS = ['processing', 'shipped', 'delivered'];
 
@@ -49,23 +50,66 @@ function OrderTracker({ status }) {
 
 export default function Orders() {
   const [orders, setOrders] = useState(null);
+  const [summary, setSummary] = useState({ count: 0, totalSpent: 0 });
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   usePageMeta(t('orders.pageTitle'), t('orders.pageMeta'));
 
   useEffect(() => {
     // No .catch previously — a failed request left this page stuck on the
     // skeleton loader forever, no error, no retry option.
-    api.get('/orders/mine?page=1&limit=10').then((d) => {
-      setOrders(d.orders);
-      setTotalPages(d.totalPages || 1);
+    Promise.all([
+      api.get('/orders/mine/summary'),
+      api.get('/orders/mine?page=1&limit=10'),
+    ]).then(([summaryData, ordersData]) => {
+      setSummary(summaryData);
+      setOrders(ordersData.orders);
+      setTotalPages(ordersData.totalPages || 1);
       setPage(1);
     }).catch((err) => setError(err.message));
   }, []);
+
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+    : '';
+
+  const pageHeader = (
+    <div className="page-header">
+      <span className="eyebrow">{t('orders.eyebrow')}</span>
+      <h1 className="page-title">
+        {t('orders.titleTop')} <em>{t('orders.titleEm')}</em>
+      </h1>
+    </div>
+  );
+
+  const profileStats = user && (
+    <div className="profile-summary" style={{ marginBottom: 28 }}>
+      <div>
+        <strong style={{ fontSize: '1.05rem' }}>{user.name}</strong>
+        <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>{user.email}</div>
+        {memberSince && (
+          <div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginTop: 2 }}>
+            {t('orders.memberSince', null, { date: memberSince })}
+          </div>
+        )}
+      </div>
+      <div className="stat-grid" style={{ marginTop: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+        <div className="stat-card">
+          <div className="stat-label">{t('orders.totalOrders')}</div>
+          <div className="stat-value">{summary.count}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">{t('orders.totalSpent')}</div>
+          <div className="stat-value">{formatPrice(summary.totalSpent)}</div>
+        </div>
+      </div>
+    </div>
+  );
 
   function loadMore() {
     const nextPage = page + 1;
@@ -93,6 +137,7 @@ export default function Orders() {
   if (orders === null) {
     return (
       <div className="container" style={{ paddingTop: 24 }}>
+        {pageHeader}
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="card" style={{ padding: 18, marginBottom: 14 }}>
             <div className="skeleton-line" style={{ width: '25%' }} />
@@ -113,6 +158,8 @@ export default function Orders() {
   if (orders.length === 0) {
     return (
       <div className="container">
+        {pageHeader}
+        {profileStats}
         <div className="empty-state">
           <div className="icon">📦</div>
           <h3>{t('orders.noOrdersTitle')}</h3>
@@ -125,12 +172,8 @@ export default function Orders() {
 
   return (
     <div className="container">
-      <div className="page-header">
-        <span className="eyebrow">{t('orders.eyebrow')}</span>
-        <h1 className="page-title">
-          {t('orders.titleTop')} <em>{t('orders.titleEm')}</em>
-        </h1>
-      </div>
+      {pageHeader}
+      {profileStats}
 
       <div style={{ paddingBottom: 80 }}>
         {orders.map((o) => (

@@ -12,10 +12,10 @@ import { verifyRecaptcha } from '../utils/recaptcha.js';
 const router = Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN = 8;
+const PASSWORD_MIN = 6;
 
-function isStrongPassword(pw) {
-  return typeof pw === 'string' && pw.length >= PASSWORD_MIN && /[A-Za-z]/.test(pw) && /[0-9]/.test(pw);
+function isValidPassword(pw) {
+  return typeof pw === 'string' && pw.length >= PASSWORD_MIN;
 }
 
 router.get('/csrf', (req, res) => {
@@ -30,8 +30,8 @@ router.get('/me', requireAuth, (req, res) => {
 router.post('/register', requireCsrf, async (req, res, next) => {
   try {
     const { name, email, password, recaptchaToken, accountType, businessName, phone, address } = req.body;
-    if (!name || !EMAIL_RE.test(email || '') || !isStrongPassword(password)) {
-      return res.status(400).json({ error: 'Please fill in all fields correctly. Password needs 8+ characters with a letter and number.' });
+    if (!name || !EMAIL_RE.test(email || '') || !isValidPassword(password)) {
+      return res.status(400).json({ error: 'Please fill in all fields correctly. Password needs at least 6 characters.' });
     }
     const isDealer = accountType === 'dealer';
     if (isDealer && (!businessName || !phone)) {
@@ -160,8 +160,8 @@ router.post('/forgot-password', requireCsrf, async (req, res, next) => {
 router.post('/reset-password', requireCsrf, async (req, res, next) => {
   try {
     const { token, password } = req.body;
-    if (!token || !isStrongPassword(password)) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters and include a letter and a number.' });
+    if (!token || !isValidPassword(password)) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
     }
     const tokenHash = hashToken(token);
     const record = await prisma.passwordResetToken.findFirst({ where: { tokenHash, used: false } });

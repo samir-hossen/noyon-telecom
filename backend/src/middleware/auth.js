@@ -40,6 +40,7 @@ export function publicUser(user) {
     name: user.name,
     email: user.email,
     role: user.role,
+    createdAt: user.createdAt,
     emailVerified: user.emailVerified,
     twoFAEnabled: user.twoFAEnabled,
     businessName: user.businessName ?? null,
