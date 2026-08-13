@@ -269,6 +269,10 @@ export default function Navbar() {
 
       <div className={`mobile-menu-backdrop ${menuOpen ? 'open' : ''}`} onClick={closeMenu} aria-hidden="true" />
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
+          <button type="button" className="mobile-menu-close" onClick={closeMenu} aria-label={t('nav.closeMenu')}>
+            ✕
+          </button>
+
           <button className="lang-switch lang-switch-mobile" onClick={toggleLang}>
             {lang === 'en' ? '🇺🇸 English' : '🇧🇩 বাংলা'} <span className="lang-switch-alt">{lang === 'en' ? '/ বাংলা' : '/ English'}</span>
           </button>

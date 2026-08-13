@@ -454,6 +454,17 @@ button { font-family: inherit; cursor: pointer; }
   pointer-events: none;
 }
 .mobile-menu.open { transform: translateX(0); pointer-events: auto; }
+.mobile-menu-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
 .mobile-menu-links { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
 .mobile-menu-links a { padding: 12px 0; font-size: 1.02rem; font-weight: 500; border-bottom: 1px solid var(--line); }
 .mobile-menu-account { display: flex; flex-direction: column; gap: 10px; }
