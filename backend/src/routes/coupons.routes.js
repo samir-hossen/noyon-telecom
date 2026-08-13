@@ -39,7 +39,10 @@ router.post('/validate', optionalAuth, requireCsrf, async (req, res, next) => {
           ? prisma.order.count({
               where: {
                 couponCode: coupon.code,
-                ...(req.user ? { userId: req.user.id } : { guestEmail: (email || '').toString().trim() }),
+                // Case-insensitive for the same reason as the matching check
+                // in orders.routes.js's checkout handler — email identity
+                // shouldn't depend on how the guest happened to capitalize it.
+                ...(req.user ? { userId: req.user.id } : { guestEmail: { equals: (email || '').toString().trim(), mode: 'insensitive' } }),
               },
             })
           : Promise.resolve(0),

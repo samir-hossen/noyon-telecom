@@ -13,6 +13,12 @@ const router = Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_MIN = 6;
+// Same bcrypt cost (12) as real password hashes — compared against on every
+// login for an email that doesn't exist, so that response timing doesn't
+// leak which emails have accounts (bcrypt.compare would otherwise be
+// skipped entirely via `||` short-circuit, making "no such user" answer
+// measurably faster than "wrong password").
+const DUMMY_PASSWORD_HASH = '$2a$12$qev7knfa52lAgXMoMtAS6uooG4haW1NBTtB4viVy6g7sFOWq2OJSG';
 
 function isValidPassword(pw) {
   return typeof pw === 'string' && pw.length >= PASSWORD_MIN;
@@ -82,7 +88,8 @@ router.post('/login', requireCsrf, async (req, res, next) => {
     }
 
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    const passwordOk = await bcrypt.compare(password, user?.passwordHash || DUMMY_PASSWORD_HASH);
+    if (!user || !passwordOk) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 

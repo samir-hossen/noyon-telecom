@@ -7,6 +7,13 @@ import { serializeProduct, withViewerPricing } from '../utils/serialize.js';
 const router = Router();
 router.use(requireAuth);
 
+class CartError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function loadCart(userId, user) {
   const rows = await prisma.cartItem.findMany({ where: { userId }, include: { product: true } });
   const items = rows.map((r) => ({
@@ -34,23 +41,31 @@ router.post('/add', requireCsrf, async (req, res, next) => {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    const existing = await prisma.cartItem.findUnique({
-      where: { userId_productId: { userId: req.user.id, productId } },
-    });
-    const moq = product.moq || 1;
-    const requestedQty = Math.max(moq, (existing?.qty || 0) + addQty);
-    const nextQty = Math.min(product.stock, requestedQty);
-    if (nextQty <= 0) return res.status(400).json({ error: 'This product is out of stock' });
-    if (nextQty < moq) return res.status(400).json({ error: `This product has a minimum order quantity of ${moq}.` });
+    // Serializable so two near-simultaneous adds of the same product
+    // (double-click, two open tabs) can't both read the same pre-add qty
+    // and have the second write clobber the first — one loses the race
+    // and gets a clean, retryable 409 (see errorHandler.js) instead of the
+    // customer's cart silently ending up short a unit.
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.cartItem.findUnique({
+        where: { userId_productId: { userId: req.user.id, productId } },
+      });
+      const moq = product.moq || 1;
+      const requestedQty = Math.max(moq, (existing?.qty || 0) + addQty);
+      const nextQty = Math.min(product.stock, requestedQty);
+      if (nextQty <= 0) throw new CartError(400, 'This product is out of stock');
+      if (nextQty < moq) throw new CartError(400, `This product has a minimum order quantity of ${moq}.`);
 
-    await prisma.cartItem.upsert({
-      where: { userId_productId: { userId: req.user.id, productId } },
-      update: { qty: nextQty },
-      create: { userId: req.user.id, productId, qty: nextQty },
-    });
+      await tx.cartItem.upsert({
+        where: { userId_productId: { userId: req.user.id, productId } },
+        update: { qty: nextQty },
+        create: { userId: req.user.id, productId, qty: nextQty },
+      });
+    }, { isolationLevel: 'Serializable' });
 
     res.json(await loadCart(req.user.id, req.user));
   } catch (err) {
+    if (err instanceof CartError) return res.status(err.status).json({ error: err.message });
     next(err);
   }
 });

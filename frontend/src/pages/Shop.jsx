@@ -69,6 +69,7 @@ export default function Shop() {
   }, [searchInput]);
 
   useEffect(() => {
+    let current = true;
     setLoading(true);
     const q = new URLSearchParams();
     if (category !== 'All') q.set('category', category);
@@ -80,14 +81,20 @@ export default function Shop() {
     api
       .get(`/products?${q.toString()}`)
       .then((d) => {
+        // Guards against an earlier, slower filter/page request resolving
+        // after a newer one — without this, quickly clicking two category
+        // pills in a row can end with the listing showing the first
+        // click's results while the pill/URL both reflect the second.
+        if (!current) return;
         setProducts(d.products);
         setCategories(d.categories);
         setBrands(d.brands || []);
         setTotal(d.total);
         setTotalPages(d.totalPages);
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (current) setLoading(false); });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    return () => { current = false; };
   }, [category, brand, search, sort, page]);
 
   async function handleAdd(id) {

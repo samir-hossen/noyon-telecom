@@ -58,6 +58,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let current = true;
     setAdded(false);
     setProduct(null);
     setLoadError('');
@@ -67,7 +68,13 @@ export default function ProductDetail() {
     // Previously had no .catch — a failed fetch (dropped connection, product
     // just deleted, backend hiccup) left the page stuck on the skeleton
     // loader forever with no way out. Now it surfaces a real error instead.
-    api.get(`/products/${id}`).then((d) => setProduct(d.product)).catch((err) => setLoadError(err.message));
+    // The `current` guard stops an earlier, slower request (e.g. clicking
+    // through two related products quickly) from overwriting the page with
+    // stale data if it resolves after the latest request already has.
+    api.get(`/products/${id}`)
+      .then((d) => { if (current) setProduct(d.product); })
+      .catch((err) => { if (current) setLoadError(err.message); });
+    return () => { current = false; };
   }, [id]);
 
   // Object URLs (used for the "add photos" preview thumbnails) are only
@@ -87,7 +94,11 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (!product) return;
-    setQty(Math.max(1, product.moq || 1));
+    // Clamp to stock too, not just MOQ — the +/- buttons and the qty input
+    // both already do this (lines below); without it here, a product whose
+    // stock has dropped below its own MOQ (e.g. moq 10, stock 5) loads with
+    // an unorderable default qty and a still-enabled Add to Cart button.
+    setQty(Math.max(1, Math.min(product.stock, product.moq || 1)));
     pushRecentlyViewed(product.id);
     trackViewItem(product);
     // Only need ~4 related items, not the whole category — this used to
@@ -208,9 +219,13 @@ export default function ProductDetail() {
   const onSale = product.compareAt && product.compareAt > product.price;
 
   async function handleAdd() {
-    await addToCart(product.id, qty);
-    setAdded(true);
-    showToast(t('shop.addedToCart'), 'success');
+    try {
+      await addToCart(product.id, qty);
+      setAdded(true);
+      showToast(t('shop.addedToCart'), 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
   }
 
   async function handleAddRelated(productId) {
@@ -224,8 +239,12 @@ export default function ProductDetail() {
 
   async function handleWishlist() {
     if (!user) return navigate('/login');
-    const nowSaved = await toggle(product.id, product);
-    showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
+    try {
+      const nowSaved = await toggle(product.id, product);
+      showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
   }
 
   const REVIEW_PHOTO_LIMIT = 4;

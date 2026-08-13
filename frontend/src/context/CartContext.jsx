@@ -112,8 +112,21 @@ export function CartProvider({ children }) {
     } else {
       const current = readGuestCart();
       const existing = current.find((i) => i.productId === productId);
-      if (existing) existing.qty += qty;
-      else current.push({ productId, qty });
+      const requestedQty = (existing?.qty || 0) + qty;
+      // Clamp against live stock/MOQ, same as updateQty below — without
+      // this, repeatedly clicking "Add to cart" on a low-stock item lets a
+      // guest's cart silently hold more units than actually exist.
+      let nextQty = requestedQty;
+      try {
+        const { product } = await api.get(`/products/${productId}`);
+        const moq = product.moq || 1;
+        nextQty = Math.min(product.stock, Math.max(moq, requestedQty));
+      } catch {
+        // Lookup failed (e.g. offline) — fall back to the raw value;
+        // checkout still re-validates stock server-side either way.
+      }
+      if (existing) existing.qty = nextQty;
+      else current.push({ productId, qty: nextQty });
       writeGuestCart(current);
       const { items: guestItems, subtotal: guestSubtotal } = await enrichGuestItems(current);
       setItems(guestItems);

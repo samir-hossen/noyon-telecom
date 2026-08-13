@@ -108,7 +108,11 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
                 ? tx.order.count({
                     where: {
                       couponCode: coupon.code,
-                      ...(req.user ? { userId: req.user.id } : { guestEmail: shipping.email }),
+                      // Case-insensitive: canViewOrder() already treats guest
+                      // email matching as case-insensitive, but an exact
+                      // match here would let a guest dodge a per-customer
+                      // limit just by varying the casing they type each order.
+                      ...(req.user ? { userId: req.user.id } : { guestEmail: { equals: shipping.email, mode: 'insensitive' } }),
                     },
                   })
                 : Promise.resolve(0),
@@ -174,7 +178,13 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
       });
 
       if (req.user) {
-        await tx.cartItem.deleteMany({ where: { userId: req.user.id } });
+        // Only clear the cart rows that actually became order items — not
+        // the whole cart. `lines` was snapshotted before this transaction
+        // started, so a concurrent add-to-cart (another tab/device) mid-
+        // checkout must survive, not be silently wiped along with it.
+        await tx.cartItem.deleteMany({
+          where: { userId: req.user.id, productId: { in: lines.map((l) => l.productId) } },
+        });
       }
 
       return created;

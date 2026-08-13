@@ -43,8 +43,12 @@ export default function FlashSale({ products, onAdd }) {
       navigate('/login');
       return;
     }
-    const nowSaved = await toggle(product.id, product);
-    showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
+    try {
+      const nowSaved = await toggle(product.id, product);
+      showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   const hrs = Math.max(0, Math.floor(remaining / 3600000));

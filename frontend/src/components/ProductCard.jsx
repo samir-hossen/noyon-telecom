@@ -37,8 +37,12 @@ export default function ProductCard({ product, onAdd }) {
       navigate('/login');
       return;
     }
-    const nowSaved = await toggle(product.id, product);
-    showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
+    try {
+      const nowSaved = await toggle(product.id, product);
+      showToast(nowSaved ? t('card.savedToWishlist') : t('card.removedFromWishlist'), 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   return (
