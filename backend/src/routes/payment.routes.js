@@ -70,7 +70,14 @@ router.use('/sslcommerz/ipn', formParser);
 // higher-value order as paid. Always bind the validated amount/currency back
 // to the order we're about to mark paid.
 function paymentMatchesOrder(validationData, order) {
-  if (!order || order.status === 'paid') return false;
+  // Must still be 'processing' (mirrors loadPayableOrder's own check above),
+  // not just "not yet paid" — otherwise a redelivered/replayed gateway
+  // callback for a since-shipped, -delivered, or -cancelled order (SSLCommerz
+  // supports resending an IPN, and the success_url POST can be resubmitted)
+  // would flip it straight back to 'paid', re-firing the Meta Purchase event
+  // and, for a cancelled order, resurrecting it after its stock was already
+  // restored.
+  if (!order || order.status !== 'processing') return false;
   if (String(validationData.tran_id) !== String(order.id)) return false;
   const paidAmount = Number(validationData.amount ?? validationData.currency_amount);
   if (!Number.isFinite(paidAmount) || Math.abs(paidAmount - order.total) > 0.5) return false;
@@ -102,8 +109,12 @@ router.post('/sslcommerz/success', async (req, res) => {
     order = await prisma.order.findUnique({ where: { id: orderId } });
     const { ok, data } = await validateSslcommerzPayment(valId);
     if (ok && paymentMatchesOrder(data, order)) {
-      await prisma.order.update({
-        where: { id: orderId },
+      // updateMany + a status: 'processing' guard, not a plain update by id
+      // — same atomic re-check as the IPN handler below, closing the race
+      // where the order's status changes between the check above and this
+      // write.
+      await prisma.order.updateMany({
+        where: { id: orderId, status: 'processing' },
         data: { status: 'paid', transactionId: orderId, gatewayValId: valId },
       });
     }
@@ -137,8 +148,12 @@ router.post('/sslcommerz/ipn', async (req, res) => {
     const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
     const { ok, data } = await validateSslcommerzPayment(valId);
     if (ok && paymentMatchesOrder(data, order)) {
+      // Guarded by status: 'processing' (not just "not paid") so a status
+      // change that lands between the paymentMatchesOrder check above and
+      // this write — e.g. an admin cancelling the order in the same instant
+      // — can't still be overwritten back to 'paid'.
       const { count } = await prisma.order.updateMany({
-        where: { id: orderId, status: { not: 'paid' } },
+        where: { id: orderId, status: 'processing' },
         data: { status: 'paid', transactionId: orderId, gatewayValId: valId },
       });
       // Only fire once, on the transition into "paid" — updateMany's count
