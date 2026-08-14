@@ -2142,10 +2142,11 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ---------- Footer cityscape strip (decorative, original artwork) ---------- */
-/* Styled as a city-at-dusk street: dark building silhouettes with small lit
-   (gold) windows against the footer's near-black background — a "Noyon
-   Telecom" office building, a shop with an awning, houses and trees, a road,
-   and a car + scooter that loop continuously along it. */
+/* Flat-vector "city street" scene in the site's own brand-red monochrome
+   palette against the footer's near-black background — a "Noyon Telecom"
+   office building, a shop with an awning, houses, trees, a lamp post and
+   bench, and a car + a pedaling delivery cyclist that loop continuously
+   along the road. */
 .cityscape-strip {
   position: relative;
   width: 100%;
@@ -2166,8 +2167,8 @@ button { font-family: inherit; cursor: pointer; }
   width: 100%;
   height: 100%;
 }
-.cityscape-building { fill: url(#cityscape-building-shade); stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
-.cityscape-accent { fill: var(--berry); }
+.cityscape-building { fill: url(#cityscape-building-shade); stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+.cityscape-accent { fill: var(--sunshine); }
 .cityscape-window { fill: var(--sunshine); opacity: 0.85; }
 .cityscape-label {
   fill: var(--paper);
@@ -2176,7 +2177,7 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 700;
   letter-spacing: 0.04em;
 }
-.cityscape-roof { fill: #2b2f3c; stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
+.cityscape-roof { fill: #4a1522; stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
 .cityscape-door { fill: rgba(255, 255, 255, 0.09); }
 .cityscape-awning-a { fill: var(--berry); }
 .cityscape-awning-b { fill: rgba(251, 241, 236, 0.88); }
@@ -2189,36 +2190,48 @@ button { font-family: inherit; cursor: pointer; }
 }
 .cityscape-trunk { fill: #5b4636; }
 .cityscape-foliage { fill: #33513f; }
+.cityscape-lamp-pole { fill: rgba(255, 255, 255, 0.18); }
+.cityscape-lamp-glow { fill: var(--sunshine); opacity: 0.9; }
+.cityscape-bench { fill: rgba(255, 255, 255, 0.16); }
 .cityscape-road { fill: rgba(255, 255, 255, 0.06); }
 .cityscape-lane { stroke: var(--sunshine); stroke-width: 2; opacity: 0.4; fill: none; }
 
+/* Flat single-tone silhouette for the car — matches the scene's simplified
+   illustration style rather than a shaded/detailed rendering. */
 .cityscape-car {
   position: absolute;
   /* Percentage, not px: the road sits at a fixed proportion of the SVG's
      viewBox (y=190 of 210 = 9.52% from the bottom), and since
      .cityscape-strip's height is aspect-ratio-locked to that same viewBox,
      a percentage `bottom` lands the wheels on the road at any container
-     size. A fixed px value (the previous bug) was tuned for one specific
+     size. A fixed px value (an earlier bug) was tuned for one specific
      rendered height and put the car up near the rooftops at any other. */
-  bottom: 7%;
+  bottom: 6%;
   left: -80px;
+  width: 68px;
   animation: cityscape-drive-car 16s linear infinite;
 }
 .cityscape-car-body { fill: var(--berry); }
-.cityscape-car-glass { fill: rgba(255, 196, 0, 0.35); }
 .cityscape-wheel { fill: #17181c; }
 
-.cityscape-scooter {
+/* Delivery cyclist — a person pedaling a bicycle. The frame/spokes stay as
+   thin stroked lines (a real bike frame IS thin tubes, so this reads
+   correctly here, unlike the earlier scooter attempt which used thin
+   strokes for what should've been a solid body/fairing and ended up
+   looking like scribbles). */
+.cityscape-cyclist {
   position: absolute;
   bottom: 4%;
   left: -60px;
-  width: 54px;
+  width: 56px;
   animation: cityscape-drive-scooter 11s linear infinite;
   animation-delay: -4s;
 }
-.cityscape-scooter-body { fill: var(--sunshine); }
-.cityscape-scooter-box { fill: var(--berry); }
-.cityscape-rider { fill: var(--paper); }
+.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 2.2; }
+.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.cityscape-bike-frame-fill { fill: var(--sunshine); }
+.cityscape-rider { fill: var(--paper); stroke: var(--paper); }
+
 /* Animating `left` (not transform) so the 100% end point is relative to
    .cityscape-strip's actual rendered width — correct at any container size
    without a breakpoint-specific keyframe. Cheap here regardless (two small
