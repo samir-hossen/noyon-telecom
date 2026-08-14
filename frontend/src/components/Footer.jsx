@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
+import CityscapeStrip from './CityscapeStrip.jsx';
 
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
@@ -149,6 +150,8 @@ export default function Footer() {
             </div>
           </a>
         </div>
+
+        <CityscapeStrip />
 
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Noyon Telecom — {t('common.footer.rights')}</span>
