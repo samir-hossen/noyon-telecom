@@ -2170,6 +2170,7 @@ button { font-family: inherit; cursor: pointer; }
 .cityscape-building { fill: url(#cityscape-building-shade); stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
 .cityscape-accent { fill: var(--sunshine); }
 .cityscape-window { fill: var(--sunshine); opacity: 0.85; }
+.cityscape-window-off { fill: rgba(255, 255, 255, 0.08); }
 .cityscape-label {
   fill: var(--paper);
   font-family: var(--font-display);
@@ -2193,8 +2194,15 @@ button { font-family: inherit; cursor: pointer; }
 .cityscape-lamp-pole { fill: rgba(255, 255, 255, 0.18); }
 .cityscape-lamp-glow { fill: var(--sunshine); opacity: 0.9; }
 .cityscape-bench { fill: rgba(255, 255, 255, 0.16); }
+.cityscape-sidewalk { fill: rgba(255, 255, 255, 0.1); }
 .cityscape-road { fill: rgba(255, 255, 255, 0.06); }
 .cityscape-lane { stroke: var(--sunshine); stroke-width: 2; opacity: 0.4; fill: none; }
+.cityscape-moon { fill: #fdf6e3; opacity: 0.95; }
+/* Matches .footer's background (var(--ink)) showing through behind the
+   SVG's empty sky area — offsetting a same-colored circle over part of the
+   moon is the simplest way to carve out a clean crescent shape. */
+.cityscape-moon-shadow { fill: var(--ink); }
+.cityscape-star { fill: var(--paper); opacity: 0.7; }
 
 /* Flat single-tone silhouette for the car — matches the scene's simplified
    illustration style rather than a shaded/detailed rendering. */
@@ -2212,7 +2220,9 @@ button { font-family: inherit; cursor: pointer; }
   animation: cityscape-drive-car 16s linear infinite;
 }
 .cityscape-car-body { fill: var(--berry); }
+.cityscape-car-roof { fill: var(--berry-dark); }
 .cityscape-wheel { fill: #17181c; }
+.cityscape-hubcap { fill: rgba(255, 255, 255, 0.4); }
 
 /* Delivery cyclist — a person pedaling a bicycle. The frame/spokes stay as
    thin stroked lines (a real bike frame IS thin tubes, so this reads
@@ -2230,7 +2240,9 @@ button { font-family: inherit; cursor: pointer; }
 .cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 2.2; }
 .cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .cityscape-bike-frame-fill { fill: var(--sunshine); }
+.cityscape-spoke { fill: none; stroke: var(--sunshine); stroke-width: 1.2; opacity: 0.6; }
 .cityscape-rider { fill: var(--paper); stroke: var(--paper); }
+.cityscape-cap { stroke: var(--berry); }
 
 /* Animating `left` (not transform) so the 100% end point is relative to
    .cityscape-strip's actual rendered width — correct at any container size
