@@ -94,4 +94,16 @@ export async function getActiveCategories(prisma, allCategories) {
   return allCategories.filter((c) => active.has(c));
 }
 
+// Same idea as getActiveCategories, for the Brand pill row — only brands
+// with at least one published product show as a filter option.
+export async function getActiveBrands(prisma, allBrands) {
+  const rows = await prisma.product.findMany({
+    where: { published: true, brand: { not: null } },
+    distinct: ['brand'],
+    select: { brand: true },
+  });
+  const active = new Set(rows.map((r) => r.brand));
+  return allBrands.filter((b) => active.has(b));
+}
+
 export { MAX_LIMIT };

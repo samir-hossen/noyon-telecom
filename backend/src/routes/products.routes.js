@@ -4,7 +4,7 @@ import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeReview, withViewerPricing } from '../utils/serialize.js';
 import { upload, storeUploadedFile } from '../utils/upload.js';
-import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCategories } from '../utils/productQuery.js';
+import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCategories, getActiveBrands } from '../utils/productQuery.js';
 import { setProductCacheControl } from '../utils/cacheControl.js';
 import { getOrSet, invalidateProductCache } from '../utils/cache.js';
 import { searchProductIds, isSearchEngineEnabled } from '../utils/search.js';
@@ -113,7 +113,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
         return res.json({
           products: rows.map((p) => withViewerPricing(serializeProduct(p), req.user)),
           categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
-          brands: ALL_BRANDS,
+          brands: await getOrSet('products:active-brands', 45, () => getActiveBrands(prisma, ALL_BRANDS)),
           total,
           totalPages: Math.max(1, Math.ceil(total / limit)),
         });
