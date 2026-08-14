@@ -2096,7 +2096,18 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 2px 14px -4px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   white-space: nowrap;
-  width: 100%;
+  /* Full-bleed technique: `width: 100%` alone (relative to this element's
+     parent) wasn't reliably spanning the true viewport width in testing —
+     this instead sizes/positions the element relative to the *viewport*
+     itself (100vw + a left/margin trick to re-center it), which is
+     guaranteed correct regardless of what any ancestor's width resolves
+     to. body's `overflow-x: hidden` (see base styles) absorbs the sub-pixel
+     overhang 100vw can have versus the visible viewport when a vertical
+     scrollbar is present. */
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
 }
 .announcement-track {
   display: inline-flex;
@@ -2155,7 +2166,7 @@ button { font-family: inherit; cursor: pointer; }
   width: 100%;
   height: 100%;
 }
-.cityscape-building { fill: #232733; stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
+.cityscape-building { fill: url(#cityscape-building-shade); stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
 .cityscape-accent { fill: var(--berry); }
 .cityscape-window { fill: var(--sunshine); opacity: 0.85; }
 .cityscape-label {
@@ -2183,7 +2194,13 @@ button { font-family: inherit; cursor: pointer; }
 
 .cityscape-car {
   position: absolute;
-  bottom: 30px;
+  /* Percentage, not px: the road sits at a fixed proportion of the SVG's
+     viewBox (y=190 of 210 = 9.52% from the bottom), and since
+     .cityscape-strip's height is aspect-ratio-locked to that same viewBox,
+     a percentage `bottom` lands the wheels on the road at any container
+     size. A fixed px value (the previous bug) was tuned for one specific
+     rendered height and put the car up near the rooftops at any other. */
+  bottom: 7%;
   left: -80px;
   animation: cityscape-drive-car 16s linear infinite;
 }
@@ -2193,12 +2210,15 @@ button { font-family: inherit; cursor: pointer; }
 
 .cityscape-scooter {
   position: absolute;
-  bottom: 22px;
+  bottom: 4%;
   left: -60px;
-  color: var(--sunshine);
+  width: 54px;
   animation: cityscape-drive-scooter 11s linear infinite;
   animation-delay: -4s;
 }
+.cityscape-scooter-body { fill: var(--sunshine); }
+.cityscape-scooter-box { fill: var(--berry); }
+.cityscape-rider { fill: var(--paper); }
 /* Animating `left` (not transform) so the 100% end point is relative to
    .cityscape-strip's actual rendered width — correct at any container size
    without a breakpoint-specific keyframe. Cheap here regardless (two small

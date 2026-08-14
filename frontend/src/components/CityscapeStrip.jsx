@@ -100,6 +100,14 @@ export default function CityscapeStrip() {
   return (
     <div className="cityscape-strip" aria-hidden="true">
       <svg viewBox="0 0 1400 210" preserveAspectRatio="xMidYMax slice" className="cityscape-skyline">
+        <defs>
+          {/* Subtle top-to-bottom shading on every building for a little
+              depth, instead of flat single-tone silhouettes. */}
+          <linearGradient id="cityscape-building-shade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2b303e" />
+            <stop offset="100%" stopColor="#1c1f28" />
+          </linearGradient>
+        </defs>
         <House x={20} w={78} h={70} base={base} />
         <Tree x={118} base={base} />
         <Shop x={140} w={130} h={92} base={base} label="EXPRESS SHOP" />
@@ -128,15 +136,20 @@ export default function CityscapeStrip() {
         </svg>
       </div>
 
+      {/* Delivery scooter — filled silhouettes rather than thin stroked
+          lines, which read as scribbles rather than a bike at this size.
+          Includes a delivery box on the back and a rider, tying into the
+          "Fast Delivery" branding used elsewhere. */}
       <div className="cityscape-scooter">
-        <svg viewBox="0 0 64 40" width="50" height="31" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="32" r="6" />
-          <circle cx="48" cy="32" r="6" />
-          <path d="M12 32h10l6-14h10" />
-          <path d="M28 18h9" />
-          <path d="M38 18l6 14h4" />
-          <path d="M18 10h8l3 5" strokeLinecap="round" />
-          <rect x="44" y="9" width="10" height="7" rx="1.5" />
+        <svg viewBox="0 0 70 42">
+          <circle cx="14" cy="34" r="6.5" className="cityscape-wheel" />
+          <circle cx="54" cy="34" r="6.5" className="cityscape-wheel" />
+          <path d="M12 30 Q10 24 18 23 L46 23 Q52 23 55 29 L55 31 L12 31 Z" className="cityscape-scooter-body" />
+          <rect x="46" y="11" width="4" height="14" rx="1.5" className="cityscape-scooter-body" />
+          <rect x="41" y="9" width="14" height="3.5" rx="1.5" className="cityscape-scooter-body" />
+          <rect x="9" y="14" width="14" height="13" rx="2.5" className="cityscape-scooter-box" />
+          <circle cx="34" cy="8" r="4.5" className="cityscape-rider" />
+          <path d="M27 26 Q28 15 36 13 L44 11 L44 15 L38 17 Q32 19 31 26 Z" className="cityscape-rider" />
         </svg>
       </div>
     </div>
