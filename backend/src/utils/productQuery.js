@@ -77,4 +77,21 @@ export function parsePagination({ page, limit } = {}, { defaultLimit = 12 } = {}
   };
 }
 
+// Which of ALL_CATEGORIES actually have at least one published product right
+// now. The Shop page's category pills only show these — a category with no
+// products yet is hidden rather than offered as a dead-end filter, but
+// automatically reappears the moment an admin adds a published product to
+// it (no code change needed). `allCategories` is passed in rather than
+// imported here to avoid a circular import with routes/products.routes.js,
+// which defines the canonical list.
+export async function getActiveCategories(prisma, allCategories) {
+  const rows = await prisma.$queryRaw`
+    SELECT DISTINCT jsonb_array_elements_text(categories) AS cat
+    FROM "Product"
+    WHERE published = true
+  `;
+  const active = new Set(rows.map((r) => r.cat));
+  return allCategories.filter((c) => active.has(c));
+}
+
 export { MAX_LIMIT };

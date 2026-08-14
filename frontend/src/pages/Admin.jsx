@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
@@ -428,10 +428,30 @@ export default function Admin() {
     setShowForm(true);
   }
 
+  const productNameRef = useRef(null);
+
   function startNew() {
     setEditingId(null);
     setForm(emptyForm);
     setShowForm(true);
+    // The form was already open (e.g. editing) or just mounted — either
+    // way, focus needs to happen after the input exists/re-renders.
+    setTimeout(() => productNameRef.current?.focus(), 0);
+  }
+
+  // Enter key moves to the next field instead of submitting — the form has
+  // ~14 fields, and submitting after the first one (Product name) would be
+  // a data-entry trap, not a shortcut. Textareas keep their normal Enter
+  // (newline) behavior. Only the explicit "Create product"/"Save changes"
+  // button submits.
+  function focusNextFieldOnEnter(e) {
+    if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA') return;
+    e.preventDefault();
+    const focusable = Array.from(
+      e.currentTarget.querySelectorAll('input:not([type=hidden]):not([type=file]), select, textarea')
+    ).filter((el) => !el.disabled && el.offsetParent !== null);
+    const idx = focusable.indexOf(e.target);
+    if (idx > -1 && idx < focusable.length - 1) focusable[idx + 1].focus();
   }
 
   async function onImagesSelected(e) {
@@ -507,6 +527,7 @@ export default function Admin() {
       if (editingId) {
         await api.put(`/admin/products/${editingId}`, payload);
         loadProducts(); // stay on the current page/search
+        setShowForm(false);
       } else {
         await api.post('/admin/products', payload);
         setProductSearchInput('');
@@ -517,10 +538,24 @@ export default function Admin() {
         // contradicting the comment below's promise that it'll be visible.
         setProductStatusFilter('all');
         loadProducts(1, '', 'all'); // new products sort first — jump to page 1 so it's visible
+        // Keep the form open for the next product instead of closing it —
+        // a batch of similar parts (same category/brand/MOQ/warranty,
+        // different name/photo/price) is the common case, and reopening +
+        // re-picking those every time was the slow part. Only the
+        // product-specific fields reset; the "batch" fields carry over.
+        setForm((f) => ({
+          ...emptyForm,
+          categories: f.categories,
+          brand: f.brand,
+          moq: f.moq,
+          dealerPrice: f.dealerPrice,
+          warranty: f.warranty,
+          published: f.published,
+        }));
+        setTimeout(() => productNameRef.current?.focus(), 0);
       }
-      setShowForm(false);
       loadAuditLogs();
-      showToast(editingId ? 'Product updated' : 'Product created', 'success');
+      showToast(editingId ? 'Product updated' : 'Product created — ready for the next one', 'success');
     } catch (err) {
       setError(err.message);
     }
@@ -823,12 +858,12 @@ export default function Admin() {
           </form>
 
           {showForm && (
-            <form onSubmit={onSubmit} className="form-panel wide" style={{ marginBottom: 30 }}>
+            <form onSubmit={onSubmit} onKeyDown={focusNextFieldOnEnter} className="form-panel wide" style={{ marginBottom: 30 }}>
               {error && <div className="form-error">{error}</div>}
               <div className="field-row">
                 <div className="field">
                   <label>Product name</label>
-                  <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <input required ref={productNameRef} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                 </div>
                 <div className="field">
                   <label>Categories</label>
