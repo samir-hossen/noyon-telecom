@@ -144,7 +144,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     res.json({
       products: rows.map((p) => withViewerPricing(serializeProduct(p), req.user)),
       categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
-      brands: ALL_BRANDS,
+      brands: await getOrSet('products:active-brands', 45, () => getActiveBrands(prisma, ALL_BRANDS)),
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
     });
