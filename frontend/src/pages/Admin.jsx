@@ -1033,6 +1033,7 @@ export default function Admin() {
                   <tr>
                     <th>Product</th>
                     <th>Category</th>
+                    <th>Brand</th>
                     <th>Price</th>
                     <th>Stock</th>
                     <th></th>
@@ -1054,6 +1055,13 @@ export default function Admin() {
                         {(p.categories && p.categories.length ? p.categories : [p.category]).join(', ')}
                         {p.images && p.images.length > 1 && (
                           <span style={{ marginLeft: 6, fontSize: '0.7rem', color: '#9a8f8a' }}>· {p.images.length} photos</span>
+                        )}
+                      </td>
+                      <td data-label="Brand">
+                        {p.brand ? p.brand : (
+                          <span style={{ color: '#9a8f8a', fontStyle: 'italic' }} title="No brand set — this product won't show up when a customer filters the Shop page by brand.">
+                            — not set —
+                          </span>
                         )}
                       </td>
                       <td data-label="Price">{formatPrice(p.price)}</td>
