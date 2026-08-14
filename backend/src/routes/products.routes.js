@@ -20,7 +20,10 @@ export const ALL_CATEGORIES = [
   'Repair Tools', 'Accessories',
 ];
 
-const ALL_BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
+const ALL_BRANDS = [
+  'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
+  'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
+];
 
 // Powers the homepage's five product rails in ONE round trip, with each
 // section computed in the database instead of the frontend fetching the

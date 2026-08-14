@@ -11,7 +11,10 @@ const ALL_CATEGORIES = [
   'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
   'Repair Tools', 'Accessories',
 ];
-const ALL_BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
+const ALL_BRANDS = [
+  'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
+  'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
+];
 const emptyForm = {
   name: '', categories: ['Display'], price: '', compareAt: '', stock: '', images: [], desc: '',
   sku: '', brand: '', compatibleModels: '', moq: '1', dealerPrice: '', warranty: '', published: true,
