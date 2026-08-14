@@ -2085,3 +2085,33 @@ button { font-family: inherit; cursor: pointer; }
 @media (max-width: 900px) {
   .sticky-search-bar { top: 0; }
 }
+
+/* ---------- Homepage announcement bar (admin-editable, Admin > Settings) ---------- */
+.announcement-bar {
+  background: var(--berry-tint);
+  border-top: 1px solid var(--berry);
+  border-bottom: 1px solid var(--berry);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.announcement-track {
+  display: inline-flex;
+  width: max-content;
+  animation: announcement-scroll 26s linear infinite;
+  will-change: transform;
+}
+.announcement-text {
+  padding: 10px 48px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--berry-dark);
+  white-space: nowrap;
+}
+@keyframes announcement-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .announcement-track { animation: none; }
+  .announcement-bar { overflow-x: auto; }
+}

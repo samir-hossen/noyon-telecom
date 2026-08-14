@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import HeroCarousel from '../components/HeroCarousel.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import PartFinder from '../components/PartFinder.jsx';
@@ -72,6 +73,7 @@ export default function Home() {
 
   return (
     <div>
+      <AnnouncementBar />
       <div className="container">
         <HeroCarousel />
         <FeatureStrip />

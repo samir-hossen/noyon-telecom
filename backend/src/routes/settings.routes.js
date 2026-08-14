@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDeliveryFee, getOnlinePaymentEnabled } from '../utils/settings.js';
+import { getDeliveryFee, getOnlinePaymentEnabled, getAnnouncement } from '../utils/settings.js';
 
 const router = Router();
 
@@ -10,8 +10,12 @@ const router = Router();
 router.get('/public', async (req, res, next) => {
   try {
     res.set('Cache-Control', 'public, max-age=60');
-    const [deliveryFee, onlinePaymentEnabled] = await Promise.all([getDeliveryFee(), getOnlinePaymentEnabled()]);
-    res.json({ deliveryFee, onlinePaymentEnabled });
+    const [deliveryFee, onlinePaymentEnabled, announcement] = await Promise.all([
+      getDeliveryFee(),
+      getOnlinePaymentEnabled(),
+      getAnnouncement(),
+    ]);
+    res.json({ deliveryFee, onlinePaymentEnabled, announcement });
   } catch (err) {
     next(err);
   }

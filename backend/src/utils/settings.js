@@ -53,3 +53,36 @@ export async function setOnlinePaymentEnabled(value) {
   cache.del('settings:onlinePaymentEnabled');
   return enabled;
 }
+
+// Scrolling announcement bar on the homepage (delivery/return policy
+// notices etc.) — admin-editable text, same reasoning as the settings
+// above: previously this kind of notice would've had to be hardcoded into
+// Home.jsx and redeployed every time the wording changed.
+export async function getAnnouncement() {
+  return getOrSet('settings:announcement', 60, async () => {
+    const [textRow, enabledRow] = await Promise.all([
+      prisma.setting.findUnique({ where: { key: 'announcementText' } }),
+      prisma.setting.findUnique({ where: { key: 'announcementEnabled' } }),
+    ]);
+    return { text: textRow?.value || '', enabled: enabledRow?.value === 'true' };
+  });
+}
+
+export async function setAnnouncement({ text, enabled }) {
+  const clean = String(text ?? '').slice(0, 500).trim();
+  const on = !!enabled;
+  await prisma.$transaction([
+    prisma.setting.upsert({
+      where: { key: 'announcementText' },
+      create: { key: 'announcementText', value: clean },
+      update: { value: clean },
+    }),
+    prisma.setting.upsert({
+      where: { key: 'announcementEnabled' },
+      create: { key: 'announcementEnabled', value: String(on) },
+      update: { value: String(on) },
+    }),
+  ]);
+  cache.del('settings:announcement');
+  return { text: clean, enabled: on };
+}

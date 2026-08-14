@@ -56,6 +56,10 @@ export default function Admin() {
   const [sslcommerzConfigured, setSslcommerzConfigured] = useState(true); // avoid a false warning flash before load
   const [savingOnlinePayment, setSavingOnlinePayment] = useState(false);
 
+  const [announcementText, setAnnouncementText] = useState('');
+  const [announcementEnabled, setAnnouncementEnabled] = useState(false);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+
   const [banners, setBanners] = useState([]);
   const [bannerUploading, setBannerUploading] = useState(false);
 
@@ -159,6 +163,8 @@ export default function Admin() {
       setDeliveryFeeInput(String(d.deliveryFee));
       setOnlinePaymentEnabled(!!d.onlinePaymentEnabled);
       setSslcommerzConfigured(!!d.sslcommerzConfigured);
+      setAnnouncementText(d.announcement?.text || '');
+      setAnnouncementEnabled(!!d.announcement?.enabled);
     }).catch((err) => showToast(err.message, 'error'));
   }
   function loadBanners() {
@@ -230,6 +236,22 @@ export default function Admin() {
       showToast(err.message, 'error');
     } finally {
       setSavingOnlinePayment(false);
+    }
+  }
+
+  async function onSaveAnnouncement(e) {
+    e.preventDefault();
+    setSavingAnnouncement(true);
+    try {
+      const d = await api.put('/admin/settings', { announcement: { text: announcementText, enabled: announcementEnabled } });
+      setAnnouncementText(d.announcement.text);
+      setAnnouncementEnabled(d.announcement.enabled);
+      showToast('Announcement updated', 'success');
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSavingAnnouncement(false);
     }
   }
 
@@ -1748,6 +1770,35 @@ export default function Admin() {
               <input type="checkbox" checked={onlinePaymentEnabled} disabled={savingOnlinePayment} onChange={onToggleOnlinePayment} />
               Enable online payment at checkout
             </label>
+          </div>
+
+          <div className="form-panel wide" style={{ marginTop: 24 }}>
+            <h3 style={{ marginBottom: 10 }}>Homepage announcement</h3>
+            <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '0.85rem' }}>
+              A scrolling notice bar at the top of the homepage — delivery/return policy, a temporary notice, etc.
+              Takes effect immediately, no deploy needed.
+            </p>
+            <form onSubmit={onSaveAnnouncement}>
+              <div className="field">
+                <label>Announcement text</label>
+                <textarea
+                  rows={3}
+                  maxLength={500}
+                  value={announcementText}
+                  onChange={(e) => setAnnouncementText(e.target.value)}
+                  placeholder="e.g. ডেলিভারি চার্জটা অগ্রিম পেমেন্ট করতে হবে, বাকি টাকা পণ্য হাতে পেয়ে..."
+                />
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <input type="checkbox" checked={announcementEnabled} onChange={(e) => setAnnouncementEnabled(e.target.checked)} />
+                Show on homepage
+              </label>
+              <div>
+                <button className="btn btn-berry" disabled={savingAnnouncement}>
+                  {savingAnnouncement ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
