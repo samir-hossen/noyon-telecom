@@ -2243,6 +2243,7 @@ button { font-family: inherit; cursor: pointer; }
 .cityscape-spoke { fill: none; stroke: var(--sunshine); stroke-width: 1.2; opacity: 0.6; }
 .cityscape-rider { fill: var(--paper); stroke: var(--paper); }
 .cityscape-cap { stroke: var(--berry); }
+.cityscape-bag { fill: var(--berry); }
 
 /* Animating `left` (not transform) so the 100% end point is relative to
    .cityscape-strip's actual rendered width — correct at any container size
