@@ -2087,31 +2087,45 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ---------- Homepage announcement bar (admin-editable, Admin > Settings) ---------- */
+/* Same dark gradient + gold-line language as .hero, so this reads as part
+   of the premium brand rather than a bolted-on notice strip. */
 .announcement-bar {
-  background: var(--berry-tint);
-  border-top: 1px solid var(--berry);
-  border-bottom: 1px solid var(--berry);
+  background: linear-gradient(90deg, #1c1e24 0%, var(--ink) 55%, #2a0107 100%);
+  border-top: 1px solid var(--sunshine);
+  border-bottom: 1px solid var(--sunshine);
+  box-shadow: 0 2px 14px -4px rgba(0, 0, 0, 0.4);
   overflow: hidden;
   white-space: nowrap;
+  width: 100%;
 }
 .announcement-track {
   display: inline-flex;
   width: max-content;
-  animation: announcement-scroll 26s linear infinite;
+  animation: announcement-scroll 30s linear infinite;
   will-change: transform;
 }
 .announcement-text {
-  padding: 10px 48px;
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 0;
   font-weight: 600;
-  font-size: 0.88rem;
-  color: var(--berry-dark);
+  font-size: 0.84rem;
+  letter-spacing: 0.02em;
+  color: var(--paper);
   white-space: nowrap;
+}
+/* A gold dot between repeats of the text, so the loop point reads as
+   intentional spacing rather than the message abruptly restarting. */
+.announcement-text::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sunshine);
+  margin: 0 40px;
 }
 @keyframes announcement-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .announcement-track { animation: none; }
-  .announcement-bar { overflow-x: auto; }
 }
