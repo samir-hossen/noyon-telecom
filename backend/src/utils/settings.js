@@ -29,3 +29,27 @@ export async function setDeliveryFee(value) {
   cache.del('settings:deliveryFee');
   return fee;
 }
+
+// Lets an admin turn the SSLCommerz online-payment option on checkout on/off
+// without a code deploy — previously this was a hardcoded `false` constant
+// in Checkout.jsx (ONLINE_PAYMENT_ENABLED) that had to be flipped in code
+// and redeployed once the gateway credentials were ready. Defaults to false
+// (opt-in) so a fresh deploy never shows a payment method before an admin
+// has actually verified the gateway works.
+export async function getOnlinePaymentEnabled() {
+  return getOrSet('settings:onlinePaymentEnabled', 300, async () => {
+    const row = await prisma.setting.findUnique({ where: { key: 'onlinePaymentEnabled' } });
+    return row?.value === 'true';
+  });
+}
+
+export async function setOnlinePaymentEnabled(value) {
+  const enabled = !!value;
+  await prisma.setting.upsert({
+    where: { key: 'onlinePaymentEnabled' },
+    create: { key: 'onlinePaymentEnabled', value: String(enabled) },
+    update: { value: String(enabled) },
+  });
+  cache.del('settings:onlinePaymentEnabled');
+  return enabled;
+}

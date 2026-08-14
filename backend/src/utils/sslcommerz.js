@@ -9,8 +9,12 @@
 const IS_LIVE = process.env.SSLCOMMERZ_IS_LIVE === 'true';
 const BASE_URL = IS_LIVE ? 'https://securepay.sslcommerz.com' : 'https://sandbox.sslcommerz.com';
 
+export function isSslcommerzConfigured() {
+  return !!(process.env.SSLCOMMERZ_STORE_ID && process.env.SSLCOMMERZ_STORE_PASSWORD);
+}
+
 function assertConfigured() {
-  if (!process.env.SSLCOMMERZ_STORE_ID || !process.env.SSLCOMMERZ_STORE_PASSWORD) {
+  if (!isSslcommerzConfigured()) {
     throw new Error(
       'Online payment is not configured yet. Set SSLCOMMERZ_STORE_ID and SSLCOMMERZ_STORE_PASSWORD in backend/.env ' +
         '(get free sandbox credentials at https://developer.sslcommerz.com/registration/).'

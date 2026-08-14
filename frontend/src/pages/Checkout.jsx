@@ -9,11 +9,6 @@ import { usePageMeta } from '../hooks/usePageTitle';
 import { trackBeginCheckout } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
 
-// Online gateway isn't configured yet — hide it from checkout so no one can
-// select it and land on a guaranteed-fail payment. Flip back to true once
-// the gateway is set up.
-const ONLINE_PAYMENT_ENABLED = false;
-
 export default function Checkout() {
   const { items, subtotal, refresh, clearGuestCart, isGuestCart } = useCart();
   const { user } = useAuth();
@@ -34,10 +29,18 @@ export default function Checkout() {
   // 150 matches the backend's DEFAULT_DELIVERY_FEE (see utils/settings.js)
   // — used only until the real value loads below.
   const [deliveryFee, setDeliveryFee] = useState(150);
+  // Whether the "Online Payment" option shows at all — admin-controlled
+  // (Admin > Settings), defaults to hidden (false) until that loads, so a
+  // slow/failed fetch never briefly shows a payment method that isn't
+  // actually ready.
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
   useEffect(() => {
     api
       .get('/settings/public')
-      .then((d) => setDeliveryFee(d.deliveryFee))
+      .then((d) => {
+        setDeliveryFee(d.deliveryFee);
+        setOnlinePaymentEnabled(!!d.onlinePaymentEnabled);
+      })
       .catch(() => {});
   }, []);
   const shipping = deliveryFee;
@@ -187,7 +190,7 @@ export default function Checkout() {
                 <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{t('checkout.codSub')}</div>
               </div>
             </label>
-            {ONLINE_PAYMENT_ENABLED && (
+            {onlinePaymentEnabled && (
               <label className={`pay-option ${method === 'online' ? 'active' : ''}`}>
                 <input type="radio" name="payment-method" checked={method === 'online'} onChange={() => setMethod('online')} />
                 <div>

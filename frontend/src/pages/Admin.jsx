@@ -49,6 +49,9 @@ export default function Admin() {
 
   const [deliveryFeeInput, setDeliveryFeeInput] = useState('150');
   const [savingDeliveryFee, setSavingDeliveryFee] = useState(false);
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
+  const [sslcommerzConfigured, setSslcommerzConfigured] = useState(true); // avoid a false warning flash before load
+  const [savingOnlinePayment, setSavingOnlinePayment] = useState(false);
 
   const [banners, setBanners] = useState([]);
   const [bannerUploading, setBannerUploading] = useState(false);
@@ -149,7 +152,11 @@ export default function Admin() {
     api.get('/admin/audit-logs').then((d) => setAuditLogs(d.logs)).catch((err) => showToast(err.message, 'error'));
   }
   function loadSettings() {
-    api.get('/admin/settings').then((d) => setDeliveryFeeInput(String(d.deliveryFee))).catch((err) => showToast(err.message, 'error'));
+    api.get('/admin/settings').then((d) => {
+      setDeliveryFeeInput(String(d.deliveryFee));
+      setOnlinePaymentEnabled(!!d.onlinePaymentEnabled);
+      setSslcommerzConfigured(!!d.sslcommerzConfigured);
+    }).catch((err) => showToast(err.message, 'error'));
   }
   function loadBanners() {
     api.get('/admin/banners').then((d) => setBanners(d.banners)).catch((err) => showToast(err.message, 'error'));
@@ -205,6 +212,21 @@ export default function Admin() {
       showToast(err.message, 'error');
     } finally {
       setSavingDeliveryFee(false);
+    }
+  }
+
+  async function onToggleOnlinePayment(e) {
+    const next = e.target.checked;
+    setSavingOnlinePayment(true);
+    try {
+      const d = await api.put('/admin/settings', { onlinePaymentEnabled: next });
+      setOnlinePaymentEnabled(!!d.onlinePaymentEnabled);
+      showToast(d.onlinePaymentEnabled ? 'Online payment enabled' : 'Online payment disabled', 'success');
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSavingOnlinePayment(false);
     }
   }
 
@@ -1704,6 +1726,25 @@ export default function Admin() {
                 {savingDeliveryFee ? 'Saving…' : 'Save'}
               </button>
             </form>
+          </div>
+
+          <div className="form-panel wide" style={{ marginTop: 24 }}>
+            <h3 style={{ marginBottom: 10 }}>Online payment (SSLCommerz)</h3>
+            <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '0.85rem' }}>
+              Shows "Online Payment" as a checkout option alongside Cash on Delivery. Takes effect immediately —
+              no deploy needed.
+            </p>
+            {!sslcommerzConfigured && (
+              <p style={{ background: '#fdf0e6', color: '#a15c00', padding: '10px 12px', borderRadius: 'var(--radius-sm)', fontSize: '0.82rem', marginBottom: 14 }}>
+                SSLCOMMERZ_STORE_ID / SSLCOMMERZ_STORE_PASSWORD aren't set on the server yet — turning this on will
+                show the option, but customers who pick it will hit a payment error until those are added in the
+                Render dashboard's Environment settings.
+              </p>
+            )}
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <input type="checkbox" checked={onlinePaymentEnabled} disabled={savingOnlinePayment} onChange={onToggleOnlinePayment} />
+              Enable online payment at checkout
+            </label>
           </div>
         </div>
       )}

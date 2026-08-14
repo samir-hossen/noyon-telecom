@@ -11,7 +11,8 @@ import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '..
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
 import { invalidateProductCache, cache } from '../utils/cache.js';
-import { getDeliveryFee, setDeliveryFee } from '../utils/settings.js';
+import { getDeliveryFee, setDeliveryFee, getOnlinePaymentEnabled, setOnlinePaymentEnabled } from '../utils/settings.js';
+import { isSslcommerzConfigured } from '../utils/sslcommerz.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
 
 const router = Router();
@@ -968,7 +969,15 @@ router.post('/backup/restore', requireCsrf, async (req, res, next) => {
 
 router.get('/settings', async (req, res, next) => {
   try {
-    res.json({ deliveryFee: await getDeliveryFee() });
+    res.json({
+      deliveryFee: await getDeliveryFee(),
+      onlinePaymentEnabled: await getOnlinePaymentEnabled(),
+      // Whether SSLCOMMERZ_STORE_ID/PASSWORD are actually set in this
+      // deploy's environment — surfaced so the admin UI can warn before
+      // they flip the toggle on with no real gateway behind it (checkout
+      // would just fail with sslcommerz.js's "not configured yet" error).
+      sslcommerzConfigured: isSslcommerzConfigured(),
+    });
   } catch (err) {
     next(err);
   }
@@ -976,11 +985,19 @@ router.get('/settings', async (req, res, next) => {
 
 router.put('/settings', requireCsrf, async (req, res, next) => {
   try {
-    const { deliveryFee } = req.body;
-    if (deliveryFee === undefined) return res.status(400).json({ error: 'deliveryFee is required.' });
-    const fee = await setDeliveryFee(deliveryFee);
-    await logAdminAction(req.user, 'settings.update', { deliveryFee: fee });
-    res.json({ deliveryFee: fee });
+    const { deliveryFee, onlinePaymentEnabled } = req.body;
+    const result = {};
+    if (deliveryFee !== undefined) {
+      result.deliveryFee = await setDeliveryFee(deliveryFee);
+    }
+    if (onlinePaymentEnabled !== undefined) {
+      result.onlinePaymentEnabled = await setOnlinePaymentEnabled(onlinePaymentEnabled);
+    }
+    if (Object.keys(result).length === 0) {
+      return res.status(400).json({ error: 'Nothing to update.' });
+    }
+    await logAdminAction(req.user, 'settings.update', result);
+    res.json(result);
   } catch (err) {
     if (err.message === 'Delivery fee must be a number.') return res.status(400).json({ error: err.message });
     next(err);
