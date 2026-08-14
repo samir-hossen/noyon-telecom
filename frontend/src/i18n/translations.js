@@ -639,7 +639,6 @@ const translations = {
     'terms.s10Title': '10. Contact us',
     'terms.s10BodyPre': 'Questions about these terms? Visit our',
     'terms.s10Link': 'Contact page',
-    'terms.legalNote': 'This is a template for a demo store. Have a legal professional review and adapt these terms before launching a real business.',
 
     'privacy.pageTitle': 'Privacy Policy',
     'privacy.pageMeta': 'Learn how Noyon Telecom collects, uses, and protects your personal data.',
@@ -663,7 +662,6 @@ const translations = {
     'privacy.s6Body': 'We use minimal, essential cookies/local storage to keep you signed in and remember your cart. We do not use third-party advertising trackers beyond what is disclosed in this policy.',
     'privacy.s7Title': '7. Contact us',
     'privacy.s7BodyPre': 'If you have questions about this policy or how your data is handled, please reach out via our',
-    'privacy.legalNote': "This is a template policy for a demo store. Before going live, have this reviewed by a legal professional to ensure compliance with the laws applicable in your country (e.g. Bangladesh's Digital Security Act / Consumer Rights Protection Act, or GDPR if serving EU customers).",
 
     'refund.pageTitle': 'Refund & Return Policy',
     'refund.pageMeta': "Read Noyon Telecom's policy on refunds, returns, and exchanges.",
@@ -692,7 +690,6 @@ const translations = {
     'refund.s7Title': '7. Questions',
     'refund.s7BodyPre': 'Need help with a return? Reach out via our',
     'refund.s7BodyPost': "and we'll be happy to assist.",
-    'refund.legalNote': 'This is a template policy for a demo store. Adjust the return window, non-returnable items, and refund method to match your actual business practices and local consumer protection law before launching.',
 
     'notFound.title': 'Page Not Found',
     'notFound.message': "This page doesn't exist.",
@@ -934,7 +931,6 @@ const translations = {
     'terms.s10Title': '১০. যোগাযোগ করুন',
     'terms.s10BodyPre': 'এই শর্তাবলী নিয়ে প্রশ্ন আছে? আমাদের',
     'terms.s10Link': 'যোগাযোগ পেজ',
-    'terms.legalNote': 'এটি একটি ডেমো স্টোরের টেমপ্লেট। আসল ব্যবসা শুরু করার আগে একজন আইনি পেশাজীবীকে দিয়ে এই শর্তাবলী পর্যালোচনা ও সংশোধন করিয়ে নিন।',
 
     'privacy.pageTitle': 'প্রাইভেসি পলিসি',
     'privacy.pageMeta': 'Noyon Telecom কীভাবে আপনার ব্যক্তিগত তথ্য সংগ্রহ, ব্যবহার ও সুরক্ষা করে তা জানুন।',
@@ -958,7 +954,6 @@ const translations = {
     'privacy.s6Body': 'আপনাকে সাইন ইন রাখতে এবং কার্ট মনে রাখতে আমরা ন্যূনতম, প্রয়োজনীয় কুকিজ/লোকাল স্টোরেজ ব্যবহার করি। এই পলিসিতে প্রকাশিত ছাড়া আমরা তৃতীয় পক্ষের বিজ্ঞাপন ট্র্যাকার ব্যবহার করি না।',
     'privacy.s7Title': '৭. যোগাযোগ করুন',
     'privacy.s7BodyPre': 'এই পলিসি বা আপনার তথ্য কীভাবে পরিচালিত হয় সে সম্পর্কে প্রশ্ন থাকলে, আমাদের',
-    'privacy.legalNote': 'এটি একটি ডেমো স্টোরের টেমপ্লেট পলিসি। লাইভ করার আগে, আপনার দেশে প্রযোজ্য আইনের (যেমন, বাংলাদেশের ডিজিটাল সিকিউরিটি অ্যাক্ট / কনজিউমার রাইটস প্রোটেকশন অ্যাক্ট, অথবা EU গ্রাহকদের জন্য GDPR) সাথে সামঞ্জস্য নিশ্চিত করতে একজন আইনি পেশাজীবীকে দিয়ে এটি পর্যালোচনা করিয়ে নিন।',
 
     'refund.pageTitle': 'রিফান্ড ও রিটার্ন পলিসি',
     'refund.pageMeta': 'রিফান্ড, রিটার্ন ও এক্সচেঞ্জ নিয়ে Noyon Telecom-এর পলিসি পড়ুন।',
@@ -987,7 +982,6 @@ const translations = {
     'refund.s7Title': '৭. প্রশ্ন',
     'refund.s7BodyPre': 'রিটার্ন নিয়ে সাহায্য দরকার? আমাদের',
     'refund.s7BodyPost': 'এর মাধ্যমে যোগাযোগ করুন, আমরা সাহায্য করতে পেরে খুশি হব।',
-    'refund.legalNote': 'এটি একটি ডেমো স্টোরের টেমপ্লেট পলিসি। লঞ্চ করার আগে রিটার্নের সময়সীমা, ফেরতযোগ্য নয় এমন পণ্য, এবং রিফান্ড পদ্ধতি আপনার প্রকৃত ব্যবসায়িক অনুশীলন ও স্থানীয় ভোক্তা সুরক্ষা আইনের সাথে মিলিয়ে সামঞ্জস্য করুন।',
     'nav.brands': 'ব্র্যান্ড অনুযায়ী কিনুন',
     'nav.search': 'ব্র্যান্ড, মডেল, SKU দিয়ে খুঁজুন...',
     'nav.wishlist': 'উইশলিস্ট',

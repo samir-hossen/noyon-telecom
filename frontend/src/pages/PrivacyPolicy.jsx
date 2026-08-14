@@ -45,10 +45,6 @@ export default function PrivacyPolicy() {
           {t('privacy.s7BodyPre')}{' '}
           <Link to="/contact">{t('terms.s10Link')}</Link>.
         </p>
-
-        <p className="legal-note">
-          {t('privacy.legalNote')}
-        </p>
       </div>
     </div>
   );

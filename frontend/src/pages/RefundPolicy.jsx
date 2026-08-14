@@ -49,10 +49,6 @@ export default function RefundPolicy() {
         <p>
           {t('refund.s7BodyPre')} <Link to="/contact">{t('terms.s10Link')}</Link> {t('refund.s7BodyPost')}
         </p>
-
-        <p className="legal-note">
-          {t('refund.legalNote')}
-        </p>
       </div>
     </div>
   );

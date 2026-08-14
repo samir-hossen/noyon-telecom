@@ -53,10 +53,6 @@ export default function Terms() {
         <p>
           {t('terms.s10BodyPre')} <Link to="/contact">{t('terms.s10Link')}</Link>.
         </p>
-
-        <p className="legal-note">
-          {t('terms.legalNote')}
-        </p>
       </div>
     </div>
   );
