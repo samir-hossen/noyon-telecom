@@ -10,7 +10,7 @@ import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js
 import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '../utils/totp.js';
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
-import { invalidateProductCache } from '../utils/cache.js';
+import { invalidateProductCache, cache } from '../utils/cache.js';
 import { getDeliveryFee, setDeliveryFee } from '../utils/settings.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
 
@@ -983,6 +983,84 @@ router.put('/settings', requireCsrf, async (req, res, next) => {
     res.json({ deliveryFee: fee });
   } catch (err) {
     if (err.message === 'Delivery fee must be a number.') return res.status(400).json({ error: err.message });
+    next(err);
+  }
+});
+
+// ---------- Homepage banners ----------
+// Admin-managed hero carousel slides (see prisma schema Banner model) —
+// lets the storefront hero images/links be changed without a code deploy.
+// `active` banners are cached publicly for 60s (see /api/banners in
+// public.routes.js or wherever it's mounted); every write here clears that
+// cache immediately so an admin edit shows up right away, same convention
+// as invalidateProductCache().
+
+router.get('/banners', async (req, res, next) => {
+  try {
+    const banners = await prisma.banner.findMany({ orderBy: { sortOrder: 'asc' } });
+    res.json({ banners });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/banners', requireCsrf, async (req, res, next) => {
+  try {
+    const { imageUrl, linkUrl, altText, sortOrder, active } = req.body;
+    if (!imageUrl || !imageUrl.trim()) return res.status(400).json({ error: 'imageUrl is required.' });
+    const banner = await prisma.banner.create({
+      data: {
+        imageUrl: imageUrl.trim(),
+        linkUrl: linkUrl?.trim() || null,
+        altText: altText?.trim() || null,
+        sortOrder: Number.isFinite(Number(sortOrder)) ? Math.trunc(Number(sortOrder)) : 0,
+        active: active !== undefined ? !!active : true,
+      },
+    });
+    cache.del('banners:active');
+    await logAdminAction(req.user, 'banner.create', { bannerId: banner.id });
+    res.status(201).json({ banner });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/banners/:id', requireCsrf, async (req, res, next) => {
+  try {
+    const existing = await prisma.banner.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Banner not found.' });
+    const { imageUrl, linkUrl, altText, sortOrder, active } = req.body;
+    if (imageUrl !== undefined && !imageUrl.trim()) return res.status(400).json({ error: 'imageUrl cannot be empty.' });
+    const banner = await prisma.banner.update({
+      where: { id: req.params.id },
+      data: {
+        ...(imageUrl !== undefined && { imageUrl: imageUrl.trim() }),
+        ...(linkUrl !== undefined && { linkUrl: linkUrl?.trim() || null }),
+        ...(altText !== undefined && { altText: altText?.trim() || null }),
+        ...(sortOrder !== undefined && { sortOrder: Math.trunc(Number(sortOrder)) || 0 }),
+        ...(active !== undefined && { active: !!active }),
+      },
+    });
+    cache.del('banners:active');
+    await logAdminAction(req.user, 'banner.update', { bannerId: banner.id });
+    res.json({ banner });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/banners/:id', requireCsrf, async (req, res, next) => {
+  try {
+    const existing = await prisma.banner.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Banner not found.' });
+    await prisma.banner.delete({ where: { id: req.params.id } });
+    // Best-effort — a banner image that fails to delete from Cloudinary
+    // just becomes an orphaned file there, not a broken banner list.
+    deleteStoredImage(existing.imageUrl).catch(() => {});
+    cache.del('banners:active');
+    await logAdminAction(req.user, 'banner.delete', { bannerId: req.params.id });
+    res.json({ ok: true });
+  } catch (err) {
     next(err);
   }
 });

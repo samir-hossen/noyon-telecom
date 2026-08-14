@@ -340,3 +340,19 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// Homepage hero carousel slides, admin-managed. Previously the hero images
+// were a hardcoded array in HeroCarousel.jsx — changing a banner meant
+// editing code and redeploying the frontend. `sortOrder` controls slide
+// order (lowest first); `active` lets an admin temporarily hide a slide
+// without deleting it (and losing its image/link/alt text).
+model Banner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  linkUrl   String?
+  altText   String?
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

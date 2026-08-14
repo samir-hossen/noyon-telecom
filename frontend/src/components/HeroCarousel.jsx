@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { api } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -66,16 +67,37 @@ export default function HeroCarousel() {
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef(null);
 
+  // Admin-uploaded banners (see Admin > Banners) override the hardcoded
+  // SLIDES above when present. Starts as [] (not null) so the hero renders
+  // immediately with the self-hosted SVG slides — this fetch never blocks
+  // the hero's first paint/LCP; if banners load in afterwards, the
+  // carousel swaps over to them.
+  const [banners, setBanners] = useState([]);
   useEffect(() => {
-    if (paused) return;
+    let current = true;
+    api.get('/banners').then((d) => {
+      if (current && d.banners?.length) setBanners(d.banners);
+    }).catch(() => {});
+    return () => { current = false; };
+  }, []);
+
+  const useAdminBanners = banners.length > 0;
+  const slideCount = useAdminBanners ? banners.length : SLIDES.length;
+
+  useEffect(() => {
+    if (index >= slideCount) setIndex(0);
+  }, [slideCount, index]);
+
+  useEffect(() => {
+    if (paused || slideCount <= 1) return;
     const timer = setInterval(() => {
-      setIndex((i) => (i + 1) % SLIDES.length);
+      setIndex((i) => (i + 1) % slideCount);
     }, AUTO_MS);
     return () => clearInterval(timer);
-  }, [paused]);
+  }, [paused, slideCount]);
 
   function goTo(i) {
-    setIndex((i + SLIDES.length) % SLIDES.length);
+    setIndex((i + slideCount) % slideCount);
   }
 
   function onTouchStart(e) {
@@ -98,42 +120,13 @@ export default function HeroCarousel() {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <div className="hero-track" style={{ transform: `translateX(-${index * 100}%)` }}>
-        {SLIDES.map((s, i) => (
-          <div className="hero-grid" key={i} aria-hidden={i !== index}>
-            <div className="hero-copy">
-              <span className="eyebrow">{t(s.eyebrowKey)}</span>
-              <h1 className="hero-title">
-                {t(s.titleTopKey)}
-                <br />
-                <em>{t(s.titleEmKey)}</em> {t(s.titleRestKey)}
-              </h1>
-              <p className="hero-sub">{t(s.subKey)}</p>
-              <div className="hero-badges">
-                <span className="hero-badge">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 4 6v6c0 4.5 3.2 7.7 8 9 4.8-1.3 8-4.5 8-9V6l-8-3Z" strokeLinejoin="round" /></svg>
-                  {t('hero.badge.original')}
-                </span>
-                <span className="hero-badge">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 7h13v9H2z" strokeLinejoin="round" /><path d="M15 10h4l3 3v3h-7z" strokeLinejoin="round" /><circle cx="6.5" cy="18" r="1.5" /><circle cx="17.5" cy="18" r="1.5" /></svg>
-                  {t('hero.badge.delivery')}
-                </span>
-                <span className="hero-badge">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 3 4 6v6c0 4.5 3.2 7.7 8 9 4.8-1.3 8-4.5 8-9V6l-8-3Z" strokeLinejoin="round" /></svg>
-                  {t('hero.badge.warranty')}
-                </span>
-              </div>
-              <div className="hero-actions">
-                <Link to={s.cta1.to} className="btn btn-berry">{t(s.cta1.labelKey)}</Link>
-                <Link to={s.cta2.to} className="btn btn-outline" style={{ borderColor: 'var(--paper)', color: 'var(--paper)' }}>
-                  {t(s.cta2.labelKey)}
-                </Link>
-              </div>
-            </div>
-            <div className="hero-img">
+      {useAdminBanners ? (
+        <div className="hero-track" style={{ transform: `translateX(-${index * 100}%)` }}>
+          {banners.map((b, i) => {
+            const img = (
               <img
-                src={s.img}
-                alt={s.alt}
+                src={b.imageUrl}
+                alt={b.altText || ''}
                 width="1200"
                 height="900"
                 loading={i === 0 ? 'eager' : 'lazy'}
@@ -141,17 +134,78 @@ export default function HeroCarousel() {
                 fetchPriority={i === 0 ? 'high' : 'auto'}
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
               />
-              <div className="hero-stripe">{t(s.stripeKey)}</div>
+            );
+            return (
+              <div className="hero-grid hero-grid-banner" key={b.id} aria-hidden={i !== index}>
+                <div className="hero-img hero-img-banner">
+                  {b.linkUrl ? (
+                    /^https?:\/\//.test(b.linkUrl) ? (
+                      <a href={b.linkUrl} target="_blank" rel="noopener noreferrer">{img}</a>
+                    ) : (
+                      <Link to={b.linkUrl}>{img}</Link>
+                    )
+                  ) : img}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="hero-track" style={{ transform: `translateX(-${index * 100}%)` }}>
+          {SLIDES.map((s, i) => (
+            <div className="hero-grid" key={i} aria-hidden={i !== index}>
+              <div className="hero-copy">
+                <span className="eyebrow">{t(s.eyebrowKey)}</span>
+                <h1 className="hero-title">
+                  {t(s.titleTopKey)}
+                  <br />
+                  <em>{t(s.titleEmKey)}</em> {t(s.titleRestKey)}
+                </h1>
+                <p className="hero-sub">{t(s.subKey)}</p>
+                <div className="hero-badges">
+                  <span className="hero-badge">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3 4 6v6c0 4.5 3.2 7.7 8 9 4.8-1.3 8-4.5 8-9V6l-8-3Z" strokeLinejoin="round" /></svg>
+                    {t('hero.badge.original')}
+                  </span>
+                  <span className="hero-badge">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 7h13v9H2z" strokeLinejoin="round" /><path d="M15 10h4l3 3v3h-7z" strokeLinejoin="round" /><circle cx="6.5" cy="18" r="1.5" /><circle cx="17.5" cy="18" r="1.5" /></svg>
+                    {t('hero.badge.delivery')}
+                  </span>
+                  <span className="hero-badge">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 3 4 6v6c0 4.5 3.2 7.7 8 9 4.8-1.3 8-4.5 8-9V6l-8-3Z" strokeLinejoin="round" /></svg>
+                    {t('hero.badge.warranty')}
+                  </span>
+                </div>
+                <div className="hero-actions">
+                  <Link to={s.cta1.to} className="btn btn-berry">{t(s.cta1.labelKey)}</Link>
+                  <Link to={s.cta2.to} className="btn btn-outline" style={{ borderColor: 'var(--paper)', color: 'var(--paper)' }}>
+                    {t(s.cta2.labelKey)}
+                  </Link>
+                </div>
+              </div>
+              <div className="hero-img">
+                <img
+                  src={s.img}
+                  alt={s.alt}
+                  width="1200"
+                  height="900"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  fetchPriority={i === 0 ? 'high' : 'auto'}
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
+                />
+                <div className="hero-stripe">{t(s.stripeKey)}</div>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <button className="hero-arrow hero-arrow-left" aria-label="Previous slide" onClick={() => goTo(index - 1)}>‹</button>
       <button className="hero-arrow hero-arrow-right" aria-label="Next slide" onClick={() => goTo(index + 1)}>›</button>
 
       <div className="hero-dots">
-        {SLIDES.map((_, i) => (
+        {Array.from({ length: slideCount }).map((_, i) => (
           <button
             key={i}
             className={`hero-dot ${i === index ? 'active' : ''}`}

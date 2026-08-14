@@ -582,6 +582,14 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow-pop);
 }
 
+/* Admin-uploaded banners (see Admin > Banners) are plain full-width images
+   with no copy column — unlike the hardcoded SLIDES' split hero-copy /
+   clipped hero-img layout above. */
+.hero-grid-banner { grid-template-columns: 1fr; min-height: 320px; }
+.hero-img-banner { clip-path: none; }
+.hero-img-banner a, .hero-img-banner img { display: block; width: 100%; height: 100%; }
+.hero-img-banner img { object-fit: cover; opacity: 1; }
+
 /* Desktop-only: shrink the hero banner so it doesn't dominate the whole
    viewport on larger screens. Scoped to min-width so mobile is untouched. */
 @media (min-width: 901px) {

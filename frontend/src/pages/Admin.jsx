@@ -50,6 +50,9 @@ export default function Admin() {
   const [deliveryFeeInput, setDeliveryFeeInput] = useState('150');
   const [savingDeliveryFee, setSavingDeliveryFee] = useState(false);
 
+  const [banners, setBanners] = useState([]);
+  const [bannerUploading, setBannerUploading] = useState(false);
+
   const [dealers, setDealers] = useState([]);
   const [dealerFilter, setDealerFilter] = useState('pending');
   const [dealerPage, setDealerPage] = useState(1);
@@ -148,6 +151,9 @@ export default function Admin() {
   function loadSettings() {
     api.get('/admin/settings').then((d) => setDeliveryFeeInput(String(d.deliveryFee))).catch((err) => showToast(err.message, 'error'));
   }
+  function loadBanners() {
+    api.get('/admin/banners').then((d) => setBanners(d.banners)).catch((err) => showToast(err.message, 'error'));
+  }
   function loadDealers(status = dealerFilter, page = 1) {
     const params = new URLSearchParams({ page, limit: 25 });
     if (status) params.set('status', status);
@@ -183,6 +189,7 @@ export default function Admin() {
     loadLowStock();
     loadAdmins();
     loadSettings();
+    loadBanners();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -199,6 +206,64 @@ export default function Admin() {
     } finally {
       setSavingDeliveryFee(false);
     }
+  }
+
+  async function onBannerImageSelected(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setBannerUploading(true);
+    try {
+      const data = await api.uploadMultiple('/admin/upload-multiple', files);
+      // Each newly uploaded image becomes its own banner slide, appended
+      // after whatever's already there (sortOrder = current count + i).
+      for (let i = 0; i < data.urls.length; i++) {
+        await api.post('/admin/banners', { imageUrl: data.urls[i], sortOrder: banners.length + i });
+      }
+      showToast(data.urls.length > 1 ? `${data.urls.length} banners added` : 'Banner added', 'success');
+      loadBanners();
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setBannerUploading(false);
+      e.target.value = '';
+    }
+  }
+
+  async function updateBanner(id, patch) {
+    try {
+      await api.put(`/admin/banners/${id}`, patch);
+      loadBanners();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteBanner(id) {
+    if (!window.confirm('Remove this banner?')) return;
+    try {
+      await api.del(`/admin/banners/${id}`);
+      showToast('Banner removed', 'success');
+      loadBanners();
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  function moveBanner(index, dir) {
+    const target = index + dir;
+    if (target < 0 || target >= banners.length) return;
+    const a = banners[index];
+    const b = banners[target];
+    // Swap sortOrder between the two neighbors, then reload — simplest way
+    // to reorder without a dedicated bulk-reorder endpoint.
+    Promise.all([
+      api.put(`/admin/banners/${a.id}`, { sortOrder: b.sortOrder }),
+      api.put(`/admin/banners/${b.id}`, { sortOrder: a.sortOrder }),
+    ])
+      .then(loadBanners)
+      .catch((err) => showToast(err.message, 'error'));
   }
 
   async function setDealerStatus(id, status) {
@@ -625,6 +690,7 @@ export default function Admin() {
         <button className={`tab ${tab === 'quotes' ? 'active' : ''}`} onClick={() => setTab('quotes')}>RFQs {quotes.length > 0 && quoteFilter === 'pending' && `(${quotes.length})`}</button>
         <button className={`tab ${tab === 'coupons' ? 'active' : ''}`} onClick={() => setTab('coupons')}>Coupons ({coupons.length})</button>
         <button className={`tab ${tab === 'data' ? 'active' : ''}`} onClick={() => setTab('data')}>Import / Export</button>
+        <button className={`tab ${tab === 'banners' ? 'active' : ''}`} onClick={() => setTab('banners')}>Banners ({banners.length})</button>
         <button className={`tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>Settings</button>
         <button className={`tab ${tab === 'security' ? 'active' : ''}`} onClick={() => setTab('security')}>Security</button>
         <button className={`tab ${tab === 'audit' ? 'active' : ''}`} onClick={() => setTab('audit')}>Audit log</button>
@@ -1502,6 +1568,71 @@ export default function Admin() {
                 <input type="file" accept=".json" hidden disabled={restoreBusy} onChange={restoreBackup} />
               </label>
             </div>
+          </div>
+        </div>
+      )}
+
+      {tab === 'banners' && (
+        <div style={{ paddingBottom: 80, maxWidth: 720 }}>
+          <div className="form-panel wide">
+            <h3 style={{ marginBottom: 10 }}>Homepage banners</h3>
+            <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '0.85rem' }}>
+              Images shown in the homepage's top carousel. Upload one or more images, optionally point each at a
+              page (e.g. <code>/shop?category=Display</code>) or an external link. While at least one banner is
+              active, it replaces the default hero slides — turn all banners off (or delete them) to go back to the
+              default.
+            </p>
+
+            <label className="btn btn-primary" style={{ cursor: 'pointer', marginBottom: 20, display: 'inline-block' }}>
+              {bannerUploading ? 'Uploading…' : '+ Upload banner image(s)'}
+              <input type="file" accept="image/*" multiple hidden disabled={bannerUploading} onChange={onBannerImageSelected} />
+            </label>
+
+            {banners.length === 0 ? (
+              <p style={{ color: 'var(--muted)' }}>No banners yet — the homepage is showing the default hero slides.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {banners.map((b, i) => (
+                  <div
+                    key={b.id}
+                    style={{
+                      display: 'flex', gap: 14, alignItems: 'center', padding: 12,
+                      border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+                      opacity: b.active ? 1 : 0.55,
+                    }}
+                  >
+                    <img
+                      src={resolveImg(b.imageUrl)}
+                      alt=""
+                      style={{ width: 96, height: 64, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="field" style={{ marginBottom: 6 }}>
+                        <input
+                          placeholder="Link (optional) — e.g. /shop?category=Display"
+                          defaultValue={b.linkUrl || ''}
+                          onBlur={(e) => {
+                            if (e.target.value !== (b.linkUrl || '')) updateBanner(b.id, { linkUrl: e.target.value });
+                          }}
+                        />
+                      </div>
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.82rem' }}>
+                        <input type="checkbox" checked={b.active} onChange={(e) => updateBanner(b.id, { active: e.target.checked })} />
+                        Active
+                      </label>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <button type="button" className="btn btn-outline" disabled={i === 0} onClick={() => moveBanner(i, -1)} style={{ padding: '4px 10px' }}>↑</button>
+                      <button type="button" className="btn btn-outline" disabled={i === banners.length - 1} onClick={() => moveBanner(i, 1)} style={{ padding: '4px 10px' }}>↓</button>
+                    </div>
+                    <button type="button" className="btn btn-outline" onClick={() => deleteBanner(b.id)} style={{ color: '#b3261e', borderColor: '#b3261e' }}>
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
