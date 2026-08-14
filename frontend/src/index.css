@@ -2131,9 +2131,21 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* ---------- Footer cityscape strip (decorative, original artwork) ---------- */
+/* Styled as a city-at-dusk street: dark building silhouettes with small lit
+   (gold) windows against the footer's near-black background — a "Noyon
+   Telecom" office building, a shop with an awning, houses and trees, a road,
+   and a car + scooter that loop continuously along it. */
 .cityscape-strip {
   position: relative;
-  height: 90px;
+  width: 100%;
+  /* Matches the SVG's viewBox (1400x210) exactly, so the scene always
+     scales uniformly to fill the full width with nothing cropped off the
+     top/bottom — a fixed pixel height here (independent of container
+     width) would make "slice" scaling crop the wrong amount on any
+     container width other than the one it was tuned for. Capped so it
+     doesn't grow enormous on very wide desktop viewports. */
+  aspect-ratio: 1400 / 210;
+  max-height: 210px;
   margin: 8px 0 28px;
   overflow: hidden;
 }
@@ -2143,21 +2155,59 @@ button { font-family: inherit; cursor: pointer; }
   width: 100%;
   height: 100%;
 }
-.cityscape-skyline rect { fill: var(--berry-tint); }
-.cityscape-skyline line { stroke: var(--berry); opacity: 0.35; }
+.cityscape-building { fill: #232733; stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
+.cityscape-accent { fill: var(--berry); }
+.cityscape-window { fill: var(--sunshine); opacity: 0.85; }
+.cityscape-label {
+  fill: var(--paper);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.cityscape-roof { fill: #2b2f3c; stroke: rgba(255, 255, 255, 0.12); stroke-width: 1; }
+.cityscape-door { fill: rgba(255, 255, 255, 0.09); }
+.cityscape-awning-a { fill: var(--berry); }
+.cityscape-awning-b { fill: rgba(251, 241, 236, 0.88); }
+.cityscape-shop-label {
+  fill: var(--paper);
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.cityscape-trunk { fill: #5b4636; }
+.cityscape-foliage { fill: #33513f; }
+.cityscape-road { fill: rgba(255, 255, 255, 0.06); }
+.cityscape-lane { stroke: var(--sunshine); stroke-width: 2; opacity: 0.4; fill: none; }
+
+.cityscape-car {
+  position: absolute;
+  bottom: 30px;
+  left: -80px;
+  animation: cityscape-drive-car 16s linear infinite;
+}
+.cityscape-car-body { fill: var(--berry); }
+.cityscape-car-glass { fill: rgba(255, 196, 0, 0.35); }
+.cityscape-wheel { fill: #17181c; }
+
 .cityscape-scooter {
   position: absolute;
-  bottom: 6px;
+  bottom: 22px;
   left: -60px;
-  color: var(--berry);
-  /* Animating `left` (not transform) so the 100% end point is relative to
-     .cityscape-strip's actual rendered width — correct at any container
-     size without a breakpoint-specific keyframe. Cheap here regardless
-     (one small 56x35 icon), so the usual transform-only-for-perf advice
-     doesn't apply. */
-  animation: cityscape-drive 14s linear infinite;
+  color: var(--sunshine);
+  animation: cityscape-drive-scooter 11s linear infinite;
+  animation-delay: -4s;
 }
-@keyframes cityscape-drive {
+/* Animating `left` (not transform) so the 100% end point is relative to
+   .cityscape-strip's actual rendered width — correct at any container size
+   without a breakpoint-specific keyframe. Cheap here regardless (two small
+   icons), so the usual transform-only-for-perf advice doesn't apply. */
+@keyframes cityscape-drive-car {
+  from { left: -80px; }
+  to { left: 100%; }
+}
+@keyframes cityscape-drive-scooter {
   from { left: -60px; }
   to { left: 100%; }
 }

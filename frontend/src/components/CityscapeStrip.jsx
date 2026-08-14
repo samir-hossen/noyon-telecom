@@ -1,29 +1,135 @@
-// Decorative animated skyline strip for the footer — a simple original
-// illustration (not sourced from anywhere), tying into the "Fast Delivery"
-// branding already used elsewhere (FeatureStrip, hero badges): a delivery
-// scooter loops continuously along a road in front of a building skyline.
-// Pure inline SVG + CSS animation, no images/network requests.
+// Decorative animated street scene for the footer — original artwork (not
+// sourced from anywhere), styled as a city-at-dusk skyline: dark building
+// silhouettes with small lit (gold) windows against the footer's near-black
+// background, a labeled "Noyon Telecom" building, a shop with an awning, a
+// couple of houses and trees for variety, and a car + delivery scooter that
+// loop continuously along the road — ties into the "Fast Delivery" branding
+// used elsewhere (FeatureStrip, hero badges).
+
+function Windows({ x, y, w, h, cols, rows }) {
+  const pad = 8;
+  const cellW = (w - pad * 2) / cols;
+  const cellH = (h - pad * 2) / rows;
+  const size = Math.min(cellW, cellH) * 0.42;
+  const windows = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      windows.push(
+        <rect
+          key={`${r}-${c}`}
+          x={x + pad + c * cellW + (cellW - size) / 2}
+          y={y + pad + r * cellH + (cellH - size) / 2}
+          width={size}
+          height={size}
+          rx="1"
+          className="cityscape-window"
+        />
+      );
+    }
+  }
+  return <>{windows}</>;
+}
+
+function OfficeBuilding({ x, w, h, base, cols, rows, label, accent }) {
+  const y = base - h;
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} className="cityscape-building" />
+      {accent && <rect x={x} y={y} width={w} height={5} className="cityscape-accent" />}
+      <Windows x={x} y={y} w={w} h={h} cols={cols} rows={rows} />
+      {label && (
+        <text x={x + w / 2} y={y - 10} textAnchor="middle" className="cityscape-label">
+          {label}
+        </text>
+      )}
+    </g>
+  );
+}
+
+function House({ x, w, h, base }) {
+  const y = base - h;
+  const roofH = h * 0.4;
+  return (
+    <g>
+      <polygon points={`${x - 4},${y + roofH} ${x + w / 2},${y - 2} ${x + w + 4},${y + roofH}`} className="cityscape-roof" />
+      <rect x={x} y={y + roofH} width={w} height={h - roofH} className="cityscape-building" />
+      <rect x={x + w * 0.6} y={base - h * 0.42} width={w * 0.22} height={h * 0.42} className="cityscape-door" />
+      <rect x={x + w * 0.16} y={y + roofH + h * 0.16} width={w * 0.22} height={w * 0.22} rx="1" className="cityscape-window" />
+    </g>
+  );
+}
+
+function Shop({ x, w, h, base, label }) {
+  const y = base - h;
+  const awningH = h * 0.16;
+  const stripes = 5;
+  const stripeW = w / stripes;
+  return (
+    <g>
+      <rect x={x} y={y + awningH} width={w} height={h - awningH} className="cityscape-building" />
+      {Array.from({ length: stripes }).map((_, i) => (
+        <rect
+          key={i}
+          x={x + i * stripeW}
+          y={y}
+          width={stripeW}
+          height={awningH}
+          className={i % 2 === 0 ? 'cityscape-awning-a' : 'cityscape-awning-b'}
+        />
+      ))}
+      <rect x={x + w * 0.32} y={base - h * 0.5} width={w * 0.36} height={h * 0.5} className="cityscape-door" />
+      <rect x={x + w * 0.08} y={y + awningH + h * 0.14} width={w * 0.18} height={w * 0.18} rx="1" className="cityscape-window" />
+      <rect x={x + w * 0.74} y={y + awningH + h * 0.14} width={w * 0.18} height={w * 0.18} rx="1" className="cityscape-window" />
+      <text x={x + w / 2} y={y + awningH - 6} textAnchor="middle" className="cityscape-shop-label">{label}</text>
+    </g>
+  );
+}
+
+function Tree({ x, base }) {
+  return (
+    <g>
+      <rect x={x - 2.5} y={base - 26} width="5" height="26" className="cityscape-trunk" />
+      <circle cx={x} cy={base - 34} r="16" className="cityscape-foliage" />
+    </g>
+  );
+}
+
 export default function CityscapeStrip() {
-  const buildings = [
-    { x: 0, w: 46, h: 70 }, { x: 50, w: 30, h: 46 }, { x: 84, w: 54, h: 92 },
-    { x: 142, w: 34, h: 58 }, { x: 180, w: 60, h: 40 }, { x: 244, w: 40, h: 78 },
-    { x: 288, w: 28, h: 50 }, { x: 320, w: 58, h: 100 }, { x: 382, w: 36, h: 62 },
-    { x: 422, w: 44, h: 46 }, { x: 470, w: 60, h: 86 }, { x: 534, w: 32, h: 56 },
-    { x: 570, w: 50, h: 72 }, { x: 624, w: 40, h: 44 }, { x: 668, w: 56, h: 96 },
-    { x: 728, w: 34, h: 60 }, { x: 766, w: 46, h: 40 }, { x: 816, w: 44, h: 80 },
-    { x: 864, w: 60, h: 52 }, { x: 928, w: 32, h: 68 }, { x: 964, w: 36, h: 40 },
-  ];
+  const base = 190;
 
   return (
     <div className="cityscape-strip" aria-hidden="true">
-      <svg viewBox="0 0 1000 110" preserveAspectRatio="none" className="cityscape-skyline">
-        {buildings.map((b, i) => (
-          <rect key={i} x={b.x} y={110 - b.h} width={b.w} height={b.h} rx="2" />
-        ))}
-        <line x1="0" y1="109" x2="1000" y2="109" strokeWidth="2" />
+      <svg viewBox="0 0 1400 210" preserveAspectRatio="xMidYMax slice" className="cityscape-skyline">
+        <House x={20} w={78} h={70} base={base} />
+        <Tree x={118} base={base} />
+        <Shop x={140} w={130} h={92} base={base} label="EXPRESS SHOP" />
+        <OfficeBuilding x={290} w={100} h={120} base={base} cols={3} rows={4} />
+        <OfficeBuilding x={410} w={150} h={168} base={base} cols={4} rows={6} label="NOYON TELECOM" accent />
+        <Tree x={580} base={base} />
+        <OfficeBuilding x={600} w={90} h={104} base={base} cols={2} rows={4} />
+        <House x={710} w={78} h={64} base={base} />
+        <Tree x={806} base={base} />
+        <Shop x={826} w={116} h={84} base={base} label="PARTS HOUSE" />
+        <OfficeBuilding x={960} w={110} h={140} base={base} cols={3} rows={5} />
+        <House x={1090} w={78} h={68} base={base} />
+        <Tree x={1188} base={base} />
+        <OfficeBuilding x={1208} w={130} h={110} base={base} cols={4} rows={4} />
+
+        <rect x="0" y={base} width="1400" height="16" className="cityscape-road" />
+        <line x1="0" y1={base + 8} x2="1400" y2={base + 8} className="cityscape-lane" strokeDasharray="18 14" />
       </svg>
+
+      <div className="cityscape-car">
+        <svg viewBox="0 0 80 34" width="66" height="28">
+          <path d="M6 26 Q4 12 20 10 L30 4 L58 4 L66 10 L74 10 Q78 12 76 22 L76 26 Z" className="cityscape-car-body" />
+          <rect x="30" y="6" width="24" height="10" rx="2" className="cityscape-car-glass" />
+          <circle cx="20" cy="27" r="6" className="cityscape-wheel" />
+          <circle cx="62" cy="27" r="6" className="cityscape-wheel" />
+        </svg>
+      </div>
+
       <div className="cityscape-scooter">
-        <svg viewBox="0 0 64 40" width="56" height="35" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 64 40" width="50" height="31" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="32" r="6" />
           <circle cx="48" cy="32" r="6" />
           <path d="M12 32h10l6-14h10" />
