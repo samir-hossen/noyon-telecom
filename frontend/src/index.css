@@ -1962,12 +1962,12 @@ button { font-family: inherit; cursor: pointer; }
   .feature-strip-item > div { text-align: center; width: 100%; }
 }
 @media (max-width: 480px) {
-  .feature-strip { padding: 14px 6px; gap: 4px; }
-  .feature-strip-icon { width: 36px; height: 36px; }
-  .feature-strip-icon svg { width: 18px; height: 18px; }
-  .feature-strip-item { gap: 6px; }
-  .feature-strip-item strong { font-size: 0.64rem; line-height: 1.2; }
-  .feature-strip-item > div span { font-size: 0.54rem; line-height: 1.15; margin-top: 1px; }
+  .feature-strip { padding: 12px 4px; gap: 4px; }
+  .feature-strip-icon { width: 28px; height: 28px; }
+  .feature-strip-icon svg { width: 14px; height: 14px; }
+  .feature-strip-item { gap: 4px; }
+  .feature-strip-item strong { font-size: 0.6rem; line-height: 1.15; }
+  .feature-strip-item > div span { font-size: 0.5rem; line-height: 1.1; margin-top: 1px; }
 }
 
 /* ---------- Homepage dark trust bar ---------- */

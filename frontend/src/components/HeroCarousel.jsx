@@ -102,14 +102,27 @@ export default function HeroCarousel() {
 
   function onTouchStart(e) {
     touchStartX.current = e.touches[0].clientX;
+    // Pause for the duration of the touch, same as hover on desktop. Doing
+    // this here (not just via onMouseEnter below) matters because mobile
+    // browsers fire a synthetic mouseenter on tap for compatibility but
+    // often never fire the matching mouseleave — that left `paused` stuck
+    // true forever after a single touch anywhere on the hero (e.g. just
+    // scrolling past it), silently killing autoplay for the rest of the
+    // session. Explicitly resuming on touchend below fixes that regardless
+    // of whether the ghost mouse events fire.
+    setPaused(true);
   }
   function onTouchEnd(e) {
-    if (touchStartX.current === null) return;
+    if (touchStartX.current === null) {
+      setPaused(false);
+      return;
+    }
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(delta) > 40) {
       goTo(index + (delta < 0 ? 1 : -1));
     }
     touchStartX.current = null;
+    setPaused(false);
   }
 
   return (
