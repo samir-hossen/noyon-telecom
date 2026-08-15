@@ -2118,21 +2118,22 @@ button { font-family: inherit; cursor: pointer; }
      the text, which would bleed the light page background through the
      dark bar's edges) since box-shadow never affects what's visible
      through the element, only light/shadow drawn on top of it. */
-  box-shadow: 0 1px 8px -3px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 16px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
   white-space: nowrap;
-  /* Full-bleed technique: `width: 100%` alone (relative to this element's
-     parent) wasn't reliably spanning the true viewport width in testing —
-     this instead sizes/positions the element relative to the *viewport*
-     itself (100vw + a left/margin trick to re-center it), which is
-     guaranteed correct regardless of what any ancestor's width resolves
-     to. body's `overflow-x: hidden` (see base styles) absorbs the sub-pixel
-     overhang 100vw can have versus the visible viewport when a vertical
-     scrollbar is present. */
-  width: 100vw;
-  position: relative;
-  left: 50%;
-  margin-left: -50vw;
+  /* Rounded ends instead of a full-bleed edge-to-edge strip — matches
+     .container's own side margins/max-width so it reads as a card sitting
+     on the page like the rest of the site, not a strip cut off by the
+     screen edges (a border-radius on a truly edge-to-edge element has
+     nothing to visibly round). */
+  max-width: 1180px;
+  margin: 14px auto 8px;
+  border-radius: var(--radius);
+}
+@media (max-width: 900px) {
+  /* Matches .container's own mobile side padding (18px) so the rounded
+     ends line up with the rest of the page's content edges. */
+  .announcement-bar { margin-left: 18px; margin-right: 18px; border-radius: var(--radius-md); }
 }
 .announcement-track {
   display: inline-flex;
