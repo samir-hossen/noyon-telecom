@@ -2147,12 +2147,14 @@ button { font-family: inherit; cursor: pointer; }
      rather than composing with a static one set here. */
   will-change: transform;
 }
+/* This padding is what sets the bar's height — the bar itself has no fixed
+   height, it just wraps this text. */
 .announcement-text {
   display: inline-flex;
   align-items: center;
-  padding: 11px 0;
+  padding: 7px 0;
   font-weight: 600;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   letter-spacing: 0.02em;
   color: var(--paper);
   white-space: nowrap;
