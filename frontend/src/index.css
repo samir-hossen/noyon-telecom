@@ -2105,9 +2105,20 @@ button { font-family: inherit; cursor: pointer; }
    of the premium brand rather than a bolted-on notice strip. */
 .announcement-bar {
   background: linear-gradient(90deg, #1c1e24 0%, var(--ink) 55%, #2a0107 100%);
-  border-top: 1px solid var(--sunshine);
-  border-bottom: 1px solid var(--sunshine);
-  box-shadow: 0 2px 14px -4px rgba(0, 0, 0, 0.4);
+  /* A hairline, not a solid gold bar — full-opacity var(--sunshine) at
+     1px reads as a bold, heavy stripe (especially on a mobile Retina
+     screen, where "1px" renders as 2-3 physical pixels). A translucent
+     gradient border (faded at both ends) reads as a subtle premium edge
+     instead. */
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, rgba(255, 180, 0, 0.55) 15%, rgba(255, 180, 0, 0.55) 85%, transparent) 1;
+  /* Outer shadow for lift off the page, plus a faint inset top highlight
+     for a touch of glassy depth — safe to add here (unlike a mask-fade on
+     the text, which would bleed the light page background through the
+     dark bar's edges) since box-shadow never affects what's visible
+     through the element, only light/shadow drawn on top of it. */
+  box-shadow: 0 1px 8px -3px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   overflow: hidden;
   white-space: nowrap;
   /* Full-bleed technique: `width: 100%` alone (relative to this element's
