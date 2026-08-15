@@ -85,6 +85,20 @@ button { font-family: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+
+  /* Exceptions: a scrolling notice and a decorative footer animation that
+     are meant to always move regardless of this device setting — this is
+     the actual reason those two kept looking completely frozen even after
+     fixing their animation code and testing in a fresh Incognito tab
+     (which doesn't reset OS-level Reduce Motion, since it isn't cached
+     data). The hero slider's transition is restored too, so slides still
+     animate between each other instead of hard-cutting. A class selector's
+     specificity beats the `*` rule above even with matching !important, so
+     no extra specificity tricks are needed here. */
+  .announcement-track { animation-duration: 30s !important; }
+  .cityscape-car-lane { animation-duration: 16s !important; }
+  .cityscape-cyclist-lane { animation-duration: 11s !important; }
+  .hero-track { transition-duration: 0.55s !important; }
 }
 
 .skip-link {

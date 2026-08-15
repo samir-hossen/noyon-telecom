@@ -124,6 +124,15 @@ export default function HeroCarousel() {
     touchStartX.current = null;
     setPaused(false);
   }
+  function onTouchCancel() {
+    // The browser fires touchcancel instead of touchend when a touch that
+    // started on the hero turns into a page scroll gesture — a very common
+    // way to touch this section without meaning to swipe it. Without this,
+    // that path left `paused` stuck true just like the original
+    // mouseenter/mouseleave bug did.
+    touchStartX.current = null;
+    setPaused(false);
+  }
 
   return (
     <section
@@ -131,6 +140,7 @@ export default function HeroCarousel() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={onTouchStart}
+      onTouchCancel={onTouchCancel}
       onTouchEnd={onTouchEnd}
     >
       {useAdminBanners ? (
