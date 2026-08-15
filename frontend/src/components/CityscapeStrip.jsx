@@ -198,20 +198,29 @@ export default function CityscapeStrip() {
         <line x1="0" y1={base + 8} x2="1400" y2={base + 8} className="cityscape-lane" strokeDasharray="18 14" />
       </svg>
 
-      {/* Two-tone silhouette — a darker roof band over the body, plus
-          hubcaps — instead of one flat block, for a bit more shape. */}
-      <div className="cityscape-car">
-        <svg viewBox="0 0 84 36">
-          <path
-            d="M4 24 Q3 15 14 13 Q19 5 34 5 L52 5 Q64 5 68 13 Q79 15 78 24 Q78 27 74 27 L8 27 Q4 27 4 24 Z"
-            className="cityscape-car-body"
-          />
-          <path d="M17 13 Q21 8 34 8 L52 8 Q61 8 66 13 Z" className="cityscape-car-roof" />
-          <circle cx="21" cy="28" r="7" className="cityscape-wheel" />
-          <circle cx="61" cy="28" r="7" className="cityscape-wheel" />
-          <circle cx="21" cy="28" r="3" className="cityscape-hubcap" />
-          <circle cx="61" cy="28" r="3" className="cityscape-hubcap" />
-        </svg>
+      {/* The animation runs on this full-width "lane" wrapper via
+          `transform`, not on the car itself via `left` — mobile browsers
+          (especially Safari/WebKit) render `left`-based animation far less
+          smoothly than GPU-composited `transform`, which on a phone could
+          drop enough frames to look like it isn't moving at all. Percentage
+          values in `transform: translateX()` are relative to the animated
+          element's own box, so the lane has to be the full-width element
+          for `translateX(100%)` to mean "the strip's full width" — the car
+          itself just sits at a static offset inside it. */}
+      <div className="cityscape-car-lane">
+        <div className="cityscape-car">
+          <svg viewBox="0 0 84 36">
+            <path
+              d="M4 24 Q3 15 14 13 Q19 5 34 5 L52 5 Q64 5 68 13 Q79 15 78 24 Q78 27 74 27 L8 27 Q4 27 4 24 Z"
+              className="cityscape-car-body"
+            />
+            <path d="M17 13 Q21 8 34 8 L52 8 Q61 8 66 13 Z" className="cityscape-car-roof" />
+            <circle cx="21" cy="28" r="7" className="cityscape-wheel" />
+            <circle cx="61" cy="28" r="7" className="cityscape-wheel" />
+            <circle cx="21" cy="28" r="3" className="cityscape-hubcap" />
+            <circle cx="61" cy="28" r="3" className="cityscape-hubcap" />
+          </svg>
+        </div>
       </div>
 
       {/* Delivery cyclist — a proper diamond-frame bicycle (chain stay,
@@ -221,7 +230,8 @@ export default function CityscapeStrip() {
           a delivery bag on the back). Wheels/frame stay thin stroked lines
           (accurate for real bike tubing); rider and bag are solid filled
           shapes. Ties into the "Fast Delivery" branding used elsewhere. */}
-      <div className="cityscape-cyclist">
+      <div className="cityscape-cyclist-lane">
+        <div className="cityscape-cyclist">
         <svg viewBox="0 0 70 48">
           <circle cx="12" cy="36" r="9" className="cityscape-wheel-ring" />
           <circle cx="56" cy="36" r="9" className="cityscape-wheel-ring" />
@@ -262,6 +272,7 @@ export default function CityscapeStrip() {
           <path d="M26 15 L35 24 L40 42" className="cityscape-rider" fill="none" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M26 15 L22 22 L24 27" className="cityscape-rider" fill="none" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
+        </div>
       </div>
     </div>
   );

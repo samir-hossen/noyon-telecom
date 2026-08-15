@@ -2113,6 +2113,12 @@ button { font-family: inherit; cursor: pointer; }
   display: inline-flex;
   width: max-content;
   animation: announcement-scroll 30s linear infinite;
+  /* GPU-compositing hint — mobile Safari in particular sometimes leaves a
+     long-running `transform` animation stuck on the main thread (visibly
+     stalled) without this, even though the same CSS runs fine on desktop.
+     The actual translateZ(0) nudge lives inside the keyframes below, since
+     an animated `transform` fully replaces the computed value each frame
+     rather than composing with a static one set here. */
   will-change: transform;
 }
 .announcement-text {
@@ -2137,8 +2143,8 @@ button { font-family: inherit; cursor: pointer; }
   margin: 0 40px;
 }
 @keyframes announcement-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from { transform: translateX(0) translateZ(0); }
+  to { transform: translateX(-50%) translateZ(0); }
 }
 
 /* ---------- Footer cityscape strip (decorative, original artwork) ---------- */
@@ -2204,6 +2210,33 @@ button { font-family: inherit; cursor: pointer; }
 .cityscape-moon-shadow { fill: var(--ink); }
 .cityscape-star { fill: var(--paper); opacity: 0.7; }
 
+/* The lane is the full-width element the animation actually runs on, via
+   `transform: translateX()` — mobile browsers (Safari/WebKit especially)
+   render `left`-based animation far less smoothly than GPU-composited
+   `transform`; on a phone that can drop enough frames to look completely
+   frozen rather than just janky, which is what a `left`-based version of
+   this reportedly did. Percentages in `translateX()` are relative to the
+   *animated element's own* box, so the lane (not the car/cyclist) has to
+   be the full-width one for `translateX(100%)` to mean "the strip's full
+   width" — correct at any container size without a breakpoint-specific
+   keyframe. The car/cyclist itself just sits at a static offset inside
+   its lane. */
+.cityscape-car-lane, .cityscape-cyclist-lane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* GPU-compositing hint — without it, mobile Safari can leave a long
+     `infinite` transform animation stalled on the main thread and visibly
+     frozen. (A static `transform: translateZ(0)` here wouldn't survive
+     the animation — an animated `transform` fully replaces the computed
+     value each frame rather than composing with it — so the Z nudge is
+     baked into the keyframes themselves below instead.) */
+  will-change: transform;
+}
+.cityscape-car-lane { animation: cityscape-drive-car 16s linear infinite; }
+.cityscape-cyclist-lane { animation: cityscape-drive-scooter 11s linear infinite; animation-delay: -4s; }
+
 /* Flat single-tone silhouette for the car — matches the scene's simplified
    illustration style rather than a shaded/detailed rendering. */
 .cityscape-car {
@@ -2217,7 +2250,6 @@ button { font-family: inherit; cursor: pointer; }
   bottom: 6%;
   left: -80px;
   width: 68px;
-  animation: cityscape-drive-car 16s linear infinite;
 }
 .cityscape-car-body { fill: var(--berry); }
 .cityscape-car-roof { fill: var(--berry-dark); }
@@ -2234,8 +2266,6 @@ button { font-family: inherit; cursor: pointer; }
   bottom: 4%;
   left: -60px;
   width: 56px;
-  animation: cityscape-drive-scooter 11s linear infinite;
-  animation-delay: -4s;
 }
 .cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 2.2; }
 .cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
@@ -2245,15 +2275,11 @@ button { font-family: inherit; cursor: pointer; }
 .cityscape-cap { stroke: var(--berry); }
 .cityscape-bag { fill: var(--berry); }
 
-/* Animating `left` (not transform) so the 100% end point is relative to
-   .cityscape-strip's actual rendered width — correct at any container size
-   without a breakpoint-specific keyframe. Cheap here regardless (two small
-   icons), so the usual transform-only-for-perf advice doesn't apply. */
 @keyframes cityscape-drive-car {
-  from { left: -80px; }
-  to { left: 100%; }
+  from { transform: translateX(-80px) translateZ(0); }
+  to { transform: translateX(100%) translateZ(0); }
 }
 @keyframes cityscape-drive-scooter {
-  from { left: -60px; }
-  to { left: 100%; }
+  from { transform: translateX(-60px) translateZ(0); }
+  to { transform: translateX(100%) translateZ(0); }
 }
