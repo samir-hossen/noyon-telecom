@@ -232,39 +232,38 @@ export default function CityscapeStrip() {
           two plain wheel rings (no spokes), a single clean frame outline,
           and a simple rider silhouette (head + one back/arm curve + one
           leg). Ties into the "Fast Delivery" branding used elsewhere. */}
+      {/* Drawn on a roughly 1-unit-per-cm grid (viewBox ~1.95m x 1.85m) so
+          the parts are in real proportion to each other: 70cm wheels,
+          105cm wheelbase, ~100cm saddle height, rider head at ~1.7m. The
+          previous version was drawn freehand and, once rendered, came out
+          nearly twice the car's height — a bicycle standing taller than a
+          car. Sizing in CSS now scales this against the car's own length
+          so the two stay in proportion on screen too. */}
       <div className="cityscape-cyclist-lane">
         <div className="cityscape-cyclist">
-          <svg viewBox="0 0 100 70">
-            {/* Wheels — equal size, well separated, the single most
-                important cue that this is a bicycle at small size. */}
-            <circle cx="20" cy="52" r="15" className="cityscape-wheel-ring" />
-            <circle cx="78" cy="52" r="15" className="cityscape-wheel-ring" />
-            <circle cx="20" cy="52" r="2" className="cityscape-wheel" />
-            <circle cx="78" cy="52" r="2" className="cityscape-wheel" />
+          <svg viewBox="0 0 195 185">
+            <circle cx="45" cy="145" r="35" className="cityscape-wheel-ring" />
+            <circle cx="150" cy="145" r="35" className="cityscape-wheel-ring" />
+            <circle cx="45" cy="145" r="5" className="cityscape-bike-frame-fill" />
+            <circle cx="150" cy="145" r="5" className="cityscape-bike-frame-fill" />
 
-            {/* Proper diamond frame: rear triangle (chain stay + seat stay
-                + seat tube) and front triangle (top tube + down tube),
-                then the fork down to the front hub. The previous version
-                was missing the seat stay entirely — the rear triangle was
-                left open, which is a big part of why it didn't read as a
-                bike frame. */}
+            {/* Diamond frame: rear triangle (chain stay, seat stay, seat
+                tube) + front triangle (top tube, down tube), then the head
+                tube/stem and fork. */}
             <path
-              d="M20 52 L46 52 M20 52 L36 30 M46 52 L36 30 M36 30 L64 26 M46 52 L64 26 M64 26 L78 52"
+              d="M45 145 L105 152 M105 152 L88 80 M45 145 L88 80 M105 152 L148 84 M88 80 L148 84 M148 84 L150 145 M148 84 L150 74"
               className="cityscape-bike-frame"
             />
-            {/* Saddle and handlebar — small but they're what visually
-                caps the frame off as a bicycle rather than a bare truss. */}
-            <path d="M30 29 L42 29 M58 23 L70 23" className="cityscape-bike-frame" />
-            {/* Crank + pedal at the bottom bracket */}
-            <circle cx="46" cy="52" r="3" className="cityscape-bike-frame-fill" />
+            {/* Saddle and handlebar */}
+            <path d="M76 78 L100 78 M138 72 L162 72" className="cityscape-bike-frame" />
+            {/* Chainring at the bottom bracket */}
+            <circle cx="105" cy="152" r="10" className="cityscape-bike-frame-fill" />
 
-            {/* Rider — upright posture (hip at the saddle, torso rising
-                clear of the frame) instead of the previous hunched-forward
-                pose that overlapped the top tube and merged into it. */}
-            <circle cx="46" cy="7" r="6" className="cityscape-rider" />
-            <path d="M36 28 L44 13" className="cityscape-rider" fill="none" strokeWidth="5" strokeLinecap="round" />
-            <path d="M43 16 L64 26" className="cityscape-rider" fill="none" strokeWidth="4" strokeLinecap="round" />
-            <path d="M36 28 L44 40 L46 52" className="cityscape-rider" fill="none" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Rider — hip at the saddle, torso rising clear of the frame */}
+            <circle cx="118" cy="18" r="15" className="cityscape-rider" />
+            <path d="M88 76 L110 34" className="cityscape-rider" fill="none" strokeWidth="13" strokeLinecap="round" />
+            <path d="M108 38 L148 78" className="cityscape-rider" fill="none" strokeWidth="10" strokeLinecap="round" />
+            <path d="M88 76 L112 116 L105 152" className="cityscape-rider" fill="none" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>

@@ -2289,21 +2289,23 @@ button { font-family: inherit; cursor: pointer; }
    looking like scribbles). */
 .cityscape-cyclist {
   position: absolute;
-  /* Sized/positioned for the 100x70 viewBox: rendered height is
-     76 * 0.7 = 53px, and the wheels bottom out ~4% above the element's
-     own bottom edge, which lands them on the road at this offset. Wider
-     than before (56px) because the previous size left the frame detail
-     too small to resolve as a bicycle at all. */
-  bottom: 5%;
-  left: -76px;
-  width: 76px;
+  /* Scaled against the car so the two stay in real-world proportion: the
+     car is 68px long for a ~4.5m car (~15px per metre), and a bicycle is
+     ~1.8m long, so ~30px would be literal. Nudged up to 44px because a
+     literal 30px loses the frame entirely — but it stays clearly shorter
+     than the car (44 vs 68) and only modestly taller (42px vs 29px, for a
+     rider who really is taller than a car roof). The previous 76px/53px
+     made the bicycle nearly twice the car's height. */
+  bottom: 6%;
+  left: -44px;
+  width: 44px;
 }
-/* Bolder strokes than the rest of the scene — a thin, delicate line reads
-   as detail on a building but as noise on a moving object this small;
-   this needs to be legible as "a bicycle" at a glance while it's sliding
-   past, not examined up close. */
-.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 3.5; }
-.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+/* Stroke widths are in viewBox units (~1 unit per cm), so they look far
+   larger here than the other cityscape numbers — at this element's render
+   scale they come out around 2px on screen, which is what keeps the frame
+   legible while it slides past. */
+.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 8; }
+.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
 .cityscape-bike-frame-fill { fill: var(--sunshine); }
 .cityscape-rider { fill: var(--paper); stroke: var(--paper); }
 
@@ -2318,5 +2320,5 @@ button { font-family: inherit; cursor: pointer; }
 }
 @keyframes cityscape-drive-scooter {
   from { transform: translateX(0) translateZ(0); }
-  to { transform: translateX(calc(100% + 152px)) translateZ(0); }
+  to { transform: translateX(calc(100% + 88px)) translateZ(0); }
 }
