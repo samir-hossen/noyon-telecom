@@ -14,6 +14,11 @@ export default defineConfig({
     // "stuck on old version" complaints from dealers with the site pinned.
     VitePWA({
       registerType: 'autoUpdate',
+      // Registration is done by src/registerServiceWorker.js instead of the
+      // bare script this would otherwise inject into index.html — see that
+      // file for why (the injected one never reloads the page when a new
+      // worker takes over, so visitors kept seeing the previous deploy).
+      injectRegister: null,
       // Matches the <link rel="manifest" href="/site.webmanifest"> already
       // in index.html, so nothing else needs to change.
       manifestFilename: 'site.webmanifest',

@@ -11,6 +11,7 @@ import { ToastProvider } from './context/ToastContext.jsx';
 import { LanguageProvider } from './context/LanguageContext.jsx';
 import { initAnalytics, initErrorTracking, initGlobalErrorTracking } from './analytics.js';
 import { initMetaPixel, initTikTokPixel } from './pixels.js';
+import { registerServiceWorker } from './registerServiceWorker.js';
 import './index.css';
 
 // Browsers restore the previous scroll position on reload by default
@@ -29,6 +30,7 @@ initMetaPixel();
 initTikTokPixel();
 initErrorTracking();
 initGlobalErrorTracking();
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
