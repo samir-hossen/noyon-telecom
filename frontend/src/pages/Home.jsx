@@ -58,10 +58,14 @@ export default function Home() {
   async function handleAdd(id) {
     try {
       await addToCart(id, 1);
-      showToast('Added to cart', 'success');
+      // t(), not literal English — these two toasts were the last hardcoded
+      // strings on the homepage, so adding to cart from here spoke English
+      // even with the site switched to Bangla. Shop.jsx already uses these
+      // exact keys for the same two messages.
+      showToast(t('shop.addedToCart'), 'success');
     } catch (e) {
       if (e.message.toLowerCase().includes('authenticated')) {
-        showToast('Please sign in to add items to your cart', 'error');
+        showToast(t('shop.signInToAddCart'), 'error');
         navigate('/login');
       } else {
         showToast(e.message, 'error');
@@ -134,31 +138,41 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section container">
-        <div className="section-head">
-          <h2 className="section-title">{t('home.newArrivals')}</h2>
-          <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
-        </div>
-        <div className="grid">
-          {newArrivals.map((p) => (
-            <ProductCard key={p.id} product={p} onAdd={handleAdd} />
-          ))}
-        </div>
-      </section>
+      {/* Each rail is hidden when it has nothing in it, the same way
+          latestImports and the flash sale already were. "Best Selling" in
+          particular is driven by reviewCount > 0 (see /home-sections), and
+          this catalog has no reviews yet — so on the live site that
+          section was rendering its heading and "View all →" link above a
+          completely empty grid. */}
+      {!loading && newArrivals.length > 0 && (
+        <section className="section container">
+          <div className="section-head">
+            <h2 className="section-title">{t('home.newArrivals')}</h2>
+            <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
+          </div>
+          <div className="grid">
+            {newArrivals.map((p) => (
+              <ProductCard key={p.id} product={p} onAdd={handleAdd} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      <section className="section container">
-        <div className="section-head">
-          <h2 className="section-title">{t('home.bestSelling')}</h2>
-          <Link to="/shop?sort=rating" className="section-link">{t('home.viewAll')} →</Link>
-        </div>
-        <div className="grid">
-          {bestSellers.map((p) => (
-            <ProductCard key={p.id} product={p} onAdd={handleAdd} />
-          ))}
-        </div>
-      </section>
+      {!loading && bestSellers.length > 0 && (
+        <section className="section container">
+          <div className="section-head">
+            <h2 className="section-title">{t('home.bestSelling')}</h2>
+            <Link to="/shop?sort=rating" className="section-link">{t('home.viewAll')} →</Link>
+          </div>
+          <div className="grid">
+            {bestSellers.map((p) => (
+              <ProductCard key={p.id} product={p} onAdd={handleAdd} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      {latestImports.length > 0 && (
+      {!loading && latestImports.length > 0 && (
         <section className="section container">
           <div className="section-head">
             <h2 className="section-title">{t('home.latestImports')}</h2>

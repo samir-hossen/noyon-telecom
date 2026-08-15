@@ -1,7 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../api';
 import { useLanguage } from '../context/LanguageContext';
 
+// Fallback only — the real lists are fetched from /products below, which
+// returns just the categories/brands that actually have published products
+// (see getActiveCategories/getActiveBrands). These are used if that request
+// fails, so the finder still renders something usable offline.
 const BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
 
 // Representative model list per brand — the Shop page's search already
@@ -27,6 +32,28 @@ export default function PartFinder() {
   const [model, setModel] = useState('');
   const [category, setCategory] = useState('');
   const navigate = useNavigate();
+
+  // Only offer brands/categories that actually have products. The hardcoded
+  // lists included plenty that don't (Battery, Camera, Housing, Speaker,
+  // Frame, Google Pixel, Motorola...), so picking one sent the customer to
+  // a "no products found" Shop page — the same dead-end the Shop page's own
+  // filter pills were already fixed to avoid. This reuses that exact
+  // filtered data rather than adding a third hardcoded copy of the lists
+  // (which had also drifted: the brand list here never got the 11 brands
+  // added to the backend taxonomy).
+  const [brands, setBrands] = useState(BRANDS);
+  const [categories, setCategories] = useState(CATEGORIES);
+  useEffect(() => {
+    let current = true;
+    api.get('/products?limit=1').then((d) => {
+      if (!current) return;
+      if (d.brands?.length) setBrands(d.brands);
+      if (d.categories?.length) setCategories(d.categories);
+    }).catch(() => {});
+    return () => { current = false; };
+  }, []);
+
+  const modelsForBrand = MODELS_BY_BRAND[brand] || [];
 
   function onFind(e) {
     e.preventDefault();
@@ -58,21 +85,32 @@ export default function PartFinder() {
           }}
         >
           <option value="">{t('partFinder.brand')}</option>
-          {BRANDS.map((b) => (
+          {brands.map((b) => (
             <option key={b} value={b}>{b}</option>
           ))}
         </select>
 
-        <select value={model} aria-label={t('partFinder.model')} onChange={(e) => setModel(e.target.value)} disabled={!brand}>
+        {/* Also disabled when the chosen brand has no representative models
+            listed — MODELS_BY_BRAND only covers the original nine brands,
+            so a newer one (Infinix, Tecno, Walton, ...) would otherwise
+            leave an enabled dropdown containing nothing but the
+            placeholder. Model is optional anyway; brand + category alone
+            is a perfectly good search. */}
+        <select
+          value={model}
+          aria-label={t('partFinder.model')}
+          onChange={(e) => setModel(e.target.value)}
+          disabled={!brand || modelsForBrand.length === 0}
+        >
           <option value="">{t('partFinder.model')}</option>
-          {(MODELS_BY_BRAND[brand] || []).map((m) => (
+          {modelsForBrand.map((m) => (
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
 
         <select value={category} aria-label={t('partFinder.category')} onChange={(e) => setCategory(e.target.value)}>
           <option value="">{t('partFinder.category')}</option>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>

@@ -27,8 +27,15 @@ export default function FlashSale({ products, onAdd }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Recompute from the clock every tick rather than subtracting 1000ms
+    // from the previous value. Browsers heavily throttle setInterval in
+    // background tabs (often to once a minute), so the subtract-based
+    // version fell further and further behind real time the longer the tab
+    // sat in the background — come back after an hour and the "sale ends
+    // in" countdown was showing roughly an hour too much. Reading the clock
+    // each tick is self-correcting no matter how irregularly it fires.
     const timer = setInterval(() => {
-      setRemaining((r) => (r <= 1000 ? getMidnight() - Date.now() : r - 1000));
+      setRemaining(getMidnight() - Date.now());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
