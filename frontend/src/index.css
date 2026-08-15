@@ -2293,13 +2293,13 @@ button { font-family: inherit; cursor: pointer; }
   left: -60px;
   width: 56px;
 }
-.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 2.2; }
-.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.cityscape-bike-frame-fill { fill: var(--sunshine); }
-.cityscape-spoke { fill: none; stroke: var(--sunshine); stroke-width: 1.2; opacity: 0.6; }
+/* Bolder strokes than the rest of the scene — a thin, delicate line reads
+   as detail on a building but as noise on a moving object this small;
+   this needs to be legible as "a bicycle" at a glance while it's sliding
+   past, not examined up close. */
+.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 3; }
+.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .cityscape-rider { fill: var(--paper); stroke: var(--paper); }
-.cityscape-cap { stroke: var(--berry); }
-.cityscape-bag { fill: var(--berry); }
 
 @keyframes cityscape-drive-car {
   from { transform: translateX(-80px) translateZ(0); }

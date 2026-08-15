@@ -223,55 +223,36 @@ export default function CityscapeStrip() {
         </div>
       </div>
 
-      {/* Delivery cyclist — a proper diamond-frame bicycle (chain stay,
-          seat stay/tube, top tube, down tube, fork, saddle, chainring +
-          crank/pedals) rather than the earlier simplified triangle, plus a
-          fuller rider (leaning torso, both legs mid-pedal-stroke, cap, and
-          a delivery bag on the back). Wheels/frame stay thin stroked lines
-          (accurate for real bike tubing); rider and bag are solid filled
-          shapes. Ties into the "Fast Delivery" branding used elsewhere. */}
+      {/* Delivery cyclist — deliberately minimal, icon-style (closer to a
+          map "bike share" pictogram than a detailed illustration). The
+          previous version packed in a chainring, crank/pedals, a cap, and
+          a delivery bag, which at this element's actual ~50px display
+          size just merged into noise — impossible to tell it was a bike
+          at all. Fewer, bolder strokes read far more clearly this small:
+          two plain wheel rings (no spokes), a single clean frame outline,
+          and a simple rider silhouette (head + one back/arm curve + one
+          leg). Ties into the "Fast Delivery" branding used elsewhere. */}
       <div className="cityscape-cyclist-lane">
         <div className="cityscape-cyclist">
-        <svg viewBox="0 0 70 48">
-          <circle cx="12" cy="36" r="9" className="cityscape-wheel-ring" />
-          <circle cx="56" cy="36" r="9" className="cityscape-wheel-ring" />
-          {/* Spokes — four lines per wheel, read as a wheel at this size
-              far better than a bare ring did. */}
-          <path d="M12 27 L12 45 M3 36 L21 36 M5.5 29.5 L18.5 42.5 M5.5 42.5 L18.5 29.5" className="cityscape-spoke" />
-          <path d="M56 27 L56 45 M47 36 L65 36 M49.5 29.5 L62.5 42.5 M49.5 42.5 L62.5 29.5" className="cityscape-spoke" />
-          <circle cx="12" cy="36" r="2" className="cityscape-wheel" />
-          <circle cx="56" cy="36" r="2" className="cityscape-wheel" />
+          <svg viewBox="0 0 70 46">
+            <circle cx="12" cy="34" r="10" className="cityscape-wheel-ring" />
+            <circle cx="54" cy="34" r="10" className="cityscape-wheel-ring" />
+            <circle cx="12" cy="34" r="1.8" className="cityscape-wheel" />
+            <circle cx="54" cy="34" r="1.8" className="cityscape-wheel" />
 
-          {/* Diamond frame */}
-          <path
-            d="M12 36 L32 36 M12 36 L26 15 M32 36 L26 15 M26 15 L48 13 M32 36 L48 13 M48 13 L56 36 M48 13 L53 15"
-            className="cityscape-bike-frame"
-          />
-          {/* Saddle */}
-          <rect x="22.5" y="12.5" width="8" height="2.4" rx="1.2" className="cityscape-bike-frame-fill" />
-          {/* Chainring + crank arms + pedals */}
-          <circle cx="32" cy="36" r="3.4" className="cityscape-bike-frame-fill" />
-          <path d="M32 36 L40 42 M32 36 L24 27" className="cityscape-bike-frame" />
-          <rect x="37.5" y="41" width="6" height="2.4" rx="1" className="cityscape-bike-frame-fill" />
-          <rect x="20.5" y="24.5" width="6" height="2.4" rx="1" className="cityscape-bike-frame-fill" />
+            {/* Frame — one clean outline, no separate saddle/chainring/
+                pedal shapes cluttering it up. */}
+            <path
+              d="M12 34 L30 34 M30 34 L24 15 M24 15 L44 13 M30 34 L44 13 M44 13 L54 34"
+              className="cityscape-bike-frame"
+            />
 
-          {/* Delivery bag on the back */}
-          <rect x="15" y="16" width="10" height="14" rx="2.5" className="cityscape-bag" />
-
-          {/* Rider */}
-          <circle cx="44" cy="7" r="4.3" className="cityscape-rider" />
-          {/* Delivery cap — a small brim on the rider's head so the
-              silhouette reads as "delivery rider" rather than a bare head. */}
-          <path d="M39.5 5.5 Q44 2 48.5 5.5" className="cityscape-cap" fill="none" strokeWidth="2.4" strokeLinecap="round" />
-          {/* Torso (shoulder to hip) and arm (shoulder to handlebar) */}
-          <path d="M40 11 Q33 13 26 15" className="cityscape-rider" fill="none" strokeWidth="4.2" strokeLinecap="round" />
-          <path d="M40 11 L53 15" className="cityscape-rider" fill="none" strokeWidth="3.4" strokeLinecap="round" />
-          {/* Both legs, mid pedal-stroke — one extended toward the front
-              pedal, one bent up toward the rear — instead of the earlier
-              single generic leg line. */}
-          <path d="M26 15 L35 24 L40 42" className="cityscape-rider" fill="none" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M26 15 L22 22 L24 27" className="cityscape-rider" fill="none" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+            {/* Rider — head, one curved line for the back+arm, one line
+                for the leg. */}
+            <circle cx="40" cy="7" r="5" className="cityscape-rider" />
+            <path d="M37 11 Q29 14 24 15 M38 10 L46 12" className="cityscape-rider" fill="none" strokeWidth="4" strokeLinecap="round" />
+            <path d="M24 15 L28 25 L30 34" className="cityscape-rider" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </div>
       </div>
     </div>
