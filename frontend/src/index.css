@@ -2289,23 +2289,34 @@ button { font-family: inherit; cursor: pointer; }
    looking like scribbles). */
 .cityscape-cyclist {
   position: absolute;
-  bottom: 4%;
-  left: -60px;
-  width: 56px;
+  /* Sized/positioned for the 100x70 viewBox: rendered height is
+     76 * 0.7 = 53px, and the wheels bottom out ~4% above the element's
+     own bottom edge, which lands them on the road at this offset. Wider
+     than before (56px) because the previous size left the frame detail
+     too small to resolve as a bicycle at all. */
+  bottom: 5%;
+  left: -76px;
+  width: 76px;
 }
 /* Bolder strokes than the rest of the scene — a thin, delicate line reads
    as detail on a building but as noise on a moving object this small;
    this needs to be legible as "a bicycle" at a glance while it's sliding
    past, not examined up close. */
-.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 3; }
-.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 3.5; }
+.cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.cityscape-bike-frame-fill { fill: var(--sunshine); }
 .cityscape-rider { fill: var(--paper); stroke: var(--paper); }
 
+/* The `to` value adds back each vehicle's own width + its negative `left`
+   offset, so it travels fully past the right edge before looping. Ending
+   at a bare translateX(100%) moved the *lane* by the strip's width, which
+   still left the vehicle (sitting at a negative `left` inside that lane)
+   partly on screen when it snapped back — a visible pop. */
 @keyframes cityscape-drive-car {
-  from { transform: translateX(-80px) translateZ(0); }
-  to { transform: translateX(100%) translateZ(0); }
+  from { transform: translateX(0) translateZ(0); }
+  to { transform: translateX(calc(100% + 148px)) translateZ(0); }
 }
 @keyframes cityscape-drive-scooter {
-  from { transform: translateX(-60px) translateZ(0); }
-  to { transform: translateX(100%) translateZ(0); }
+  from { transform: translateX(0) translateZ(0); }
+  to { transform: translateX(calc(100% + 152px)) translateZ(0); }
 }

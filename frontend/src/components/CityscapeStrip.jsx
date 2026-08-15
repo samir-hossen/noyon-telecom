@@ -234,24 +234,37 @@ export default function CityscapeStrip() {
           leg). Ties into the "Fast Delivery" branding used elsewhere. */}
       <div className="cityscape-cyclist-lane">
         <div className="cityscape-cyclist">
-          <svg viewBox="0 0 70 46">
-            <circle cx="12" cy="34" r="10" className="cityscape-wheel-ring" />
-            <circle cx="54" cy="34" r="10" className="cityscape-wheel-ring" />
-            <circle cx="12" cy="34" r="1.8" className="cityscape-wheel" />
-            <circle cx="54" cy="34" r="1.8" className="cityscape-wheel" />
+          <svg viewBox="0 0 100 70">
+            {/* Wheels — equal size, well separated, the single most
+                important cue that this is a bicycle at small size. */}
+            <circle cx="20" cy="52" r="15" className="cityscape-wheel-ring" />
+            <circle cx="78" cy="52" r="15" className="cityscape-wheel-ring" />
+            <circle cx="20" cy="52" r="2" className="cityscape-wheel" />
+            <circle cx="78" cy="52" r="2" className="cityscape-wheel" />
 
-            {/* Frame — one clean outline, no separate saddle/chainring/
-                pedal shapes cluttering it up. */}
+            {/* Proper diamond frame: rear triangle (chain stay + seat stay
+                + seat tube) and front triangle (top tube + down tube),
+                then the fork down to the front hub. The previous version
+                was missing the seat stay entirely — the rear triangle was
+                left open, which is a big part of why it didn't read as a
+                bike frame. */}
             <path
-              d="M12 34 L30 34 M30 34 L24 15 M24 15 L44 13 M30 34 L44 13 M44 13 L54 34"
+              d="M20 52 L46 52 M20 52 L36 30 M46 52 L36 30 M36 30 L64 26 M46 52 L64 26 M64 26 L78 52"
               className="cityscape-bike-frame"
             />
+            {/* Saddle and handlebar — small but they're what visually
+                caps the frame off as a bicycle rather than a bare truss. */}
+            <path d="M30 29 L42 29 M58 23 L70 23" className="cityscape-bike-frame" />
+            {/* Crank + pedal at the bottom bracket */}
+            <circle cx="46" cy="52" r="3" className="cityscape-bike-frame-fill" />
 
-            {/* Rider — head, one curved line for the back+arm, one line
-                for the leg. */}
-            <circle cx="40" cy="7" r="5" className="cityscape-rider" />
-            <path d="M37 11 Q29 14 24 15 M38 10 L46 12" className="cityscape-rider" fill="none" strokeWidth="4" strokeLinecap="round" />
-            <path d="M24 15 L28 25 L30 34" className="cityscape-rider" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Rider — upright posture (hip at the saddle, torso rising
+                clear of the frame) instead of the previous hunched-forward
+                pose that overlapped the top tube and merged into it. */}
+            <circle cx="46" cy="7" r="6" className="cityscape-rider" />
+            <path d="M36 28 L44 13" className="cityscape-rider" fill="none" strokeWidth="5" strokeLinecap="round" />
+            <path d="M43 16 L64 26" className="cityscape-rider" fill="none" strokeWidth="4" strokeLinecap="round" />
+            <path d="M36 28 L44 40 L46 52" className="cityscape-rider" fill="none" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>
