@@ -17,16 +17,6 @@ if (process.env.NODE_ENV === 'production' && !process.env.SITE_URL) {
   throw new Error('SITE_URL must be set in production (see backend/.env.example) — refusing to generate sitemaps with a placeholder domain.');
 }
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
-// Every route below (sitemap-index, sitemap-pages, sitemap-products) is
-// served by THIS backend, not the frontend — each needs the backend's own
-// public URL, not SITE_URL (which points at the frontend static host, which
-// has no /api route at all). Using SITE_URL for these previously made the
-// sitemap index advertise a URL that 404s, which Search Console would only
-// surface weeks later as a failed sitemap fetch. Same env var
-// payment.routes.js already uses for this backend's own public URL. SITE_URL
-// itself is still what's used *inside* the generated XML — every <loc> in
-// sitemap-pages.xml/sitemap-products.xml points at the storefront, not this API.
-const API_URL = (process.env.API_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/$/, '');
 
 function escapeXml(s) {
   return String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
@@ -44,14 +34,23 @@ router.get('/sitemap-index.xml', (req, res) => {
   // product/catalog change is still reflected quickly, while sparing a
   // repeat-crawl request from regenerating this on every hit.
   res.set('Cache-Control', 'public, max-age=300');
+  // SITE_URL (the frontend), not API_URL, for the <loc>s below — per the
+  // sitemap protocol, every sitemap listed inside a sitemap index must be
+  // on the same site as the index itself. The frontend's _redirects file
+  // proxies these exact three paths straight through to this backend, so
+  // the URL a crawler sees stays same-origin while the content is still
+  // generated here. (Search Console's manual "submit a sitemap" box also
+  // silently strips a pasted cross-origin URL down to a path and fetches
+  // it against the property's own domain regardless — same-origin avoids
+  // that failure mode too, not just the sitemap-index rule above.)
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>${API_URL}/api/sitemap-pages.xml</loc>
+    <loc>${SITE_URL}/api/sitemap-pages.xml</loc>
     <lastmod>${lastmod}</lastmod>
   </sitemap>
   <sitemap>
-    <loc>${API_URL}/api/sitemap-products.xml</loc>
+    <loc>${SITE_URL}/api/sitemap-products.xml</loc>
     <lastmod>${lastmod}</lastmod>
   </sitemap>
 </sitemapindex>`);

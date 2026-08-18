@@ -1,1 +1,15 @@
+# Proxy the backend's sitemap/feed XML through this same domain — Google
+# Search Console's "submit a sitemap" tool only accepts a path relative to
+# the verified property, not an absolute URL on a different host, so a
+# cross-domain sitemap URL submitted directly there gets silently truncated
+# to a path and 404s against this frontend instead of reaching the backend.
+# These four exact paths are proxied (not redirected — the URL in the
+# browser/Search Console stays on this domain) straight through to the real
+# backend routes; everything else is unaffected. See backend/src/routes/
+# sitemap.routes.js and feed.routes.js for what actually generates these.
+/api/sitemap-index.xml     https://noyon-telecom-api.onrender.com/api/sitemap-index.xml     200
+/api/sitemap-pages.xml     https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml     200
+/api/sitemap-products.xml  https://noyon-telecom-api.onrender.com/api/sitemap-products.xml  200
+/api/google-merchant.xml   https://noyon-telecom-api.onrender.com/api/google-merchant.xml   200
+
 /*    /index.html   200
