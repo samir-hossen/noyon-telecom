@@ -13,7 +13,8 @@ export default function AdminLogin() {
   const { login, verifyTwoFA, logout } = useAuth();
   const navigate = useNavigate();
 
-  usePageMeta('Admin Login', 'Staff sign-in for the Noyon Telecom admin dashboard.');
+  // noindex: staff-only sign-in, must never appear in search results.
+  usePageMeta('Admin Login', 'Staff sign-in for the Noyon Telecom admin dashboard.', undefined, undefined, undefined, true);
 
   async function onSubmit(e) {
     e.preventDefault();

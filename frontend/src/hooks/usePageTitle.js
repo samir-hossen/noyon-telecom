@@ -6,6 +6,13 @@ const DEFAULT_TITLE = SITE_NAME + ' — Wholesale Mobile Phone Spare Parts';
 const DEFAULT_DESCRIPTION =
   "Bangladesh's trusted wholesale importer & distributor of mobile phone spare parts — displays, batteries, back glass and more, for dealers, shops and service centers.";
 
+// Pins canonical/og:url to one real production domain, same idea as the
+// backend's required SITE_URL (see sitemap.routes.js) — set VITE_SITE_URL
+// as a build-time env var before going live. Falls back to whatever origin
+// actually served the page so nothing breaks (or needs configuring) in
+// local dev or before that env var is set.
+const SITE_ORIGIN = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, '');
+
 function setMeta(name, content, attr) {
   attr = attr || 'name';
   if (!content) return;
@@ -86,7 +93,13 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
   useEffect(() => {
     const fullTitle = title ? title + ' — ' + SITE_NAME : DEFAULT_TITLE;
     const desc = description || DEFAULT_DESCRIPTION;
-    const url = window.location.href;
+    // Drops the query string when a page doesn't pass its own canonicalPath
+    // (e.g. /request-quote?productId=... prefilled from a product page, or
+    // /verify-email?token=...) — the underlying page content is identical
+    // regardless of those params, so the old `window.location.href` default
+    // was minting a distinct "canonical" URL per query-string combination
+    // instead of pointing every variant at the one real page.
+    const canonicalUrl = SITE_ORIGIN + (canonicalPath || window.location.pathname);
 
     document.title = fullTitle;
     setMeta('description', desc);
@@ -94,7 +107,10 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
 
     setMeta('og:title', fullTitle, 'property');
     setMeta('og:description', desc, 'property');
-    setMeta('og:url', url, 'property');
+    // og:url should match canonical, not the raw browser URL — otherwise a
+    // link shared from a URL carrying ?utm_source=/fbclid=/etc tracking
+    // params gets that tracking noise baked into the share preview's URL.
+    setMeta('og:url', canonicalUrl, 'property');
     setMeta('og:type', 'website', 'property');
     if (image) setMeta('og:image', image, 'property');
 
@@ -103,8 +119,7 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
     setMeta('twitter:description', desc);
     if (image) setMeta('twitter:image', image);
 
-    const origin = window.location.origin;
-    setCanonical(canonicalPath ? origin + canonicalPath : url);
+    setCanonical(canonicalUrl);
 
     const ldBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     ldBlocks.forEach((block) => setJsonLd(block.id, block.data));

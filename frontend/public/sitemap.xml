@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Static sitemap for core/category pages. Product URLs are served dynamically
-  from the backend at /api/sitemap-products.xml (see backend/src/routes/sitemap.routes.js)
-  since a static file can't scale to thousands of SKUs. In production, add
-  BOTH sitemaps to Google Search Console / robots.txt, or configure your
-  reverse proxy to merge them at a single /sitemap-index.xml.
+  SUPERSEDED — kept only so this URL keeps returning valid XML if it was
+  ever submitted directly in Search Console. /api/sitemap-index.xml (see
+  robots.txt) no longer references this file: both the pages sitemap and
+  the product sitemap are now generated dynamically by the backend
+  (backend/src/routes/sitemap.routes.js — /api/sitemap-pages.xml and
+  /api/sitemap-products.xml), so category/brand changes show up
+  automatically instead of needing a manual edit here.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://noyon-telecom-web.onrender.com/</loc><priority>1.0</priority><changefreq>daily</changefreq></url>
@@ -26,7 +28,8 @@
   <url><loc>https://noyon-telecom-web.onrender.com/shop?brand=Apple</loc><priority>0.7</priority></url>
   <url><loc>https://noyon-telecom-web.onrender.com/shop?brand=Samsung</loc><priority>0.7</priority></url>
   <url><loc>https://noyon-telecom-web.onrender.com/shop?brand=Xiaomi</loc><priority>0.6</priority></url>
-  <url><loc>https://noyon-telecom-web.onrender.com/register</loc><priority>0.6</priority></url>
+  <!-- Not /register: robots.txt disallows it, so listing it here would
+       contradict that (Google indexing a URL it's also told not to crawl). -->
   <url><loc>https://noyon-telecom-web.onrender.com/about</loc><priority>0.6</priority></url>
   <url><loc>https://noyon-telecom-web.onrender.com/request-quote</loc><priority>0.6</priority></url>
   <url><loc>https://noyon-telecom-web.onrender.com/contact</loc><priority>0.5</priority></url>

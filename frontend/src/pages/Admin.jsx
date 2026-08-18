@@ -29,7 +29,8 @@ export default function Admin() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
-  usePageMeta('Admin Dashboard', 'Manage products, orders, and coupons.');
+  // noindex: staff-only dashboard, must never appear in search results.
+  usePageMeta('Admin Dashboard', 'Manage products, orders, and coupons.', undefined, undefined, undefined, true);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);

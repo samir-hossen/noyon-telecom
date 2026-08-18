@@ -18,7 +18,8 @@ export default function OrderConfirmation() {
   const paymentIssue = searchParams.get('payment');
   const { t } = useLanguage();
 
-  usePageMeta(t('orderConf.pageTitle'), t('orderConf.pageMeta'));
+  // noindex: one customer's order detail, not content that should ever rank.
+  usePageMeta(t('orderConf.pageTitle'), t('orderConf.pageMeta'), undefined, undefined, undefined, true);
 
   // Checkout is a long, scrolled-down form on mobile; without this the
   // browser carries that scroll position over to this much shorter page

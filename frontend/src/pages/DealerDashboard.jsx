@@ -20,7 +20,8 @@ export default function DealerDashboard() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [licenseUploading, setLicenseUploading] = useState(false);
 
-  usePageMeta(t('dealerDash.pageTitle'), t('dealerDash.pageMeta'));
+  // noindex: authenticated dealer account area, no public content.
+  usePageMeta(t('dealerDash.pageTitle'), t('dealerDash.pageMeta'), undefined, undefined, undefined, true);
 
   useEffect(() => {
     // Stats cards use a cheap DB-side aggregate (accurate for a dealer's

@@ -14,7 +14,8 @@ export default function Wishlist() {
   const { showToast } = useToast();
   const { t } = useLanguage();
 
-  usePageMeta(t('wishlist.pageTitle'), t('wishlist.pageMeta'));
+  // noindex: personal, per-account page with no content of its own to rank.
+  usePageMeta(t('wishlist.pageTitle'), t('wishlist.pageMeta'), undefined, undefined, undefined, true);
 
   async function handleAdd(id) {
     try {

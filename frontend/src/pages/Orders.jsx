@@ -58,7 +58,8 @@ export default function Orders() {
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  usePageMeta(t('orders.pageTitle'), t('orders.pageMeta'));
+  // noindex: personal order history, nothing here is public content.
+  usePageMeta(t('orders.pageTitle'), t('orders.pageMeta'), undefined, undefined, undefined, true);
 
   useEffect(() => {
     // No .catch previously — a failed request left this page stuck on the

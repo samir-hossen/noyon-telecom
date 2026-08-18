@@ -231,30 +231,34 @@ export default function Navbar() {
             >
               ☰ {t('nav.allCategoriesBtn')}
             </button>
-            {megaOpen && (
-              <div className="mega-menu" role="menu">
-                {MEGA_MENU_GROUPS.map((group) => (
-                  <div className="mega-menu-col" key={group.titleKey} role="group" aria-label={t(group.titleKey)}>
-                    <h4>{t(group.titleKey)}</h4>
-                    {group.categories.map((c) => (
-                      <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`} onClick={() => setMegaOpen(false)} role="menuitem">
-                        {c}
-                      </Link>
-                    ))}
-                  </div>
-                ))}
-                <div className="mega-menu-col mega-menu-brands" role="group" aria-label={t('nav.brands')}>
-                  <h4>{t('nav.brands')}</h4>
-                  <div className="mega-menu-brand-grid">
-                    {BRANDS.map((b) => (
-                      <Link key={b} to={`/shop?brand=${encodeURIComponent(b)}`} onClick={() => setMegaOpen(false)} role="menuitem">
-                        {b}
-                      </Link>
-                    ))}
-                  </div>
+            {/* Always rendered (not `{megaOpen && ...}`) so every category/brand
+                link below is real, crawlable HTML present in the DOM from
+                first render — a crawler that doesn't hover/click a menu
+                trigger previously saw none of these links at all. Visibility
+                is purely CSS now (.mega-menu.open, see index.css), the same
+                pattern .mobile-menu already used below. */}
+            <div className={`mega-menu ${megaOpen ? 'open' : ''}`} role="menu" aria-hidden={!megaOpen}>
+              {MEGA_MENU_GROUPS.map((group) => (
+                <div className="mega-menu-col" key={group.titleKey} role="group" aria-label={t(group.titleKey)}>
+                  <h4>{t(group.titleKey)}</h4>
+                  {group.categories.map((c) => (
+                    <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`} onClick={() => setMegaOpen(false)} role="menuitem">
+                      {c}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+              <div className="mega-menu-col mega-menu-brands" role="group" aria-label={t('nav.brands')}>
+                <h4>{t('nav.brands')}</h4>
+                <div className="mega-menu-brand-grid">
+                  {BRANDS.map((b) => (
+                    <Link key={b} to={`/shop?brand=${encodeURIComponent(b)}`} onClick={() => setMegaOpen(false)} role="menuitem">
+                      {b}
+                    </Link>
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
           </div>
           <Link to="/">{t('nav.home')}</Link>
           <Link to="/shop">{t('nav.allParts')}</Link>

@@ -365,14 +365,22 @@ button { font-family: inherit; cursor: pointer; }
   border-top: 3px solid var(--berry);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  animation: fade-up 0.18s var(--ease) both;
   display: grid;
   grid-template-columns: repeat(6, minmax(150px, 1fr));
   gap: 24px;
   padding: 26px;
   z-index: 60;
   min-width: 900px;
+  /* Always in the DOM now (see Navbar.jsx) so every category/brand link
+     inside is real, crawlable HTML instead of only existing after a hover —
+     CSS-only show/hide here, same opacity+pointer-events pattern already
+     used for .mobile-menu/.mobile-menu-backdrop below. */
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
+.mega-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .mega-menu-col { display: flex; flex-direction: column; gap: 8px; }
 .mega-menu-col h4 {
   font-size: 0.78rem;
@@ -1086,7 +1094,11 @@ button { font-family: inherit; cursor: pointer; }
 .breadcrumb-trail a:hover { color: var(--berry-text); }
 .breadcrumb-trail span[aria-current] { color: var(--ink); font-weight: 600; }
 .pd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; padding: 24px 0 80px; }
-.pd-img { background: var(--paper-dim); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+/* aspect-ratio reserves the image's height before it loads (matches the
+   skeleton loader above, which uses the same ratio) — without it the image
+   pops in at full height once loaded, shifting the thumbnails/page content
+   below it and hurting CLS specifically on product pages. */
+.pd-img { background: var(--paper-dim); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); aspect-ratio: 1 / 1; }
 .pd-thumb-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .pd-thumb {
   padding: 0;

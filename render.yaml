@@ -109,6 +109,11 @@ services:
       # https://noyon-telecom-api.onrender.com/api
       - key: VITE_API_URL
         sync: false
+      # This service's own public URL, e.g. https://noyon-telecom-web.onrender.com
+      # (or a custom domain once one is set up) — used to build stable
+      # canonical/og:url tags. See frontend/.env.example.
+      - key: VITE_SITE_URL
+        sync: false
       - key: VITE_RECAPTCHA_SITE_KEY
         sync: false
       - key: VITE_GA_ID

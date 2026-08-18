@@ -39,6 +39,16 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 // admin.routes.js).
 app.use(compression());
 
+// A missing CORS_ORIGIN in production would otherwise silently fall back to
+// the localhost dev origin, locking out the real deployed frontend (cross-
+// origin cookies would never be allowed) with no obvious error pointing at
+// why. Warns loudly rather than throwing at boot (unlike SITE_URL's
+// fail-fast check below) — CORS_ORIGIN gates the entire site's login/
+// checkout, so refusing to start at all here is a bigger, riskier blast
+// radius than an SEO route serving one wrong URL.
+if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGIN) {
+  console.error('WARNING: CORS_ORIGIN is not set in production — falling back to http://localhost:5173, which will reject every request from the real frontend. Set CORS_ORIGIN in your hosting provider’s dashboard.');
+}
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map((s) => s.trim());
 app.use(
   cors({

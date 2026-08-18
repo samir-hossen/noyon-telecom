@@ -20,7 +20,7 @@ export const ALL_CATEGORIES = [
   'Repair Tools', 'Accessories',
 ];
 
-const ALL_BRANDS = [
+export const ALL_BRANDS = [
   'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
   'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
 ];

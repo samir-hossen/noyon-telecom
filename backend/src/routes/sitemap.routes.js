@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import { getOrSet } from '../utils/cache.js';
+import { getActiveCategories, getActiveBrands } from '../utils/productQuery.js';
+import { ALL_CATEGORIES, ALL_BRANDS } from './products.routes.js';
 
 const router = Router();
 // Set SITE_URL in the backend .env to your real storefront domain in production.
@@ -15,21 +17,23 @@ if (process.env.NODE_ENV === 'production' && !process.env.SITE_URL) {
   throw new Error('SITE_URL must be set in production (see backend/.env.example) — refusing to generate sitemaps with a placeholder domain.');
 }
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
-// /api/sitemap-products.xml below is served by THIS backend, not the
-// frontend — it needs the backend's own public URL, not SITE_URL (which
-// points at the frontend). Using SITE_URL here previously made the sitemap
-// index advertise a URL that 404s (the frontend static host has no /api
-// route at all), which Search Console would only surface weeks later as a
-// failed sitemap fetch. Same env var payment.routes.js already uses for
-// this backend's own public URL.
+// Every route below (sitemap-index, sitemap-pages, sitemap-products) is
+// served by THIS backend, not the frontend — each needs the backend's own
+// public URL, not SITE_URL (which points at the frontend static host, which
+// has no /api route at all). Using SITE_URL for these previously made the
+// sitemap index advertise a URL that 404s, which Search Console would only
+// surface weeks later as a failed sitemap fetch. Same env var
+// payment.routes.js already uses for this backend's own public URL. SITE_URL
+// itself is still what's used *inside* the generated XML — every <loc> in
+// sitemap-pages.xml/sitemap-products.xml points at the storefront, not this API.
 const API_URL = (process.env.API_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/$/, '');
 
 function escapeXml(s) {
   return String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 }
 
-// Single entry point for search engines / Search Console: merges the static
-// core-pages sitemap (served from the frontend's /public) with the dynamic,
+// Single entry point for search engines / Search Console: merges the
+// dynamic pages sitemap (home/static/category/brand URLs) with the dynamic,
 // always-current product sitemap below into one <sitemapindex>, so nobody
 // has to remember to submit two separate URLs.
 router.get('/sitemap-index.xml', (req, res) => {
@@ -43,7 +47,7 @@ router.get('/sitemap-index.xml', (req, res) => {
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>${SITE_URL}/sitemap.xml</loc>
+    <loc>${API_URL}/api/sitemap-pages.xml</loc>
     <lastmod>${lastmod}</lastmod>
   </sitemap>
   <sitemap>
@@ -51,6 +55,63 @@ router.get('/sitemap-index.xml', (req, res) => {
     <lastmod>${lastmod}</lastmod>
   </sitemap>
 </sitemapindex>`);
+});
+
+// Homepage + the storefront's evergreen marketing pages, plus every
+// category/brand that currently has at least one published product —
+// computed from the live catalog via the same getActiveCategories/
+// getActiveBrands helpers the Shop page's filter pills use, rather than
+// hardcoded. A previous static frontend/public/sitemap.xml listed only 3 of
+// the 20 real brands and needed a manual edit every time a category was
+// added/retired — exactly the "static sitemap that goes outdated" problem.
+// Pure and DB-free (categories/brands passed in) so it's unit-testable
+// without a database — see sitemap.routes.test.js.
+export function buildPagesSitemapXml({ siteUrl, categories, brands }) {
+  const entries = [
+    { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
+    { loc: `${siteUrl}/shop`, priority: '0.9', changefreq: 'daily' },
+    ...categories.map((c) => ({ loc: `${siteUrl}/shop?category=${encodeURIComponent(c)}`, priority: '0.7' })),
+    ...brands.map((b) => ({ loc: `${siteUrl}/shop?brand=${encodeURIComponent(b)}`, priority: '0.6' })),
+    { loc: `${siteUrl}/about`, priority: '0.6' },
+    { loc: `${siteUrl}/request-quote`, priority: '0.6' },
+    // NOT /register: robots.txt disallows it (it's the auth/signup form),
+    // so listing it here would tell Google to index a URL it's also told
+    // not to crawl — contradictory signals that show up in Search Console
+    // as "Indexed, though blocked by robots.txt". The old static
+    // frontend/public/sitemap.xml this route replaced had the same
+    // register-vs-robots.txt conflict; carried over here by mistake when
+    // porting it to be dynamic, caught during a later verification pass.
+    { loc: `${siteUrl}/contact`, priority: '0.5' },
+  ];
+  const urls = entries
+    .map(
+      (e) => `  <url>
+    <loc>${escapeXml(e.loc)}</loc>
+    <priority>${e.priority}</priority>${e.changefreq ? `\n    <changefreq>${e.changefreq}</changefreq>` : ''}
+  </url>`
+    )
+    .join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+}
+
+router.get('/sitemap-pages.xml', async (req, res, next) => {
+  try {
+    // Same public/unpersonalized/short-cache reasoning as sitemap-products.xml
+    // below — invalidateProductCache() (admin product writes) clears this
+    // too, so a newly active category/brand doesn't wait out the TTL.
+    res.set('Cache-Control', 'public, max-age=300');
+    const xml = await getOrSet('sitemap:pages-xml', 300, async () => {
+      const [categories, brands] = await Promise.all([
+        getActiveCategories(prisma, ALL_CATEGORIES),
+        getActiveBrands(prisma, ALL_BRANDS),
+      ]);
+      return buildPagesSitemapXml({ siteUrl: SITE_URL, categories, brands });
+    });
+    res.set('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Dynamically generated so it always reflects the live catalog, however many

@@ -263,6 +263,17 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
     const errors = [];
     const toIndex = []; // successfully written rows, bulk-synced to the search index once at the end
 
+    // One lookup for every SKU already in the file, instead of a
+    // `findUnique` per row inside importRow() below — at up to 5000 rows
+    // that was up to 5000 extra round trips just to find out which rows are
+    // creates vs updates, on top of the create/update itself.
+    const skusInFile = rows.map((r) => (r.sku ? String(r.sku).trim() : null)).filter(Boolean);
+    const existingBySku = new Map(
+      skusInFile.length
+        ? (await prisma.product.findMany({ where: { sku: { in: skusInFile } }, select: { id: true, sku: true } })).map((p) => [p.sku, p.id])
+        : []
+    );
+
     // Processes one parsed spreadsheet row: validates required fields, then
     // upserts by SKU. Pulled out of the loop below so rows can run
     // concurrently in small batches instead of one full DB round-trip at a
@@ -304,9 +315,9 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
       data.img = data.images[0] || '';
 
       try {
-        const existing = data.sku ? await prisma.product.findUnique({ where: { sku: data.sku } }) : null;
-        if (existing) {
-          const row = await prisma.product.update({ where: { id: existing.id }, data });
+        const existingId = data.sku ? existingBySku.get(data.sku) : null;
+        if (existingId) {
+          const row = await prisma.product.update({ where: { id: existingId }, data });
           updated++;
           toIndex.push(row);
         } else {

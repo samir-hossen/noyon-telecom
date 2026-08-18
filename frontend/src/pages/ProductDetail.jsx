@@ -33,6 +33,20 @@ function pushRecentlyViewed(id) {
   }
 }
 
+// "Buy X at ৳1,234 in Bangladesh. <real description>. In stock. Order from
+// Noyon Telecom." — built entirely from this product's own DB fields (price,
+// desc, stock), never invented. Mirrors the "[Product] Price in Bangladesh"
+// title pattern below, a common high-intent search phrase for BD shoppers.
+function buildMetaDescription(product, t) {
+  // Same "0/missing price = not really orderable yet" rule ProductCard uses
+  // — don't state a fake "at ৳0" price for a draft-priced product.
+  const priceUnavailable = !product.price || product.price <= 0;
+  const priceText = priceUnavailable ? '' : `at ${formatPrice(product.price)} `;
+  const stockText = product.stock > 0 ? 'In stock.' : 'Currently out of stock.';
+  const detail = product.desc ? product.desc.slice(0, 90) : t('pd.metaFallback', null, { category: product.category });
+  return `Buy ${product.name} ${priceText}in Bangladesh. ${detail} ${stockText} Order from Noyon Telecom.`;
+}
+
 export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -121,8 +135,8 @@ export default function ProductDetail() {
   }, [product]);
 
   usePageMeta(
-    product?.name,
-    product ? `${product.name} — ${product.desc ? product.desc.slice(0, 140) : t('pd.metaFallback', null, { category: product.category })}` : undefined,
+    product ? `${product.name} Price in Bangladesh` : undefined,
+    product ? buildMetaDescription(product, t) : undefined,
     // Only pass a real image URL — resolveImg() falls back to an inline SVG
     // data: URI when a product has no photo yet (see utils/fallbackImage.js),
     // which is exactly right for an <img> tag but wrong here: Facebook/
@@ -172,7 +186,11 @@ export default function ProductDetail() {
             },
           },
         ]
-      : undefined
+      : undefined,
+    // noindex once the fetch has definitively failed (deleted product, bad
+    // link, etc) — without this, a dead product URL kept whatever meta the
+    // previously-viewed page left behind and was never marked non-indexable.
+    !!loadError
   );
 
   if (loadError) {

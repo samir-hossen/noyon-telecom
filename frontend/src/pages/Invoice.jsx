@@ -17,7 +17,8 @@ export default function Invoice() {
   const [error, setError] = useState('');
   const { t } = useLanguage();
 
-  usePageMeta(t('invoice.pageTitle'), t('invoice.pageMeta'));
+  // noindex: one customer's invoice, not content that should ever rank.
+  usePageMeta(t('invoice.pageTitle'), t('invoice.pageMeta'), undefined, undefined, undefined, true);
 
   useEffect(() => {
     // Guest orders require the email they checked out with as proof of
