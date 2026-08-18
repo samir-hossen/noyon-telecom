@@ -15,4 +15,4 @@ Disallow: /wishlist
 Disallow: /order-confirmation
 Disallow: /invoice
 
-Sitemap: https://noyon-telecom-web.onrender.com/api/sitemap-index.xml
+Sitemap: https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
