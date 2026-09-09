@@ -11,6 +11,30 @@ import { useLanguage } from '../context/LanguageContext';
 
 const PAGE_SIZE = 12;
 
+// ক্যাটাগরিভিত্তিক হাই-ভ্যালু এসইও কিওয়ার্ড ম্যাপিং
+const CATEGORY_SEO = {
+  display: {
+    title: 'Mobile Display Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Display Wholesale in Bangladesh',
+    desc: 'Wholesale importer of original smartphone LCD and OLED displays in Bangladesh. Best wholesale rates for repair shops in Gulistan, Dhaka.',
+  },
+  battery: {
+    title: 'Original Phone Battery Wholesale in Dhaka BD | Noyon Telecom',
+    h1: 'Original Phone Battery Wholesale in Dhaka',
+    desc: 'High quality original mobile phone batteries at wholesale prices in Bangladesh for dealers, repair shops and technicians.',
+  },
+  'charging port': {
+    title: 'Mobile Charging Port & Flex Ribbon Wholesale BD | Noyon Telecom',
+    h1: 'Mobile Charging Port Wholesale in Bangladesh',
+    desc: 'Wholesale supplier of smartphone charging ports, sub-boards, and flex ribbons across Bangladesh.',
+  },
+  'back glass': {
+    title: 'Mobile Back Glass & Housing Wholesale Bangladesh | Noyon Telecom',
+    h1: 'Mobile Back Glass & Housing Wholesale BD',
+    desc: 'Imported smartphone back glass, camera glass, and body housing replacement parts at wholesale rates.',
+  },
+};
+
 export default function Shop() {
   const [params, setParams] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -31,9 +55,7 @@ export default function Shop() {
   const page = Math.max(1, parseInt(params.get('page'), 10) || 1);
   const [searchInput, setSearchInput] = useState(search);
 
-  // Canonicalize away sort/page/search noise — only category (and brand)
-  // meaningfully changes what content is shown, so that's all that should
-  // get indexed as a distinct URL.
+  // Canonicalize away sort/page/search noise
   const canonicalPath = (() => {
     const clean = new URLSearchParams();
     if (category !== 'All') clean.set('category', category);
@@ -41,25 +63,29 @@ export default function Shop() {
     const qs = clean.toString();
     return `/shop${qs ? `?${qs}` : ''}`;
   })();
-  // Whichever single filter is actually narrowing the catalog right now —
-  // category wins if somehow both are set, matching the <h1> logic below.
-  // Was previously only checked for `category`, so filtering by brand alone
-  // silently kept the generic "Shop" title/description while the <h1>
-  // already correctly showed "{brand} Parts" — title and heading disagreeing
-  // like that is exactly the kind of mismatch Google's quality guidance
-  // flags structured data/metadata for, so it's worth keeping them in sync
-  // here even though this isn't structured data.
+
   const activeFilterName = category !== 'All' ? category : brand !== 'All' ? brand : null;
 
+  // বর্তমান ক্যাটাগরি কিওয়ার্ড শনাক্তকরণ
+  const catKey = category !== 'All' ? category.toLowerCase().replace(/-/g, ' ') : null;
+  const currentSEO = catKey ? CATEGORY_SEO[catKey] : null;
+
+  // ডাইনামিক পেজ মেটা ও এসইও হ্যান্ডলার
   usePageMeta(
     search
       ? t('shop.searchResultsTitle', null, { search })
+      : currentSEO
+      ? currentSEO.title
       : category !== 'All'
-      ? category
+      ? `${category} Wholesale in Bangladesh | Noyon Telecom`
       : brand !== 'All'
-      ? `${brand} ${t('shop.partsSuffix')}`
+      ? `${brand} Mobile Spare Parts Wholesale | Noyon Telecom`
       : t('shop.pageTitleDefault'),
-    activeFilterName ? t('shop.pageMetaCategory', null, { category: activeFilterName }) : t('shop.pageMetaDefault'),
+    currentSEO
+      ? currentSEO.desc
+      : activeFilterName
+      ? t('shop.pageMetaCategory', null, { category: activeFilterName })
+      : t('shop.pageMetaDefault'),
     undefined,
     canonicalPath,
     activeFilterName
@@ -78,17 +104,17 @@ export default function Shop() {
       : undefined
   );
 
-  // Keep the box in sync if the URL changes from elsewhere (e.g. navbar search).
+  // Keep the box in sync if the URL changes from elsewhere
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
 
-  // Track each distinct search term once (not on every keystroke/re-render).
+  // Track each distinct search term once
   useEffect(() => {
     if (search) trackSearch(search);
   }, [search]);
 
-  // Live search: debounce keystrokes so we don't fire a request on every character.
+  // Live search debouncing
   useEffect(() => {
     const handle = setTimeout(() => {
       if (searchInput !== search) setFilter('search', searchInput);
@@ -107,13 +133,10 @@ export default function Shop() {
     if (sort) q.set('sort', sort);
     q.set('page', page);
     q.set('limit', PAGE_SIZE);
+
     api
       .get(`/products?${q.toString()}`)
       .then((d) => {
-        // Guards against an earlier, slower filter/page request resolving
-        // after a newer one — without this, quickly clicking two category
-        // pills in a row can end with the listing showing the first
-        // click's results while the pill/URL both reflect the second.
         if (!current) return;
         setProducts(d.products);
         setCategories(d.categories);
@@ -121,9 +144,14 @@ export default function Shop() {
         setTotal(d.total);
         setTotalPages(d.totalPages);
       })
-      .finally(() => { if (current) setLoading(false); });
+      .finally(() => {
+        if (current) setLoading(false);
+      });
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    return () => { current = false; };
+    return () => {
+      current = false;
+    };
   }, [category, brand, search, sort, page]);
 
   async function handleAdd(id) {
@@ -148,13 +176,6 @@ export default function Shop() {
     setParams(next);
   }
 
-  // Same URL logic as setFilter, but returning the target URL (rather than
-  // navigating directly) so category/brand pills can render as real <Link>
-  // elements — a crawler that won't click a JS onClick handler can still
-  // follow an <a href>, so these filter combinations are discoverable
-  // on-page instead of only via the sitemap. React Router still handles the
-  // actual navigation client-side when a Link is clicked, so behavior for a
-  // real visitor is unchanged.
   function buildFilterUrl(key, value) {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -171,9 +192,6 @@ export default function Shop() {
     return `/shop${qs ? `?${qs}` : ''}`;
   }
 
-  // Windowed pagination — for large catalogs we don't want 40 page buttons
-  // stretching the layout; show first, last, current ±1, and ellipses.
-  // (Logic lives in utils/pagination.js so it's unit-tested without a DB.)
   function pageWindow() {
     return buildPageWindow(page, totalPages);
   }
@@ -187,11 +205,22 @@ export default function Shop() {
           <span aria-current="page">{activeFilterName}</span>
         </nav>
       )}
+
       <div className="page-header">
         <span className="eyebrow">{t('shop.eyebrow')}</span>
         <h1 className="page-title">
-          {search ? t('shop.resultsForPre', null, { search }) : category !== 'All' ? category : brand !== 'All' ? `${brand} ${t('shop.partsSuffix')}` : (
-            <>{t('shop.shopTitleTop')} <em>{t('shop.shopTitleEm')}</em></>
+          {search ? (
+            t('shop.resultsForPre', null, { search })
+          ) : currentSEO ? (
+            currentSEO.h1
+          ) : category !== 'All' ? (
+            `${category} Wholesale in Bangladesh`
+          ) : brand !== 'All' ? (
+            `${brand} ${t('shop.partsSuffix')}`
+          ) : (
+            <>
+              {t('shop.shopTitleTop')} <em>{t('shop.shopTitleEm')}</em>
+            </>
           )}
         </h1>
       </div>
@@ -222,10 +251,15 @@ export default function Shop() {
 
       <div className="sticky-search-bar">
         <div className="shop-toolbar">
-          <span className="shop-result-count">{loading ? t('shop.searching') : `${total} ${total === 1 ? t('shop.product') : t('shop.products')}`}</span>
+          <span className="shop-result-count">
+            {loading ? t('shop.searching') : `${total} ${total === 1 ? t('shop.product') : t('shop.products')}`}
+          </span>
           <div className="shop-toolbar-controls">
             <div className="shop-search-input">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" strokeLinecap="round" /></svg>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" strokeLinecap="round" />
+              </svg>
               <input
                 type="text"
                 placeholder={t('shop.searchPlaceholder')}
@@ -262,7 +296,13 @@ export default function Shop() {
           <div className="icon">🔍</div>
           <h3>{t('shop.noProductsTitle')}</h3>
           <p>{t('shop.noProductsSub')}</p>
-          <button className="btn btn-primary" onClick={() => { setSearchInput(''); setParams({}); }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setSearchInput('');
+              setParams({});
+            }}
+          >
             {t('shop.clearFilters')}
           </button>
         </div>
@@ -277,13 +317,19 @@ export default function Shop() {
       {!loading && totalPages > 1 && (
         <div className="pagination">
           {page <= 1 ? (
-            <span className="page-btn" aria-disabled="true">←</span>
+            <span className="page-btn" aria-disabled="true">
+              ←
+            </span>
           ) : (
-            <Link className="page-btn" to={buildPageUrl(page - 1)} aria-label={t('shop.prevPage')}>←</Link>
+            <Link className="page-btn" to={buildPageUrl(page - 1)} aria-label={t('shop.prevPage')}>
+              ←
+            </Link>
           )}
           {pageWindow().map((p, i) =>
             p === '…' ? (
-              <span key={`e${i}`} className="page-ellipsis">…</span>
+              <span key={`e${i}`} className="page-ellipsis">
+                …
+              </span>
             ) : (
               <Link
                 key={p}
@@ -296,9 +342,13 @@ export default function Shop() {
             )
           )}
           {page >= totalPages ? (
-            <span className="page-btn" aria-disabled="true">→</span>
+            <span className="page-btn" aria-disabled="true">
+              →
+            </span>
           ) : (
-            <Link className="page-btn" to={buildPageUrl(page + 1)} aria-label={t('shop.nextPage')}>→</Link>
+            <Link className="page-btn" to={buildPageUrl(page + 1)} aria-label={t('shop.nextPage')}>
+              →
+            </Link>
           )}
         </div>
       )}
