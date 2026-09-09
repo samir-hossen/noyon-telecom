@@ -1,406 +1,591 @@
 import React from "react";
 
 /**
- * NOYON TELECOM — CINEMATIC PREMIUM FOOTER CITY
- * ------------------------------------------------
+ * NOYON TELECOM — CINEMATIC CITYSCAPE FOOTER
  * Full replacement for CityscapeStrip.jsx
  *
- * Desktop and mobile use separate compositions automatically:
- * - Desktop: wide cinematic city scene
- * - Mobile: compact centered scene, no tiny unreadable objects
+ * Desktop and mobile use separate compositions so the scene stays premium
+ * instead of simply shrinking/cropping the desktop SVG.
  *
  * No external libraries required.
  */
 
-const Glow = ({ id = "g", color = "#ffbf55", std = 4 }) => (
-  <filter id={id} x="-120%" y="-120%" width="340%" height="340%">
-    <feGaussianBlur stdDeviation={std} result="blur" />
-    <feMerge>
-      <feMergeNode in="blur" />
-      <feMergeNode in="SourceGraphic" />
-    </feMerge>
-  </filter>
-);
+const Stars = ({ mobile = false }) => {
+  const desktop = [
+    [54, 28, 1.1], [110, 44, 0.7], [182, 20, 1], [254, 39, 0.8],
+    [340, 26, 1.1], [430, 48, 0.8], [522, 23, 0.7], [608, 41, 1],
+    [704, 18, 1], [786, 44, 0.7], [875, 26, 1.1], [962, 39, 0.8],
+    [1040, 20, 0.9], [1148, 43, 1], [1240, 28, 0.7], [1350, 46, 1],
+  ];
+  const mob = [
+    [24, 18, 0.8], [62, 34, 0.6], [104, 15, 0.8], [145, 29, 0.6],
+    [193, 18, 0.8], [236, 37, 0.6], [285, 17, 0.8], [332, 29, 0.6],
+  ];
+  return (mobile ? mob : desktop).map(([cx, cy, r], i) => (
+    <circle key={i} cx={cx} cy={cy} r={r} className={`nt-star nt-star-${i % 4}`} />
+  ));
+};
 
-function WindowGrid({ x, y, w, h, cols = 3, rows = 4, size = 11 }) {
-  const items = [];
-  const gapX = (w - size * cols) / (cols + 1);
-  const gapY = (h - size * rows) / (rows + 1);
-
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      if ((row * 7 + col * 3) % 8 === 0) continue;
-      items.push(
-        <rect
-          key={`${row}-${col}`}
-          x={x + gapX + col * (size + gapX)}
-          y={y + gapY + row * (size + gapY)}
-          width={size}
-          height={size * 0.8}
-          rx="1.5"
-          fill="#ffbd4c"
-          opacity={0.55 + (((row + col) % 3) * 0.18)}
-          filter="url(#windowGlow)"
-        />
-      );
-    }
-  }
-  return items;
-}
-
-function Skyline({ mobile = false }) {
-  const bars = mobile
-    ? [[0,112,42],[42,94,34],[76,126,30],[106,82,44],[150,106,34],[184,66,48],[232,114,32],[264,86,44],[308,122,35],[343,96,47]]
-    : [[0,140,70],[68,108,45],[112,82,62],[174,118,48],[225,62,68],[292,94,52],[348,45,70],[420,102,50],[478,76,68],[550,118,48],[610,50,72],[686,88,56],[748,38,75],[826,105,58],[890,70,62],[954,98,52],[1010,42,74],[1090,86,62],[1154,62,76],[1238,104,50],[1290,48,74],[1370,90,66],[1440,60,72],[1510,112,90]]
-    ;
-  const width = mobile ? 390 : 1600;
-  const ground = mobile ? 260 : 292;
-
+function Moon({ x, y, scale = 1 }) {
   return (
-    <g opacity=".88">
-      {bars.map(([x, top, w], i) => (
-        <g key={i}>
-          <rect x={x} y={top} width={w} height={ground - top} fill={i % 3 === 0 ? "#15192b" : "#111626"} />
-          <WindowGrid
-            x={x + 5}
-            y={top + 7}
-            w={Math.max(20, w - 10)}
-            h={Math.max(20, ground - top - 10)}
-            cols={Math.max(2, Math.floor(w / 20))}
-            rows={Math.max(2, Math.floor((ground - top) / 22))}
-            size={mobile ? 3.5 : 5}
-          />
-        </g>
-      ))}
-      <rect x="0" y={ground - 7} width={width} height="7" fill="#11151d" />
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <circle cx="0" cy="0" r="17" className="nt-moon" />
+      <circle cx="8" cy="-5" r="15" className="nt-moon-cut" />
     </g>
   );
 }
 
-function Tree({ x, base, scale = 1 }) {
+function Cloud({ x, y, scale = 1, className = "" }) {
   return (
-    <g transform={`translate(${x} ${base}) scale(${scale})`}>
-      <rect x="-4" y="-52" width="8" height="52" rx="3" fill="#34271f" />
-      <circle cx="-16" cy="-49" r="21" fill="#102c25" />
-      <circle cx="13" cy="-51" r="23" fill="#15352c" />
-      <circle cx="-2" cy="-72" r="25" fill="#1b4336" />
-      <circle cx="-11" cy="-81" r="10" fill="#2c604a" opacity=".55" />
+    <g transform={`translate(${x} ${y}) scale(${scale})`} className={`nt-cloud ${className}`}>
+      <ellipse cx="42" cy="18" rx="42" ry="13" />
+      <circle cx="19" cy="14" r="15" />
+      <circle cx="39" cy="6" r="20" />
+      <circle cx="61" cy="14" r="16" />
+    </g>
+  );
+}
+
+function BackgroundSkyline({ mobile = false }) {
+  const bars = mobile
+    ? [
+        [0, 79, 19], [22, 69, 22], [47, 82, 16], [66, 60, 22],
+        [91, 72, 20], [114, 53, 28], [145, 77, 20], [169, 63, 25],
+        [198, 80, 18], [220, 55, 27], [250, 70, 22], [278, 59, 29],
+        [310, 78, 18], [332, 62, 26], [361, 72, 19],
+      ]
+    : [
+        [0, 104, 44], [50, 89, 35], [91, 101, 44], [141, 67, 48],
+        [195, 94, 31], [232, 78, 44], [282, 110, 37], [326, 61, 56],
+        [389, 87, 33], [430, 73, 50], [486, 101, 38], [530, 57, 49],
+        [585, 91, 35], [626, 69, 57], [690, 104, 39], [735, 64, 48],
+        [790, 88, 34], [831, 54, 56], [893, 98, 44], [943, 69, 50],
+        [1000, 91, 36], [1043, 61, 58], [1108, 100, 39], [1153, 70, 52],
+        [1211, 91, 38], [1256, 57, 47], [1310, 82, 40], [1357, 69, 43],
+      ];
+
+  return (
+    <g className="nt-distant-city">
+      {bars.map(([x, y, w], i) => (
+        <g key={i}>
+          <rect x={x} y={y} width={w} height={190 - y} rx="1" />
+          {i % 2 === 0 && (
+            <>
+              <rect x={x + w * 0.18} y={y + 13} width="3" height="3" className="nt-far-window" />
+              <rect x={x + w * 0.57} y={y + 23} width="3" height="3" className="nt-far-window dim" />
+              <rect x={x + w * 0.33} y={y + 39} width="3" height="3" className="nt-far-window" />
+            </>
+          )}
+        </g>
+      ))}
+    </g>
+  );
+}
+
+function Tree({ x, base, scale = 1, delay = 0 }) {
+  return (
+    <g transform={`translate(${x} ${base}) scale(${scale})`} className="nt-tree">
+      <rect x="-2.5" y="-38" width="5" height="38" rx="2" className="nt-trunk" />
+      <circle cx="-14" cy="-41" r="17" className="nt-tree-dark" />
+      <circle cx="13" cy="-43" r="18" className="nt-tree-dark" />
+      <circle cx="0" cy="-57" r="22" className="nt-tree-main" style={{ animationDelay: `${delay}s` }} />
+      <circle cx="-11" cy="-62" r="13" className="nt-tree-light" />
+      <circle cx="12" cy="-58" r="11" className="nt-tree-light subtle" />
     </g>
   );
 }
 
 function Lamp({ x, base, scale = 1 }) {
   return (
-    <g transform={`translate(${x} ${base}) scale(${scale})`}>
-      <circle cx="0" cy="-96" r="28" fill="#ffb942" opacity=".13" filter="url(#softGlow)" />
-      <circle cx="0" cy="-96" r="13" fill="#ffb942" opacity=".22" filter="url(#lampGlow)" />
-      <circle cx="0" cy="-96" r="5" fill="#ffe2a1" filter="url(#lampGlow)" />
-      <rect x="-2.5" y="-92" width="5" height="92" rx="2" fill="#34343c" />
-      <rect x="-11" y="-101" width="22" height="3" rx="1.5" fill="#4a4648" />
+    <g transform={`translate(${x} ${base}) scale(${scale})`} className="nt-lamp">
+      <rect x="-1.5" y="-83" width="3" height="83" rx="2" className="nt-lamp-pole" />
+      <rect x="-5" y="-84" width="10" height="2" rx="1" className="nt-lamp-cap" />
+      <circle cx="0" cy="-88" r="20" className="nt-lamp-aura" />
+      <circle cx="0" cy="-88" r="8" className="nt-lamp-glow" />
+      <circle cx="0" cy="-88" r="3.5" className="nt-lamp-core" />
     </g>
   );
 }
 
-function House({ x, base, scale = 1 }) {
+function Bench({ x, base, scale = 1 }) {
   return (
-    <g transform={`translate(${x} ${base}) scale(${scale})`}>
-      <path d="M0 -66 L43 -103 L86 -66 Z" fill="#311321" stroke="#632238" />
-      <rect x="7" y="-66" width="72" height="66" rx="3" fill="#22141b" />
-      <rect x="20" y="-48" width="17" height="18" rx="2" fill="#ffc047" filter="url(#windowGlow)" />
-      <rect x="49" y="-48" width="17" height="18" rx="2" fill="#ffc047" filter="url(#windowGlow)" />
-      <rect x="34" y="-28" width="18" height="28" rx="2" fill="#160f15" />
+    <g transform={`translate(${x} ${base}) scale(${scale})`} className="nt-bench">
+      <rect x="-22" y="-20" width="44" height="4" rx="2" />
+      <rect x="-22" y="-27" width="44" height="4" rx="2" />
+      <rect x="-18" y="-24" width="3" height="14" />
+      <rect x="15" y="-24" width="3" height="14" />
     </g>
   );
 }
 
-function Shop({ x, base, title = "SHOP", scale = 1 }) {
+function Windows({ x, y, w, h, cols, rows, seed = 0, bright = false }) {
+  const nodes = [];
+  const padX = Math.max(8, w * 0.12);
+  const padY = Math.max(9, h * 0.12);
+  const gapX = (w - padX * 2) / Math.max(cols - 1, 1);
+  const gapY = (h - padY * 2) / Math.max(rows - 1, 1);
+  const ww = Math.min(9, w / (cols * 3.2));
+  const wh = Math.min(13, h / (rows * 2.8));
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const n = (r * 7 + c * 13 + seed) % 10;
+      if (n === 0 || n === 1) continue;
+      nodes.push(
+        <rect
+          key={`${r}-${c}`}
+          x={x + padX + c * gapX - ww / 2}
+          y={y + padY + r * gapY - wh / 2}
+          width={ww}
+          height={wh}
+          rx="1.5"
+          className={`nt-window ${bright ? "bright" : ""}`}
+          opacity={n === 2 ? 0.45 : n === 3 ? 0.68 : 1}
+        />
+      );
+    }
+  }
+  return <>{nodes}</>;
+}
+
+function House({ x, base, w = 100, h = 70 }) {
+  const y = base - h;
   return (
-    <g transform={`translate(${x} ${base}) scale(${scale})`}>
-      <rect x="0" y="-112" width="148" height="112" rx="6" fill="#261821" stroke="#8b263c" strokeWidth="1.5" />
-      <rect x="-7" y="-120" width="162" height="20" rx="4" fill="#ee1638" filter="url(#redGlow)" />
-      <rect x="6" y="-115" width="136" height="10" rx="2" fill="#ff5a6e" opacity=".45" />
-      <text x="74" y="-106" textAnchor="middle" fill="#fff4f5" fontSize="11" fontWeight="800" letterSpacing="1.5">
-        {title}
-      </text>
-      <rect x="15" y="-88" width="50" height="72" rx="3" fill="#f9bf75" opacity=".9" filter="url(#windowGlow)" />
-      <rect x="83" y="-88" width="50" height="72" rx="3" fill="#f9bf75" opacity=".9" filter="url(#windowGlow)" />
-      <rect x="20" y="-83" width="40" height="61" fill="#ffe2a8" opacity=".65" />
-      <rect x="88" y="-83" width="40" height="61" fill="#ffe2a8" opacity=".65" />
-      <path d="M74 -96 V0" stroke="#3c2428" strokeWidth="3" />
-      <rect x="0" y="-5" width="148" height="5" fill="#3b1b24" />
+    <g className="nt-house">
+      <path d={`M${x - 9} ${y + 31} L${x + w / 2} ${y - 5} L${x + w + 9} ${y + 31} Z`} className="nt-house-roof" />
+      <rect x={x} y={y + 29} width={w} height={h - 29} rx="3" className="nt-house-body" />
+      <rect x={x + w * 0.17} y={y + 42} width={w * 0.18} height={w * 0.16} rx="1" className="nt-house-window" />
+      <rect x={x + w * 0.66} y={y + 42} width={w * 0.18} height={w * 0.16} rx="1" className="nt-house-window" />
+      <rect x={x + w * 0.43} y={base - h * 0.43} width={w * 0.18} height={h * 0.43} rx="2" className="nt-house-door" />
     </g>
   );
 }
 
-function MainStore({ x, base, scale = 1 }) {
+function Shop({ x, base, w, h, title }) {
+  const y = base - h;
   return (
-    <g transform={`translate(${x} ${base}) scale(${scale})`}>
-      <rect x="0" y="-178" width="230" height="178" rx="10" fill="#171a22" stroke="#d5a948" strokeWidth="1.5" />
-      <rect x="7" y="-171" width="216" height="11" rx="5" fill="#f0b63d" opacity=".85" filter="url(#goldGlow)" />
-      <rect x="28" y="-205" width="174" height="35" rx="10" fill="#151820" stroke="#e8c164" strokeWidth="1.5" />
-      <text x="115" y="-183" textAnchor="middle" fill="#f6e1a1" fontSize="18" fontWeight="800" letterSpacing=".8">
-        Noyon Telecom
-      </text>
-      <path d="M48 -192 q0 -13 13 -13 h10 v21 h-7 v-11 h-5 v11 h-7z" fill="#f2cf74" />
-      <rect x="22" y="-151" width="186" height="135" rx="3" fill="#d99a54" opacity=".25" />
-      <rect x="29" y="-145" width="80" height="112" fill="#ffe1a6" opacity=".9" filter="url(#windowGlow)" />
-      <rect x="121" y="-145" width="80" height="112" fill="#ffe1a6" opacity=".9" filter="url(#windowGlow)" />
-      <rect x="35" y="-138" width="68" height="96" fill="#fff0c7" opacity=".65" />
-      <rect x="127" y="-138" width="68" height="96" fill="#fff0c7" opacity=".65" />
-      <rect x="108" y="-145" width="13" height="129" fill="#2a2223" />
-      <rect x="84" y="-34" width="60" height="18" rx="2" fill="#1e1c22" />
-      <rect x="43" y="-88" width="24" height="34" rx="2" fill="#ec4160" opacity=".7" />
-      <rect x="72" y="-98" width="24" height="44" rx="2" fill="#7168e8" opacity=".55" />
-      <rect x="141" y="-91" width="24" height="37" rx="2" fill="#d22b52" opacity=".65" />
-      <rect x="170" y="-102" width="20" height="48" rx="2" fill="#f5aa3d" opacity=".65" />
-      <rect x="0" y="-5" width="230" height="5" fill="#4b3a2c" />
+    <g className="nt-shop">
+      <rect x={x - 3} y={y} width={w + 6} height="23" rx="3" className="nt-shop-sign" />
+      <rect x={x} y={y + 20} width={w} height={h - 20} rx="2" className="nt-shop-building" />
+      <rect x={x + 5} y={y + 27} width={w - 10} height={h - 33} rx="2" className="nt-shop-glass" />
+      <rect x={x + 5} y={y + 27} width={(w - 10) / 2 - 1} height={h - 33} className="nt-shop-interior left" />
+      <rect x={x + 6 + (w - 10) / 2} y={y + 27} width={(w - 10) / 2 - 1} height={h - 33} className="nt-shop-interior" />
+      <line x1={x + w / 2} y1={y + 27} x2={x + w / 2} y2={base - 5} className="nt-shop-divider" />
+      <rect x={x + 13} y={y + 44} width={w * 0.18} height={h * 0.34} className="nt-shelf" />
+      <rect x={x + w * 0.69} y={y + 44} width={w * 0.16} height={h * 0.34} className="nt-shelf" />
+      <text x={x + w / 2} y={y + 15} textAnchor="middle" className="nt-shop-title">{title}</text>
+      <rect x={x + 8} y={base - 5} width={w - 16} height="3" rx="1.5" className="nt-shop-step" />
     </g>
   );
 }
 
-function Car({ x, y, scale = 1 }) {
-  return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`} className="car-anim">
-      <ellipse cx="64" cy="38" rx="60" ry="8" fill="#000" opacity=".45" />
-      <path d="M8 29 Q8 18 23 16 L39 4 Q45 0 61 0 H91 Q102 1 111 17 Q124 18 127 29 Q127 36 117 36 H18 Q8 36 8 29Z" fill="#c91434" stroke="#ff5d73" strokeWidth="1.5" />
-      <path d="M40 15 L49 5 H87 Q96 5 102 15Z" fill="#1d2630" stroke="#6d7780" />
-      <circle cx="36" cy="36" r="10" fill="#090a0d" stroke="#575b61" strokeWidth="2" />
-      <circle cx="102" cy="36" r="10" fill="#090a0d" stroke="#575b61" strokeWidth="2" />
-      <circle cx="36" cy="36" r="4" fill="#bbb" />
-      <circle cx="102" cy="36" r="4" fill="#bbb" />
-      <rect x="116" y="22" width="7" height="5" rx="2" fill="#ffe1a1" filter="url(#lampGlow)" />
-    </g>
-  );
-}
+function Showroom({ x, base, scale = 1 }) {
+  const w = 250 * scale;
+  const h = 132 * scale;
+  const y = base - h;
+  const sx = (v) => x + v * scale;
+  const sy = (v) => y + v * scale;
 
-function Bicycle({ x, y, scale = 1 }) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`} className="bike-anim">
-      <ellipse cx="48" cy="46" rx="45" ry="7" fill="#000" opacity=".38" />
-      <g className="wheel wheel-a">
-        <circle cx="17" cy="25" r="16" fill="none" stroke="#ffc43d" strokeWidth="3" />
-        <path d="M17 9V41 M2 25H32 M6 14L28 36 M28 14L6 36" stroke="#d7901a" strokeWidth="1.5" />
+    <g className="nt-showroom">
+      <ellipse cx={x + w / 2} cy={base + 5} rx={w * 0.56} ry="12" className="nt-showroom-reflection" />
+      <rect x={x} y={y + 16 * scale} width={w} height={116 * scale} rx={5 * scale} className="nt-showroom-body" />
+      <rect x={x - 7 * scale} y={y} width={w + 14 * scale} height={35 * scale} rx={6 * scale} className="nt-showroom-sign" />
+      <rect x={x + 10 * scale} y={y + 42 * scale} width={w - 20 * scale} height={78 * scale} rx={2 * scale} className="nt-showroom-glass" />
+
+      <rect x={sx(25)} y={sy(53)} width={55 * scale} height={56 * scale} className="nt-showroom-inside" />
+      <rect x={sx(85)} y={sy(53)} width={80 * scale} height={56 * scale} className="nt-showroom-inside warm" />
+      <rect x={sx(170)} y={sy(53)} width={55 * scale} height={56 * scale} className="nt-showroom-inside" />
+
+      <rect x={sx(34)} y={sy(62)} width={35 * scale} height={22 * scale} rx={2} className="nt-display-screen pink" />
+      <rect x={sx(97)} y={sy(60)} width={23 * scale} height={39 * scale} rx={2} className="nt-phone-display" />
+      <rect x={sx(127)} y={sy(60)} width={23 * scale} height={39 * scale} rx={2} className="nt-phone-display second" />
+      <rect x={sx(182)} y={sy(63)} width={31 * scale} height={35 * scale} rx={2} className="nt-display-screen" />
+
+      <path d={`M${sx(21)} ${sy(44)}H${sx(229)}`} className="nt-ceiling-light" />
+      <path d={`M${sx(45)} ${sy(49)}V${sy(112)}M${sx(84)} ${sy(49)}V${sy(112)}M${sx(166)} ${sy(49)}V${sy(112)}M${sx(205)} ${sy(49)}V${sy(112)}`} className="nt-glass-frame" />
+
+      <g className="nt-person person-a">
+        <circle cx={sx(74)} cy={sy(82)} r={4 * scale} />
+        <path d={`M${sx(74)} ${sy(86)}V${sy(108)}`} />
       </g>
-      <g className="wheel wheel-b">
-        <circle cx="73" cy="25" r="16" fill="none" stroke="#ffc43d" strokeWidth="3" />
-        <path d="M73 9V41 M58 25H88 M62 14L84 36 M84 14L62 36" stroke="#d7901a" strokeWidth="1.5" />
+      <g className="nt-person person-b">
+        <circle cx={sx(190)} cy={sy(82)} r={4 * scale} />
+        <path d={`M${sx(190)} ${sy(86)}V${sy(108)}`} />
       </g>
-      <path d="M17 25 L47 27 L37 7 L17 25 M37 7 L70 9 L47 27 M70 9 L73 25 M70 9 L76 2" fill="none" stroke="#ffc43d" strokeWidth="3.5" strokeLinejoin="round" />
-      <circle cx="48" cy="-19" r="8" fill="#ffc43d" />
-      <path d="M39 -11 L49 5 L68 9" fill="none" stroke="#ffc43d" strokeWidth="7" strokeLinecap="round" />
-      <path d="M49 5 L37 22" fill="none" stroke="#ffc43d" strokeWidth="6" strokeLinecap="round" className="leg-a" />
-      <path d="M49 5 L57 24" fill="none" stroke="#ffc43d" strokeWidth="6" strokeLinecap="round" className="leg-b" />
-      <path d="M48 -8 L65 4" fill="none" stroke="#ffc43d" strokeWidth="5" strokeLinecap="round" />
+
+      <g transform={`translate(${sx(27)} ${sy(8)}) scale(${scale})`}>
+        <path d="M0 15V5C0 1 3 0 6 0H17C20 0 23 3 23 6V17H17V8H6V17H0Z" className="nt-logo-mark" />
+      </g>
+      <text x={sx(58)} y={sy(22)} className="nt-showroom-title">Noyon Telecom</text>
+      <rect x={sx(16)} y={sy(31)} width={218 * scale} height={2 * scale} className="nt-sign-line" />
+      <rect x={sx(16)} y={base - 4} width={218 * scale} height={4 * scale} rx={2} className="nt-showroom-step" />
     </g>
   );
 }
 
-function Road({ width, y }) {
+function Road({ width, base }) {
   return (
     <g>
-      <rect x="0" y={y} width={width} height="56" fill="#0a0e16" />
-      <rect x="0" y={y} width={width} height="4" fill="#37353a" />
-      <line x1="0" y1={y + 31} x2={width} y2={y + 31} stroke="#c68d32" strokeWidth="2.5" strokeDasharray="30 23" opacity=".7" />
-      <path d={`M0 ${y+43} H${width}`} stroke="#222b38" strokeWidth="1" />
-      <g opacity=".24" filter="url(#softGlow)">
-        <rect x={width*.22} y={y+7} width={width*.13} height="24" fill="#ffb64b" />
-        <rect x={width*.44} y={y+8} width={width*.15} height="22" fill="#ff263f" />
-        <rect x={width*.72} y={y+8} width={width*.11} height="22" fill="#ffb64b" />
-      </g>
+      <rect x="0" y={base - 4} width={width} height="4" className="nt-sidewalk" />
+      <rect x="0" y={base} width={width} height="52" className="nt-road" />
+      <line x1="0" y1={base + 27} x2={width} y2={base + 27} className="nt-road-line" />
+      <line x1="0" y1={base + 3} x2={width} y2={base + 3} className="nt-road-edge" />
+      <ellipse cx={width * 0.49} cy={base + 35} rx={width * 0.16} ry="6" className="nt-road-shine" />
+      <ellipse cx={width * 0.71} cy={base + 35} rx={width * 0.09} ry="4" className="nt-road-red-shine" />
     </g>
+  );
+}
+
+function Car() {
+  return (
+    <div className="nt-car-track" aria-hidden="true">
+      <div className="nt-car">
+        <div className="nt-car-light-beam" />
+        <svg viewBox="0 0 160 75">
+          <path d="M12 49Q10 34 27 31L43 13Q49 7 62 7H103Q117 7 126 30Q145 32 149 46Q151 56 139 57H21Q13 57 12 49Z" className="nt-car-body" />
+          <path d="M47 30L60 13H101Q111 13 119 30Z" className="nt-car-glass" />
+          <path d="M80 14V30" className="nt-car-glass-line" />
+          <path d="M23 42H143" className="nt-car-detail" />
+          <circle cx="43" cy="57" r="12" className="nt-car-tire" />
+          <circle cx="122" cy="57" r="12" className="nt-car-tire" />
+          <circle cx="43" cy="57" r="5" className="nt-car-rim" />
+          <circle cx="122" cy="57" r="5" className="nt-car-rim" />
+          <rect x="139" y="37" width="7" height="5" rx="2" className="nt-car-headlight" />
+          <rect x="15" y="38" width="5" height="5" rx="2" className="nt-car-tail" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function Cyclist() {
+  return (
+    <div className="nt-cycle-track" aria-hidden="true">
+      <div className="nt-cyclist">
+        <svg viewBox="0 0 220 180">
+          <g className="nt-wheel-spin">
+            <circle cx="47" cy="139" r="35" className="nt-bike-wheel" />
+            <path d="M47 104V174M12 139H82M22 114L72 164M72 114L22 164" className="nt-bike-spokes" />
+          </g>
+          <g className="nt-wheel-spin">
+            <circle cx="162" cy="139" r="35" className="nt-bike-wheel" />
+            <path d="M162 104V174M127 139H197M137 114L187 164M187 114L137 164" className="nt-bike-spokes" />
+          </g>
+          <path d="M47 139L105 146L84 82L47 139M84 82L157 88L105 146M157 88L162 139M157 88L162 74M75 78H98" className="nt-bike-frame" />
+          <circle cx="105" cy="146" r="9" className="nt-bike-gear" />
+          <g className="nt-crank"><path d="M105 146L118 157" className="nt-bike-frame" /></g>
+
+          <circle cx="113" cy="19" r="15" className="nt-rider-head" />
+          <path d="M86 80L107 38" className="nt-rider-body" />
+          <path d="M107 40L151 82" className="nt-rider-arm" />
+          <g className="nt-rider-leg-group">
+            <path d="M86 80L122 112L117 157" className="nt-rider-leg" />
+          </g>
+        </svg>
+      </div>
+    </div>
   );
 }
 
 function DesktopScene() {
-  const base = 350;
+  const base = 175;
   return (
-    <svg className="city-svg desktop-city" viewBox="0 0 1600 420" preserveAspectRatio="xMidYMid slice">
+    <svg viewBox="0 0 1400 230" preserveAspectRatio="none" className="nt-scene nt-desktop-scene">
       <defs>
-        <linearGradient id="desktopSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#161226" />
-          <stop offset="38%" stopColor="#7d3750" />
-          <stop offset="62%" stopColor="#ef7956" />
-          <stop offset="78%" stopColor="#342143" />
-          <stop offset="100%" stopColor="#0c1018" />
+        <linearGradient id="nt-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0a0b1b" />
+          <stop offset=".38" stopColor="#2a1830" />
+          <stop offset=".68" stopColor="#b15d50" />
+          <stop offset=".82" stopColor="#f08b57" />
+          <stop offset="1" stopColor="#171726" />
         </linearGradient>
-        <radialGradient id="sunGlow" cx="48%" cy="58%" r="42%">
-          <stop offset="0%" stopColor="#ffbd73" stopOpacity=".34" />
-          <stop offset="100%" stopColor="#ffbd73" stopOpacity="0" />
+        <radialGradient id="nt-sunset" cx=".48" cy=".64" r=".72">
+          <stop offset="0" stopColor="#ffb061" stopOpacity=".76" />
+          <stop offset=".42" stopColor="#bd5870" stopOpacity=".28" />
+          <stop offset="1" stopColor="#160d20" stopOpacity="0" />
         </radialGradient>
-        <Glow id="windowGlow" std={3}/>
-        <Glow id="lampGlow" std={5}/>
-        <Glow id="goldGlow" std={4}/>
-        <Glow id="redGlow" color="#ef1738" std={4}/>
-        <Glow id="softGlow" std={10}/>
+        <linearGradient id="nt-road-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#161a26" />
+          <stop offset="1" stopColor="#080b12" />
+        </linearGradient>
+        <linearGradient id="nt-shop-glass-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffd780" />
+          <stop offset=".35" stopColor="#f8a84f" />
+          <stop offset="1" stopColor="#3a1b22" />
+        </linearGradient>
+        <linearGradient id="nt-showroom-glass-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff0b4" />
+          <stop offset=".32" stopColor="#ffc96d" />
+          <stop offset="1" stopColor="#272031" />
+        </linearGradient>
+        <filter id="nt-glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="nt-soft"><feGaussianBlur stdDeviation="12"/></filter>
+        <filter id="nt-red-glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
 
-      <rect width="1600" height="420" fill="url(#desktopSky)" />
-      <rect width="1600" height="420" fill="url(#sunGlow)" />
+      <rect width="1400" height="230" fill="url(#nt-sky)" />
+      <rect width="1400" height="230" fill="url(#nt-sunset)" />
+      <Cloud x={90} y={37} scale={1.1} className="cloud-one" />
+      <Cloud x={390} y={58} scale={.85} className="cloud-two" />
+      <Cloud x={990} y={39} scale={1.15} className="cloud-three" />
+      <Cloud x={1210} y={76} scale={.72} className="cloud-four" />
+      <Stars />
+      <Moon x={1285} y={41} />
+      <BackgroundSkyline />
 
-      <g opacity=".45">
-        <path d="M0 68 C120 18 205 96 330 58 S550 30 690 68 S920 23 1070 65 S1320 25 1600 72" fill="none" stroke="#5c466a" strokeWidth="18" />
-        <path d="M0 108 C170 72 280 124 440 93 S700 71 850 109 S1110 73 1280 108 S1470 80 1600 100" fill="none" stroke="#b65a63" strokeWidth="10" opacity=".7" />
-      </g>
+      <path d="M0 145Q170 111 330 142T650 136T960 144T1240 126T1400 139V178H0Z" className="nt-hill-layer" />
+      <rect x="0" y="143" width="1400" height="38" className="nt-tree-line" />
 
-      <Skyline />
+      <House x={18} base={base} w={108} h={67} />
+      <Tree x={142} base={base} scale={.9} delay={.2} />
+      <Bench x={186} base={base} />
+      <Shop x={220} base={base} w={154} h={91} title="EXPRESS SHOP" />
+      <Lamp x={205} base={base} scale={.9} />
+      <Tree x={396} base={base} scale={1.02} delay={.5} />
+      <Bench x={431} base={base} />
+      <Showroom x={480} base={base} scale={1} />
+      <Tree x={770} base={base} scale={.92} delay={.1} />
+      <Shop x={868} base={base} w={143} h={85} title="PARTS HOUSE" />
+      <Lamp x={842} base={base} scale={.92} />
+      <Tree x={1032} base={base} scale={.92} delay={.6} />
+      <Lamp x={1130} base={base} scale={.95} />
+      <House x={1178} base={base} w={104} h={70} />
+      <Bench x={1320} base={base} />
+      <Tree x={1360} base={base} scale={1.02} delay={.3} />
 
-      <circle cx="1390" cy="72" r="19" fill="#ffe8a3" filter="url(#lampGlow)" />
-      <circle cx="1400" cy="64" r="18" fill="#20172b" />
-
-      <g transform="translate(0 0)">
-        <House x={70} base={base} scale={1.1} />
-        <Tree x={155} base={base} scale={1.1} />
-        <Lamp x={225} base={base} />
-        <Shop x={305} base={base} title="EXPRESS SHOP" scale={1.08} />
-        <Tree x={470} base={base} scale={1.05} />
-        <Lamp x={510} base={base} />
-        <MainStore x={610} base={base} scale={1} />
-        <Tree x={590} base={base} scale={.9} />
-        <Tree x={850} base={base} scale={1.05} />
-        <Shop x={1015} base={base} title="PARTS HOUSE" scale={1.08} />
-        <Lamp x={1195} base={base} />
-        <Tree x={1270} base={base} scale={1.05} />
-        <House x={1320} base={base} scale={1.05} />
-        <Lamp x={1510} base={base} />
-        <Tree x={1570} base={base} scale={1.2} />
-      </g>
-
-      <Bicycle x={510} y={322} scale={1.15} />
-      <Car x={900} y={317} scale={1.1} />
-
-      <Road width={1600} y={350} />
+      <Road width={1400} base={base} />
     </svg>
   );
 }
 
 function MobileScene() {
-  const base = 385;
+  const base = 158;
   return (
-    <svg className="city-svg mobile-city" viewBox="0 0 390 460" preserveAspectRatio="xMidYMid slice">
+    <svg viewBox="0 0 390 210" preserveAspectRatio="xMidYMid slice" className="nt-scene nt-mobile-scene">
       <defs>
-        <linearGradient id="mobileSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#171226" />
-          <stop offset="38%" stopColor="#873b52" />
-          <stop offset="62%" stopColor="#ec7a58" />
-          <stop offset="82%" stopColor="#24203b" />
-          <stop offset="100%" stopColor="#090d15" />
+        <linearGradient id="nt-msky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#090b19" />
+          <stop offset=".36" stopColor="#332039" />
+          <stop offset=".7" stopColor="#d56b59" />
+          <stop offset="1" stopColor="#171624" />
         </linearGradient>
-        <Glow id="windowGlow" std={2.5}/>
-        <Glow id="lampGlow" std={4}/>
-        <Glow id="goldGlow" std={3.5}/>
-        <Glow id="redGlow" std={3}/>
-        <Glow id="softGlow" std={8}/>
+        <radialGradient id="nt-msun" cx=".48" cy=".62" r=".7">
+          <stop offset="0" stopColor="#ffbd6f" stopOpacity=".72" />
+          <stop offset="1" stopColor="#351b2b" stopOpacity="0" />
+        </radialGradient>
+        <filter id="nt-mglow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
 
-      <rect width="390" height="460" fill="url(#mobileSky)" />
-      <Skyline mobile />
+      <rect width="390" height="210" fill="url(#nt-msky)" />
+      <rect width="390" height="210" fill="url(#nt-msun)" />
+      <Cloud x={15} y={34} scale={.7} />
+      <Cloud x={245} y={49} scale={.68} />
+      <Stars mobile />
+      <Moon x={344} y={38} scale={.7} />
+      <BackgroundSkyline mobile />
 
-      <circle cx="344" cy="55" r="13" fill="#ffe8a3" filter="url(#lampGlow)" />
-      <circle cx="351" cy="50" r="13" fill="#21172a" />
-
-      <House x={4} base={base} scale={.65} />
-      <Tree x={48} base={base} scale={.65} />
-      <Shop x={70} base={base} title="SHOP" scale={.62} />
-      <MainStore x={143} base={base} scale={.58} />
-      <Shop x={282} base={base} title="PARTS" scale={.62} />
-      <Tree x={370} base={base} scale={.68} />
-      <Lamp x={58} base={base} scale={.65} />
-      <Lamp x={344} base={base} scale={.65} />
-
-      <Bicycle x={50} y={360} scale={.65} />
-      <Car x={244} y={360} scale={.68} />
-
-      <Road width={390} y={385} />
+      <rect x="0" y="123" width="390" height="38" className="nt-tree-line" />
+      <House x={-18} base={base} w={64} h={47} />
+      <Tree x={48} base={base} scale={.58} />
+      <Shop x={61} base={base} w={70} h={57} title="EXPRESS" />
+      <Lamp x={53} base={base} scale={.55} />
+      <Showroom x={141} base={base} scale={.78} />
+      <Shop x={337} base={base} w={55} h={52} title="PARTS" />
+      <Tree x={327} base={base} scale={.56} />
+      <Road width={390} base={base} />
     </svg>
   );
 }
 
 export default function CityscapeStrip() {
   return (
-    <section className="noyon-premium-city" aria-label="Noyon Telecom city animation">
+    <section className="noyon-cityscape" aria-label="Noyon Telecom cityscape">
       <style>{`
-        .noyon-premium-city{
+        .noyon-cityscape{
+          --red:#f01b3f;
+          --red2:#ff536b;
+          --gold:#ffc447;
+          --cream:#ffe5a3;
           position:relative;
           width:100%;
-          height:clamp(205px,17vw,330px);
+          height:clamp(205px,18vw,290px);
           overflow:hidden;
-          background:#0b0e16;
-          border-top:1px solid rgba(255,255,255,.08);
-          box-shadow:
-            inset 0 25px 40px rgba(0,0,0,.18),
-            0 -10px 35px rgba(0,0,0,.15);
+          isolation:isolate;
+          background:#0b0d15;
+          border-top:1px solid rgba(255,255,255,.06);
+          border-bottom:1px solid rgba(255,255,255,.06);
         }
-        .city-svg{
+
+        .nt-scene{position:absolute;inset:0;width:100%;height:100%;display:block}
+        .nt-mobile-scene{display:none}
+
+        /* SKY */
+        .nt-cloud{fill:#1a1729;opacity:.55}
+        .nt-cloud-one{animation:ntCloudOne 25s ease-in-out infinite alternate}
+        .nt-cloud-two{animation:ntCloudTwo 32s ease-in-out infinite alternate}
+        .nt-cloud-three{animation:ntCloudOne 28s ease-in-out infinite alternate-reverse}
+        .nt-cloud-four{animation:ntCloudTwo 22s ease-in-out infinite alternate}
+        .nt-star{fill:#fff4d4;opacity:.8;animation:ntTwinkle 4s ease-in-out infinite}
+        .nt-star-1{animation-delay:.8s}.nt-star-2{animation-delay:1.6s}.nt-star-3{animation-delay:2.5s}
+        .nt-moon{fill:#fff1bd;filter:drop-shadow(0 0 7px rgba(255,220,125,.5))}
+        .nt-moon-cut{fill:#151323}
+
+        .nt-distant-city{fill:#151728;opacity:.88}
+        .nt-far-window{fill:#f6b24d;opacity:.48}
+        .nt-far-window.dim{opacity:.2}
+        .nt-hill-layer{fill:#111722;opacity:.78}
+        .nt-tree-line{fill:#0b1518}
+
+        /* ENVIRONMENT */
+        .nt-trunk{fill:#35251e}
+        .nt-tree-dark{fill:#102a26}
+        .nt-tree-main{fill:#173c33;filter:drop-shadow(0 0 6px rgba(55,119,91,.12));animation:ntTree 4.8s ease-in-out infinite}
+        .nt-tree-light{fill:#255443;opacity:.75}
+        .nt-tree-light.subtle{opacity:.45}
+        .nt-bench rect{fill:#3b2a25;opacity:.85}
+
+        .nt-lamp-pole{fill:#262b34}
+        .nt-lamp-cap{fill:#424852}
+        .nt-lamp-aura{fill:#ffb83c;opacity:.12;filter:url(#nt-soft)}
+        .nt-lamp-glow{fill:#ffc34e;opacity:.72;filter:url(#nt-glow);animation:ntLamp 3.2s ease-in-out infinite}
+        .nt-lamp-core{fill:#fff0ad}
+
+        /* HOUSES */
+        .nt-house-roof{fill:#251421;stroke:rgba(255,255,255,.08);stroke-width:1}
+        .nt-house-body{fill:#1a1822;stroke:#312c37;stroke-width:1}
+        .nt-house-window{fill:#ffbd43;filter:url(#nt-glow)}
+        .nt-house-door{fill:#100f16}
+
+        /* SHOPS */
+        .nt-shop-sign{fill:#b80f30;stroke:#ff6075;stroke-opacity:.4;filter:url(#nt-red-glow)}
+        .nt-shop-building{fill:#27131d}
+        .nt-shop-glass{fill:url(#nt-shop-glass-grad);stroke:#ffe2a1;stroke-opacity:.38}
+        .nt-shop-interior{fill:#f6a73f;opacity:.16}
+        .nt-shop-interior.left{fill:#ffe3a2;opacity:.22}
+        .nt-shop-divider{stroke:#4c2926;stroke-width:2}
+        .nt-shelf{fill:#7b4329;opacity:.58}
+        .nt-shop-title{fill:#fff5de;font:700 10px/1 system-ui,-apple-system,sans-serif;letter-spacing:.8px}
+        .nt-shop-step{fill:#2b2528}
+
+        /* SHOWROOM */
+        .nt-showroom-body{fill:#161720;stroke:#4a4140;stroke-width:1}
+        .nt-showroom-sign{fill:#11131a;stroke:#f3b63e;stroke-opacity:.65;filter:drop-shadow(0 0 10px rgba(255,181,49,.12))}
+        .nt-showroom-glass{fill:url(#nt-showroom-glass-grad);stroke:#ffe9af;stroke-opacity:.72}
+        .nt-showroom-inside{fill:#d58d4a;opacity:.3}
+        .nt-showroom-inside.warm{fill:#ffe3a3;opacity:.28}
+        .nt-display-screen{fill:#4ea2e9;filter:drop-shadow(0 0 3px rgba(65,163,255,.35))}
+        .nt-display-screen.pink{fill:#ff6b9b}
+        .nt-phone-display{fill:#d8f0ff;stroke:#79a7d1;stroke-width:1}
+        .nt-phone-display.second{fill:#f3e0ff;stroke:#b785ce}
+        .nt-ceiling-light{stroke:#fff0ae;stroke-width:3;filter:url(#nt-glow)}
+        .nt-glass-frame{stroke:#5c5147;stroke-width:1.5}
+        .nt-person circle{fill:#2b2220}
+        .nt-person path{stroke:#2b2220;stroke-width:4;stroke-linecap:round}
+        .nt-logo-mark{fill:#ffd262;filter:drop-shadow(0 0 4px rgba(255,205,98,.55))}
+        .nt-showroom-title{fill:#f7f7f8;font:600 17px/1 system-ui,-apple-system,sans-serif;letter-spacing:.15px}
+        .nt-sign-line{fill:#ffc447;opacity:.65}
+        .nt-showroom-step{fill:#393238}
+        .nt-showroom-reflection{fill:#ffbb4e;opacity:.14;filter:url(#nt-soft)}
+
+        /* ROAD */
+        .nt-sidewalk{fill:#262a30}
+        .nt-road{fill:url(#nt-road-grad)}
+        .nt-road-line{stroke:#b77e34;stroke-width:2;stroke-dasharray:20 15;opacity:.8}
+        .nt-road-edge{stroke:#424750;stroke-width:1}
+        .nt-road-shine{fill:#ffbd68;opacity:.16;filter:url(#nt-soft)}
+        .nt-road-red-shine{fill:#ef2343;opacity:.18;filter:url(#nt-soft)}
+
+        /* CAR */
+        .nt-car-track{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+        .nt-car{
           position:absolute;
-          inset:0;
-          width:100%;
-          height:100%;
-          display:block;
+          width:clamp(72px,8vw,108px);
+          left:-150px;
+          top:62%;
+          z-index:4;
+          animation:ntDrive 17s linear infinite;
+          filter:drop-shadow(0 7px 5px rgba(0,0,0,.55));
         }
-        .mobile-city{display:none}
-
-        .car-anim{
-          transform-box:fill-box;
-          transform-origin:center;
-          animation:carFloat 2.4s ease-in-out infinite;
-          filter:drop-shadow(0 5px 5px rgba(0,0,0,.45));
-        }
-        .bike-anim{
-          transform-box:fill-box;
-          transform-origin:center;
-          animation:bikeFloat 1.1s ease-in-out infinite;
-        }
-        .wheel{
-          transform-box:fill-box;
-          transform-origin:center;
-          animation:wheelSpin .8s linear infinite;
-        }
-        .wheel-b{animation-delay:-.4s}
-        .leg-a{animation:legMove .8s ease-in-out infinite alternate}
-        .leg-b{animation:legMove .8s ease-in-out infinite alternate-reverse}
-
-        @keyframes wheelSpin{to{transform:rotate(360deg)}}
-        @keyframes carFloat{
-          0%,100%{transform:translateY(0)}
-          50%{transform:translateY(-1.5px)}
-        }
-        @keyframes bikeFloat{
-          0%,100%{transform:translateY(0)}
-          50%{transform:translateY(-2px)}
-        }
-        @keyframes legMove{
-          from{transform:rotate(-8deg)}
-          to{transform:rotate(10deg)}
+        .nt-car svg{width:100%;height:auto;display:block}
+        .nt-car-body{fill:#c91632;stroke:#ff5870;stroke-width:1.5}
+        .nt-car-glass{fill:#151e2a;stroke:#7790a1;stroke-width:1}
+        .nt-car-glass-line{stroke:#66798a;stroke-width:1}
+        .nt-car-detail{stroke:#ff5d72;stroke-width:1;opacity:.5}
+        .nt-car-tire{fill:#07090d;stroke:#3f4750;stroke-width:2}
+        .nt-car-rim{fill:#b7bec5}
+        .nt-car-headlight{fill:#ffe09a;filter:drop-shadow(0 0 4px #ffca68)}
+        .nt-car-tail{fill:#ff304c}
+        .nt-car-light-beam{
+          position:absolute;right:-16%;top:51%;
+          width:34%;height:13%;
+          background:linear-gradient(90deg,rgba(255,230,160,.28),transparent);
+          filter:blur(5px);transform:skewY(-4deg)
         }
 
-        /* MOBILE: separate compact composition, automatically selected */
-        @media (max-width:700px){
-          .noyon-premium-city{
-            height:220px;
-            min-height:220px;
-          }
-          .desktop-city{display:none}
-          .mobile-city{display:block}
+        /* CYCLIST */
+        .nt-cycle-track{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+        .nt-cyclist{
+          position:absolute;
+          width:clamp(46px,5vw,68px);
+          left:-100px;
+          top:51%;
+          z-index:5;
+          animation:ntRide 22s linear infinite;
+          filter:drop-shadow(0 6px 4px rgba(0,0,0,.55));
+        }
+        .nt-cyclist svg{width:100%;height:auto;display:block}
+        .nt-bike-wheel{fill:none;stroke:#f4b631;stroke-width:4}
+        .nt-bike-spokes{stroke:#cf891b;stroke-width:2.5}
+        .nt-bike-frame{fill:none;stroke:#f4b631;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+        .nt-bike-gear{fill:#f4b631}
+        .nt-rider-head{fill:#f4b631}
+        .nt-rider-body,.nt-rider-arm,.nt-rider-leg{fill:none;stroke:#f4b631;stroke-linecap:round}
+        .nt-rider-body{stroke-width:13}.nt-rider-arm{stroke-width:10}.nt-rider-leg{stroke-width:11}
+        .nt-wheel-spin{transform-box:fill-box;transform-origin:center;animation:ntWheel .8s linear infinite}
+        .nt-crank{transform-box:fill-box;transform-origin:center;animation:ntWheel .8s linear infinite}
+        .nt-rider-leg-group{transform-box:fill-box;transform-origin:86px 80px;animation:ntPedal .8s ease-in-out infinite}
+
+        @keyframes ntDrive{
+          0%{transform:translateX(0)}
+          100%{transform:translateX(calc(100vw + 180px))}
+        }
+        @keyframes ntRide{
+          0%{transform:translateX(0)}
+          100%{transform:translateX(calc(100vw + 140px))}
+        }
+        @keyframes ntWheel{to{transform:rotate(360deg)}}
+        @keyframes ntPedal{0%,100%{transform:rotate(18deg)}50%{transform:rotate(-24deg)}}
+        @keyframes ntTwinkle{0%,100%{opacity:.3}50%{opacity:1}}
+        @keyframes ntTree{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(1px) rotate(.5deg)}}
+        @keyframes ntLamp{0%,100%{opacity:.62}50%{opacity:1}}
+        @keyframes ntCloudOne{to{transform:translateX(25px)}}
+        @keyframes ntCloudTwo{to{transform:translateX(-20px)}}
+
+        /* MOBILE: different composition, not a squeezed desktop */
+        @media (max-width:640px){
+          .noyon-cityscape{height:225px}
+          .nt-desktop-scene{display:none}
+          .nt-mobile-scene{display:block}
+          .nt-car{width:74px;top:68%;animation-duration:13s}
+          .nt-cyclist{width:45px;top:57%;animation-duration:17s}
         }
 
-        @media (max-width:390px){
-          .noyon-premium-city{
-            height:205px;
-            min-height:205px;
-          }
+        @media (min-width:641px) and (max-width:900px){
+          .noyon-cityscape{height:240px}
+          .nt-car{top:64%}
+          .nt-cyclist{top:53%}
         }
 
         @media (prefers-reduced-motion:reduce){
-          .noyon-premium-city *,
-          .noyon-premium-city *::before,
-          .noyon-premium-city *::after{
-            animation:none!important;
-          }
+          .noyon-cityscape *{animation:none!important}
         }
       `}</style>
 
       <DesktopScene />
       <MobileScene />
+      <Cyclist />
+      <Car />
     </section>
   );
 }
