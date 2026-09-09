@@ -96,8 +96,16 @@ button { font-family: inherit; cursor: pointer; }
      specificity beats the `*` rule above even with matching !important, so
      no extra specificity tricks are needed here. */
   .announcement-track { animation-duration: 30s !important; }
-  .cityscape-car-lane { animation-duration: 16s !important; }
-  .cityscape-cyclist-lane { animation-duration: 11s !important; }
+  .cityscape-car-lane { animation-duration: 12s !important; }
+  .cityscape-cyclist-lane { animation-duration: 22s !important; }
+  /* The bike keeps travelling above, so its wheels have to keep turning
+     with it — a vehicle sliding along on frozen wheels reads as a broken
+     animation, not as a calmer one. The vehicles' decorative bob is
+     deliberately NOT listed here: it's pure ornament, so the blanket rule
+     above is allowed to still it. */
+  .cityscape-wheel-roll { animation-duration: 1s !important; }
+  .cityscape-thigh, .cityscape-shin { animation-duration: 1.4s !important; }
+  .cityscape-crank { animation-duration: 1.4s !important; }
   .hero-track { transition-duration: 0.55s !important; }
 }
 
@@ -151,7 +159,7 @@ button { font-family: inherit; cursor: pointer; }
 .btn-berry { background: var(--berry); color: #fff; }
 .btn-berry:hover { background: var(--berry-dark); }
 .btn-outline { background: transparent; border-color: rgba(20,20,22,0.18); color: var(--ink); }
-.btn-outline:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+@media (hover: hover) { .btn-outline:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); } }
 .btn-block { width: 100%; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
@@ -360,6 +368,7 @@ button { font-family: inherit; cursor: pointer; }
   left: 0;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: var(--ink);
   border: 1px solid var(--line);
   border-top: 3px solid var(--berry);
@@ -578,9 +587,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hero-actions { display: flex; gap: 14px; }
 .hero-actions .btn-primary { background: var(--berry); box-shadow: 0 16px 36px -8px rgba(230,0,35,0.5); }
-.hero-actions .btn-primary:hover { background: var(--berry-dark); }
-.hero-actions .btn-outline { border-color: rgba(255,255,255,0.35); color: #fff; backdrop-filter: blur(6px); }
-.hero-actions .btn-outline:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.6); }
+@media (hover: hover) { .hero-actions .btn-primary:hover { background: var(--berry-dark); } }
+/* Resting border is deliberately just short of solid white, so hovering to
+   full white is an actual visible change. It used to be pinned to solid
+   white by an inline style on the element itself (see HeroCarousel.jsx),
+   which both froze the hover transition and made the 1px rim read a little
+   harsh against the dark hero. */
+.hero-actions .btn-outline { border-color: rgba(255,255,255,0.7); color: var(--paper); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+@media (hover: hover) { .hero-actions .btn-outline:hover { background: rgba(255,255,255,0.16); border-color: var(--paper); } }
 .hero-img {
   position: relative;
   background: #0c0d10;
@@ -676,10 +690,25 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--berry-text);
   transition: all 0.15s ease;
 }
-.cat-pill.active, .cat-pill:hover { background: var(--berry); color: #fff; border-color: var(--berry); box-shadow: var(--shadow-pop); }
+.cat-pill.active { background: var(--berry); color: #fff; border-color: var(--berry); box-shadow: var(--shadow-pop); }
+@media (hover: hover) { .cat-pill:hover { background: var(--berry); color: #fff; border-color: var(--berry); box-shadow: var(--shadow-pop); } }
 
 /* ---------- Section headers ---------- */
-.section { padding: 64px 0; }
+/* padding-top/bottom, NOT the `padding: 64px 0` shorthand. Almost every
+   section on the site is <section className="section container">, and the
+   shorthand's implied `padding-left/right: 0` silently overrode
+   .container's own `padding: 0 28px` — same (0,1,0) specificity, and this
+   rule comes later in the file, so it won. Desktop hid the damage because
+   .container is max-width:1180px and centered, so there's slack either
+   side anyway; on a phone there is no slack, so every section heading
+   ("Browse Categories", "Featured Products", "Shop by Brand", the FAQ and
+   testimonial headings) and every "View all →" link sat hard against the
+   screen edge with zero margin, while sections built from a plain
+   .container (hero, part finder, trust bar, promo banner, footer) stayed
+   correctly inset — which is why only *some* text looked wrong. Setting
+   only the vertical sides here leaves .container's horizontal padding
+   intact. */
+.section { padding-top: 64px; padding-bottom: 64px; }
 .section-head {
   display: flex;
   align-items: flex-end;
@@ -728,7 +757,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.3s var(--ease), transform 0.3s var(--ease), border-color 0.3s var(--ease);
 }
-.card:hover { box-shadow: var(--shadow-lg); transform: translateY(-6px); border-color: rgba(20,20,22,0.14); }
+@media (hover: hover) { .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-6px); border-color: rgba(20,20,22,0.14); } }
 .card-img {
   aspect-ratio: 1 / 1.05;
   overflow: hidden;
@@ -767,6 +796,7 @@ button { font-family: inherit; cursor: pointer; }
   border: none;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--ink);
   font-size: 1.2rem;
   display: flex;
@@ -794,7 +824,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow-sm);
   transition: all 0.18s var(--ease);
 }
-.wishlist-heart-lg:hover { border-color: var(--berry); transform: scale(1.06); }
+@media (hover: hover) { .wishlist-heart-lg:hover { border-color: var(--berry); transform: scale(1.06); } }
 .wishlist-heart-lg.active { color: var(--berry-text); border-color: var(--berry); background: var(--berry-tint); }
 .pd-rating-summary { font-size: 0.9rem; color: var(--gold); font-weight: 600; margin: 6px 0 14px; }
 .pd-rating-summary span { color: #6b5f59; font-weight: 400; }
@@ -822,7 +852,7 @@ button { font-family: inherit; cursor: pointer; }
   display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
   color: var(--muted); cursor: pointer; background: #faf7f5;
 }
-.review-photo-add:hover { border-color: var(--berry); color: var(--berry); }
+@media (hover: hover) { .review-photo-add:hover { border-color: var(--berry); color: var(--berry); } }
 .review-photo-view {
   width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line);
   padding: 0; cursor: pointer; background: none;
@@ -882,7 +912,7 @@ button { font-family: inherit; cursor: pointer; }
   letter-spacing: 0.01em;
   transition: all 0.2s var(--ease);
 }
-.card-cta:hover { background: var(--berry); border-color: var(--berry); transform: translateY(-1px); }
+@media (hover: hover) { .card-cta:hover { background: var(--berry); border-color: var(--berry); transform: translateY(-1px); } }
 
 /* ---------- Footer ---------- */
 .footer { background: var(--ink); color: var(--paper); padding: 0 0 30px; margin-top: 80px; }
@@ -963,7 +993,7 @@ button { font-family: inherit; cursor: pointer; }
 .trust-badge strong { display: block; font-size: 0.8rem; font-weight: 600; color: #fff; }
 .trust-badge span { display: block; font-size: 0.74rem; color: rgba(251, 241, 236, 0.6); margin-top: 2px; }
 .trust-badge-link { text-decoration: none; transition: border-color 0.15s, background 0.15s; }
-.trust-badge-link:hover { border-color: var(--gold-light); background: rgba(251, 241, 236, 0.09); }
+@media (hover: hover) { .trust-badge-link:hover { border-color: var(--gold-light); background: rgba(251, 241, 236, 0.09); } }
 .trust-badge-link span { color: var(--gold-light); }
 @media (max-width: 760px) { .trust-badge { flex: 1 1 100%; } }
 @media (max-width: 760px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
@@ -1004,7 +1034,8 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: var(--radius-md);
   transition: border-color 0.18s var(--ease);
 }
-.select:hover, .select:focus { border-color: var(--ink); outline: none; }
+.select:focus { border-color: var(--ink); outline: none; }
+@media (hover: hover) { .select:hover { border-color: var(--ink); outline: none; } }
 
 /* ---------- Pagination ---------- */
 .pagination { display: flex; justify-content: center; gap: 6px; padding: 20px 0 70px; flex-wrap: wrap; }
@@ -1019,7 +1050,7 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: var(--radius-md);
   transition: all 0.18s var(--ease);
 }
-.page-btn:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-1px); }
+@media (hover: hover) { .page-btn:hover:not(:disabled) { border-color: var(--ink); transform: translateY(-1px); } }
 .page-btn.active { background: var(--berry); color: #fff; border-color: var(--berry); box-shadow: var(--shadow-pop); }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
@@ -1060,6 +1091,7 @@ button { font-family: inherit; cursor: pointer; }
 .support-menu {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
@@ -1277,7 +1309,7 @@ button { font-family: inherit; cursor: pointer; }
 .checkout-section { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 30px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
 .checkout-section h3 { font-family: var(--font-display); font-size: 1.2rem; margin: 0 0 20px; }
 .pay-option { display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--line); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 10px; cursor: pointer; transition: all 0.18s var(--ease); }
-.pay-option:hover { border-color: rgba(20,20,22,0.25); }
+@media (hover: hover) { .pay-option:hover { border-color: rgba(20,20,22,0.25); } }
 .pay-option.active { border-color: var(--berry); background: var(--berry-tint); box-shadow: 0 0 0 3px var(--berry-tint); }
 .mini-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
 .mini-item img { width: 52px; height: 52px; object-fit: cover; }
@@ -1586,7 +1618,7 @@ button { font-family: inherit; cursor: pointer; }
   flex-shrink: 0;
   transition: all 0.18s var(--ease);
 }
-.deal-cta:hover { background: var(--berry); border-color: var(--berry); color: #fff; }
+@media (hover: hover) { .deal-cta:hover { background: var(--berry); border-color: var(--berry); color: #fff; } }
 
 @media (max-width: 900px) {
   .deal-card { flex-basis: 160px; }
@@ -1635,7 +1667,8 @@ button { font-family: inherit; cursor: pointer; }
   .hero-actions .btn { flex: initial; min-width: 0; padding: 8px 18px; min-height: 34px; font-size: 0.78rem; }
   .hero-stripe { display: none; }
 
-  .section { padding: 30px 0; }
+  /* Vertical-only, for the same reason as the base .section rule above. */
+  .section { padding-top: 30px; padding-bottom: 30px; }
   .section-title { font-size: 1.35rem; }
 
   .page-title { font-size: 1.9rem; }
@@ -1675,7 +1708,7 @@ button { font-family: inherit; cursor: pointer; }
 
   /* Tighter rhythm between home-page sections on small phones — less
      empty space to scroll past between blocks feels snappier. */
-  .section { padding: 22px 0; }
+  .section { padding-top: 22px; padding-bottom: 22px; }
   .section-head { margin-bottom: 18px; }
   .section-title { font-size: 1.18rem; }
 }
@@ -1773,7 +1806,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow-sm);
   transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
 }
-.category-tile:hover { transform: translateY(-4px); border-color: rgba(20,20,22,0.14); box-shadow: var(--shadow-lg); }
+@media (hover: hover) { .category-tile:hover { transform: translateY(-4px); border-color: rgba(20,20,22,0.14); box-shadow: var(--shadow-lg); } }
 .category-tile-icon {
   font-size: 1.6rem;
   width: 58px;
@@ -1809,7 +1842,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: var(--shadow-sm);
   transition: all 0.2s var(--ease);
 }
-.brand-chip:hover { border-color: var(--berry); color: var(--berry-text); transform: translateY(-2px); box-shadow: var(--shadow); }
+@media (hover: hover) { .brand-chip:hover { border-color: var(--berry); color: var(--berry-text); transform: translateY(-2px); box-shadow: var(--shadow); } }
 @media (max-width: 900px) { .brand-strip { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 560px) { .brand-strip { grid-template-columns: repeat(3, 1fr); gap: 7px; } .brand-chip { padding: 11px 6px; font-size: 0.7rem; } }
 
@@ -1908,6 +1941,20 @@ button { font-family: inherit; cursor: pointer; }
   font-weight: 600;
   text-align: left;
 }
+/* The question row is a <button>, but it was the only interactive control on
+   the page with no hover response at all — nothing moved, tinted or changed,
+   so on desktop it didn't read as clickable until you tried it. Deliberately
+   restrained: the row's own divider brightens to brand red and the label
+   picks up the same colour, matching the accent the row already turns when
+   it's open, so hovering previews the open state rather than introducing a
+   new one. The divider lives on .faq-item, hence hovering the button styles
+   its parent via :has(). */
+.faq-question { transition: color 0.18s var(--ease); }
+@media (hover: hover) {
+  .faq-item:has(.faq-question:hover) { border-bottom-color: rgba(230, 0, 35, 0.45); }
+  .faq-question:hover { color: var(--berry-text); }
+}
+.faq-item { transition: border-color 0.18s var(--ease); }
 .faq-item.open .faq-question { color: var(--berry-text); }
 .faq-toggle { font-size: 1.3rem; flex-shrink: 0; margin-left: 12px; }
 .faq-answer { padding: 0 4px 18px; font-size: 0.88rem; color: #52565c; line-height: 1.6; }
@@ -2116,15 +2163,41 @@ button { font-family: inherit; cursor: pointer; }
 /* Same dark gradient + gold-line language as .hero, so this reads as part
    of the premium brand rather than a bolted-on notice strip. */
 .announcement-bar {
-  background: linear-gradient(90deg, #1c1e24 0%, var(--ink) 55%, #2a0107 100%);
   /* A hairline, not a solid gold bar — full-opacity var(--sunshine) at
      1px reads as a bold, heavy stripe (especially on a mobile Retina
      screen, where "1px" renders as 2-3 physical pixels). A translucent
-     gradient border (faded at both ends) reads as a subtle premium edge
-     instead. */
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid transparent;
-  border-image: linear-gradient(90deg, transparent, rgba(255, 180, 0, 0.55) 15%, rgba(255, 180, 0, 0.55) 85%, transparent) 1;
+     gradient edge (faded out at both ends) reads as a subtle premium
+     rim instead.
+
+     Drawn as stacked background layers rather than with border-image,
+     which is what this used before. border-image and border-radius don't
+     work together: per spec a border-image is painted as straight edges
+     and the radius applies only to the background, so the gold hairline
+     shot straight past both rounded ends and hung in mid-air beyond the
+     corner — the exact opposite of the "rounded card" look intended
+     below. Background layers, unlike a border-image, ARE clipped by
+     border-radius, so the hairline now follows the curve properly.
+
+     Three layers, not two. The gold is translucent (0.55 alpha), so it
+     takes its character from whatever sits behind it: with only a
+     padding-box fill beneath it, the rim composited against the light
+     page instead of against the bar and came out as a bright cream
+     outline rather than a hairline. So the bottom layer repeats the dark
+     fill across the border box purely to give the gold something dark to
+     sit on — which is what border-image got for free by painting over the
+     element's own background. The middle (gold) layer is clipped to the
+     border box and the top (dark) layer to the padding box, so only the
+     1px border ring shows the gold.
+
+     The border runs all four sides (border-image only did top/bottom),
+     which costs nothing visually: the gradient is transparent at 0% and
+     100%, so the left and right ends fade to the bare dark fill anyway,
+     leaving the fading top/bottom rim that was always the intent. */
+  background:
+    linear-gradient(90deg, #1c1e24 0%, var(--ink) 55%, #2a0107 100%) padding-box,
+    linear-gradient(90deg, transparent, rgba(255, 180, 0, 0.55) 15%, rgba(255, 180, 0, 0.55) 85%, transparent) border-box,
+    linear-gradient(90deg, #1c1e24 0%, var(--ink) 55%, #2a0107 100%) border-box;
+  border: 1px solid transparent;
   /* Outer shadow for lift off the page, plus a faint inset top highlight
      for a touch of glassy depth — safe to add here (unlike a mask-fade on
      the text, which would bleed the light page background through the
@@ -2274,8 +2347,15 @@ button { font-family: inherit; cursor: pointer; }
      baked into the keyframes themselves below instead.) */
   will-change: transform;
 }
-.cityscape-car-lane { animation: cityscape-drive-car 16s linear infinite; }
-.cityscape-cyclist-lane { animation: cityscape-drive-scooter 11s linear infinite; animation-delay: -4s; }
+/* The car has to cross FASTER than the bicycle. It previously took 16s to
+   the cyclist's 11s, i.e. the pushbike travelled ~45% quicker than the car
+   and visibly overtook it every lap — the single biggest reason the scene
+   read as "wrong" without it being obvious why at a glance. A car in city
+   traffic is roughly 3x a cyclist's speed; 12s vs 22s keeps the car clearly
+   quicker while stopping short of a literal 3x, at which the bike would
+   barely appear to move at all. */
+.cityscape-car-lane { animation: cityscape-drive-car 12s linear infinite; }
+.cityscape-cyclist-lane { animation: cityscape-drive-scooter 22s linear infinite; animation-delay: -8s; }
 
 /* Flat single-tone silhouette for the car — matches the scene's simplified
    illustration style rather than a shaded/detailed rendering. */
@@ -2290,6 +2370,7 @@ button { font-family: inherit; cursor: pointer; }
   bottom: 6%;
   left: -80px;
   width: 68px;
+  animation: cityscape-vehicle-bob 0.85s ease-in-out infinite alternate;
 }
 .cityscape-car-body { fill: var(--berry); }
 .cityscape-car-roof { fill: var(--berry-dark); }
@@ -2311,17 +2392,94 @@ button { font-family: inherit; cursor: pointer; }
      rider who really is taller than a car roof). The previous 76px/53px
      made the bicycle nearly twice the car's height. */
   bottom: 6%;
-  left: -44px;
-  width: 44px;
+  /* 40px, down from 44px: at 44px the rendered cyclist measured 45.7px tall
+     against the car's 33.1px — a ratio of 1.38, where a real cyclist to a
+     real car is about 1.2. 40px brings it to ~41.5px (ratio 1.25), so the
+     rider still reads as taller than the car roof (as they should) without
+     looming over it. `left` matches the width so the vehicle starts fully
+     off-stage; the keyframe's travel distance below adds both back. */
+  left: -40px;
+  width: 40px;
+  animation: cityscape-vehicle-bob 0.5s ease-in-out infinite alternate;
+}
+/* Both wheels turn as the bike travels. transform-box: fill-box makes
+   transform-origin resolve against each <g>'s own bounding box (its wheel)
+   rather than the SVG viewport's origin — without it the wheels would
+   swing around the top-left corner of the whole drawing instead of
+   spinning in place. ~1s per revolution is close to physically honest at
+   this size: the wheel renders ~14px across (~44px circumference) and the
+   bike covers roughly 43px/s. */
+.cityscape-wheel-roll {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cityscape-wheel-roll 1s linear infinite;
 }
 /* Stroke widths are in viewBox units (~1 unit per cm), so they look far
    larger here than the other cityscape numbers — at this element's render
    scale they come out around 2px on screen, which is what keeps the frame
    legible while it slides past. */
 .cityscape-wheel-ring { fill: none; stroke: var(--sunshine); stroke-width: 8; }
+/* Thinner than the rim so the spokes read as spokes rather than more frame,
+   and slightly translucent so three of them don't visually fill the wheel. */
+.cityscape-spoke { fill: none; stroke: var(--sunshine); stroke-width: 5; stroke-linecap: round; opacity: 0.7; }
 .cityscape-bike-frame { fill: none; stroke: var(--sunshine); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
 .cityscape-bike-frame-fill { fill: var(--sunshine); }
 .cityscape-rider { fill: var(--paper); stroke: var(--paper); }
+
+/* Pedalling rig. `transform-box: view-box` makes transform-origin resolve in
+   the SVG's own viewBox units, so each joint can be pinned to an exact
+   anatomical point (the hip, the knee, the bottom bracket) — fill-box, used
+   for the wheels above, could only ever give the centre of each bone's own
+   bounding box, which would swing the limb from its middle instead of its
+   joint. Thigh and shin run the same period, a quarter-cycle out of phase
+   with each other, so the foot traces a rough ellipse rather than the two
+   bones flapping in lockstep. 1.4s per revolution is a touch slower than the
+   1s wheel, which is the right relationship: the wheel turns faster than the
+   cranks that drive it. */
+.cityscape-thigh {
+  transform-box: view-box;
+  transform-origin: 88px 76px; /* hip */
+  animation: cityscape-pedal-thigh 1.4s linear infinite;
+}
+.cityscape-shin {
+  transform-box: view-box;
+  transform-origin: 116.5px 119.5px; /* knee — must track the drawn joint exactly */
+  animation: cityscape-pedal-shin 1.4s linear infinite;
+}
+.cityscape-crank {
+  transform-box: view-box;
+  transform-origin: 105px 152px; /* bottom bracket */
+  animation: cityscape-wheel-roll 1.4s linear infinite;
+}
+/* Solved, not hand-tuned: these are the thigh/shin angles that put the foot
+   on the pedal at each 45 degrees of crank rotation, from the same IK solve
+   that produced the rest pose drawn in CityscapeStrip.jsx. The shin values
+   look large because the shin group is nested inside the thigh group, so
+   each shin angle is relative to an already-rotated thigh. The crank shares
+   this 1.4s period and starts at the same phase, so foot and pedal stay
+   together through the whole stroke. */
+@keyframes cityscape-pedal-thigh {
+  0% { transform: rotate(0deg); }
+  12.5% { transform: rotate(-0.5deg); }
+  25% { transform: rotate(-6.7deg); }
+  37.5% { transform: rotate(-16.4deg); }
+  50% { transform: rotate(-25.4deg); }
+  62.5% { transform: rotate(-26.8deg); }
+  75% { transform: rotate(-19.2deg); }
+  87.5% { transform: rotate(-7.6deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes cityscape-pedal-shin {
+  0% { transform: rotate(0deg); }
+  12.5% { transform: rotate(12.2deg); }
+  25% { transform: rotate(30.4deg); }
+  37.5% { transform: rotate(44.5deg); }
+  50% { transform: rotate(47.4deg); }
+  62.5% { transform: rotate(37.5deg); }
+  75% { transform: rotate(20.1deg); }
+  87.5% { transform: rotate(3.9deg); }
+  100% { transform: rotate(0deg); }
+}
 
 /* The `to` value adds back each vehicle's own width + its negative `left`
    offset, so it travels fully past the right edge before looping. Ending
@@ -2334,5 +2492,52 @@ button { font-family: inherit; cursor: pointer; }
 }
 @keyframes cityscape-drive-scooter {
   from { transform: translateX(0) translateZ(0); }
-  to { transform: translateX(calc(100% + 88px)) translateZ(0); }
+  to { transform: translateX(calc(100% + 80px)) translateZ(0); }
+}
+@keyframes cityscape-wheel-roll {
+  to { transform: rotate(360deg); }
+}
+/* Suspension/effort bob — a sub-pixel-ish vertical rock on each vehicle.
+   Too small to consciously notice, but it's what stops both of them from
+   looking like flat stickers being slid sideways across the artwork.
+   Deliberately different periods so the two never fall into visible sync. */
+@keyframes cityscape-vehicle-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-1px); }
+}
+
+/* ---------- Touch devices: press feedback in place of hover ---------- */
+/* Every border effect on this site was written as a :hover state, and a
+   phone has no pointer to hover with — (hover: none) and (pointer: coarse)
+   are what a real handset reports. So on mobile those borders did one of
+   two wrong things: nothing at all, or — because mobile browsers fire a
+   compatibility :hover on tap and then leave it applied — they lit up on
+   the tapped card and stayed lit until the visitor happened to tap
+   something else, leaving a stuck highlight behind while scrolling.
+
+   The hover rules above are now gated behind (hover: hover) so they only
+   exist for a real pointer, and the same accents are restated here on
+   :active, which is the touch-correct equivalent: it is on for exactly as
+   long as the finger is down and releases by itself. The base rules
+   already declare `transition: border-color`, so these animate rather than
+   snapping. Kept to border/background only — the existing width-based
+   block above owns the press-scale part, and doubling up would fight it. */
+@media (hover: none) {
+  .card:active { border-color: rgba(20, 20, 22, 0.14); }
+  .category-tile:active { border-color: rgba(20, 20, 22, 0.14); }
+  .deal-card:active { border-color: rgba(20, 20, 22, 0.14); }
+  .card-cta:active { background: var(--berry); border-color: var(--berry); color: #fff; }
+  .deal-cta:active { background: var(--berry); border-color: var(--berry); color: #fff; }
+  .cat-pill:active { background: var(--berry); color: #fff; border-color: var(--berry); }
+  .brand-chip:active { border-color: var(--berry); color: var(--berry-text); }
+  .page-btn:active:not(:disabled) { border-color: var(--ink); }
+  .btn-outline:active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .hero-actions .btn-outline:active { background: rgba(255, 255, 255, 0.16); border-color: var(--paper); }
+  .trust-badge-link:active { border-color: var(--gold-light); background: rgba(251, 241, 236, 0.09); }
+  .wishlist-heart-lg:active { border-color: var(--berry); }
+  .review-photo-add:active { border-color: var(--berry); color: var(--berry); }
+  .pay-option:active { border-color: rgba(20, 20, 22, 0.25); }
+  .select:active { border-color: var(--ink); }
+  .faq-item:has(.faq-question:active) { border-bottom-color: rgba(230, 0, 35, 0.45); }
+  .faq-question:active { color: var(--berry-text); }
 }

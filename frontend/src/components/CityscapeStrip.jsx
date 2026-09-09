@@ -229,9 +229,10 @@ export default function CityscapeStrip() {
           a delivery bag, which at this element's actual ~50px display
           size just merged into noise — impossible to tell it was a bike
           at all. Fewer, bolder strokes read far more clearly this small:
-          two plain wheel rings (no spokes), a single clean frame outline,
-          and a simple rider silhouette (head + one back/arm curve + one
-          leg). Ties into the "Fast Delivery" branding used elsewhere. */}
+          wheel rings carrying just three thick spokes each, a single clean
+          frame outline, and a simple rider silhouette (head + one back/arm
+          curve + one leg). Ties into the "Fast Delivery" branding used
+          elsewhere. */}
       {/* Drawn on a roughly 1-unit-per-cm grid (viewBox ~1.95m x 1.85m) so
           the parts are in real proportion to each other: 70cm wheels,
           105cm wheelbase, ~100cm saddle height, rider head at ~1.7m. The
@@ -242,10 +243,26 @@ export default function CityscapeStrip() {
       <div className="cityscape-cyclist-lane">
         <div className="cityscape-cyclist">
           <svg viewBox="0 0 195 185">
-            <circle cx="45" cy="145" r="35" className="cityscape-wheel-ring" />
-            <circle cx="150" cy="145" r="35" className="cityscape-wheel-ring" />
-            <circle cx="45" cy="145" r="5" className="cityscape-bike-frame-fill" />
-            <circle cx="150" cy="145" r="5" className="cityscape-bike-frame-fill" />
+            {/* Each wheel is its own <g> so it can spin about its own centre
+                while the lane carries it across. Three bold spokes, not a
+                realistic spoke count — the wheel renders about 14px across,
+                where a real lacing pattern is just grey mush, but three
+                thick struts read clearly as a wheel turning. Without any
+                spoke at all (the previous version) a plain ring is
+                radially symmetric, so it can rotate all it likes and still
+                look like a static disc sliding along the road — which is
+                the main reason the whole strip read as two cut-outs being
+                dragged past rather than a bike being ridden. */}
+            <g className="cityscape-wheel-roll">
+              <circle cx="45" cy="145" r="35" className="cityscape-wheel-ring" />
+              <path d="M45 145 L45 110 M45 145 L75.3 162.5 M45 145 L14.7 162.5" className="cityscape-spoke" />
+              <circle cx="45" cy="145" r="5" className="cityscape-bike-frame-fill" />
+            </g>
+            <g className="cityscape-wheel-roll">
+              <circle cx="150" cy="145" r="35" className="cityscape-wheel-ring" />
+              <path d="M150 145 L150 110 M150 145 L180.3 162.5 M150 145 L119.7 162.5" className="cityscape-spoke" />
+              <circle cx="150" cy="145" r="5" className="cityscape-bike-frame-fill" />
+            </g>
 
             {/* Diamond frame: rear triangle (chain stay, seat stay, seat
                 tube) + front triangle (top tube, down tube), then the head
@@ -256,6 +273,12 @@ export default function CityscapeStrip() {
             />
             {/* Saddle and handlebar */}
             <path d="M76 78 L100 78 M138 72 L162 72" className="cityscape-bike-frame" />
+            {/* Crank arm + pedal, on its own rotating group about the bottom
+                bracket, so the foot visibly has something driving it round. */}
+            <g className="cityscape-crank">
+              <path d="M105 152 L105 164" className="cityscape-bike-frame" />
+              <circle cx="105" cy="164" r="5" className="cityscape-bike-frame-fill" />
+            </g>
             {/* Chainring at the bottom bracket */}
             <circle cx="105" cy="152" r="10" className="cityscape-bike-frame-fill" />
 
@@ -263,7 +286,33 @@ export default function CityscapeStrip() {
             <circle cx="118" cy="18" r="15" className="cityscape-rider" />
             <path d="M88 76 L110 34" className="cityscape-rider" fill="none" strokeWidth="13" strokeLinecap="round" />
             <path d="M108 38 L148 78" className="cityscape-rider" fill="none" strokeWidth="10" strokeLinecap="round" />
-            <path d="M88 76 L112 116 L105 152" className="cityscape-rider" fill="none" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* The leg is rigged as two bones rather than one static
+                polyline, because a cyclist coasting past with a rigid leg is
+                exactly what made this read as a cut-out being dragged along
+                instead of somebody riding. The shin group is nested INSIDE
+                the thigh group, so the thigh's rotation carries the knee (and
+                with it the shin's own rotation origin) along automatically —
+                that nesting is what keeps the joint attached instead of the
+                shin tearing away from the knee as the thigh swings.
+
+                These coordinates are not eyeballed: hip (88,76), knee
+                (116.5,119.5) and foot (105,164) are the rest pose solved by
+                2-bone inverse kinematics for a foot sitting on the pedal at
+                the bottom of a 12-unit crank, and the keyframe angles in the
+                CSS come from the same solve run at 45-degree crank
+                increments. The leg also had to grow (thigh 52, shin 46,
+                against the previous 46.6/36.7): at the old lengths the foot
+                only just reached the bottom bracket with the leg almost
+                straight, so there was no slack left to pedal with at all —
+                the first attempt at this animation moved the foot barely 2px
+                and read as a twitch rather than a pedal stroke. */}
+            <g className="cityscape-thigh">
+              <path d="M88 76 L116.5 119.5" className="cityscape-rider" fill="none" strokeWidth="11" strokeLinecap="round" />
+              <g className="cityscape-shin">
+                <path d="M116.5 119.5 L105 164" className="cityscape-rider" fill="none" strokeWidth="10" strokeLinecap="round" />
+              </g>
+            </g>
           </svg>
         </div>
       </div>

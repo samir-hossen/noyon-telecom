@@ -215,9 +215,10 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
 
     // Cash-on-delivery orders are "purchased" the moment they're placed (no
     // separate payment-gateway confirmation step) — fire the server-side
-    // Purchase event here. Online-payment orders fire this instead from the
-    // SSLCommerz IPN handler once the money has actually been confirmed
-    // (see payment.routes.js), so this stays a no-op for those.
+    // Purchase event here. Online-payment orders fire this instead from
+    // whichever SSLCommerz callback (success redirect or IPN) actually
+    // confirms the money and flips the order to 'paid' — see
+    // payment.routes.js — so this stays a no-op for those.
     if (payment.method === 'cod') {
       sendMetaPurchaseEvent({ order, req }).catch(() => {});
     }

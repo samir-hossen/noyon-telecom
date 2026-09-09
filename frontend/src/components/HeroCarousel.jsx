@@ -53,6 +53,22 @@ const SLIDES = [
 
 const AUTO_MS = 5000;
 
+// Every slide stays in the DOM — the track just translates the inactive ones
+// out of view — so their CTA links remained fully keyboard-focusable while
+// invisible: tabbing through the homepage silently parked focus on an
+// off-screen "Shop now" button with no visible focus ring. aria-hidden alone
+// made that worse rather than better, since aria-hidden on an element that
+// contains the focused element is an ARIA violation; Chrome refuses to
+// honour it and logs "Blocked aria-hidden on an element because its
+// descendant retained focus". `inert` is the attribute that actually fixes
+// both halves: it removes the subtree from the tab order AND from the
+// accessibility tree. Passed as '' rather than a boolean because React 18
+// doesn't know `inert` and warns on a boolean value for an unknown
+// attribute; '' still renders as the bare, enabled `inert` attribute.
+function inactiveProps(isInactive) {
+  return isInactive ? { inert: '' } : {};
+}
+
 // These slides used to hotlink photos straight from Unsplash's CDN. That's
 // an external network request on every single pageview with no fallback —
 // on flaky mobile connections (or if Unsplash rate-limits/hiccups) the slide
@@ -159,7 +175,7 @@ export default function HeroCarousel() {
               />
             );
             return (
-              <div className="hero-grid hero-grid-banner" key={b.id} aria-hidden={i !== index}>
+              <div className="hero-grid hero-grid-banner" key={b.id} aria-hidden={i !== index} {...inactiveProps(i !== index)}>
                 <div className="hero-img hero-img-banner">
                   {b.linkUrl ? (
                     /^https?:\/\//.test(b.linkUrl) ? (
@@ -176,7 +192,7 @@ export default function HeroCarousel() {
       ) : (
         <div className="hero-track" style={{ transform: `translateX(-${index * 100}%)` }}>
           {SLIDES.map((s, i) => (
-            <div className="hero-grid" key={i} aria-hidden={i !== index}>
+            <div className="hero-grid" key={i} aria-hidden={i !== index} {...inactiveProps(i !== index)}>
               <div className="hero-copy">
                 <span className="eyebrow">{t(s.eyebrowKey)}</span>
                 <h1 className="hero-title">
@@ -201,7 +217,13 @@ export default function HeroCarousel() {
                 </div>
                 <div className="hero-actions">
                   <Link to={s.cta1.to} className="btn btn-berry">{t(s.cta1.labelKey)}</Link>
-                  <Link to={s.cta2.to} className="btn btn-outline" style={{ borderColor: 'var(--paper)', color: 'var(--paper)' }}>
+                  {/* Colours live in .hero-actions .btn-outline rather than
+                      in an inline style here. An inline style beats every
+                      stylesheet rule, so pinning borderColor here also
+                      silently overrode the :hover rule — the button's border
+                      could never change on hover, and the two border-colour
+                      values written for it in index.css were dead code. */}
+                  <Link to={s.cta2.to} className="btn btn-outline">
                     {t(s.cta2.labelKey)}
                   </Link>
                 </div>

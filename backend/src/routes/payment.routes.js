@@ -106,17 +106,30 @@ router.post('/sslcommerz/success', async (req, res) => {
   const { tran_id: orderId, val_id: valId } = req.body;
   let order = null;
   try {
-    order = await prisma.order.findUnique({ where: { id: orderId } });
+    // items are included because a successful transition to 'paid' here
+    // fires the Meta Purchase event below, which reads order.items.
+    order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
     const { ok, data } = await validateSslcommerzPayment(valId);
     if (ok && paymentMatchesOrder(data, order)) {
       // updateMany + a status: 'processing' guard, not a plain update by id
       // — same atomic re-check as the IPN handler below, closing the race
       // where the order's status changes between the check above and this
       // write.
-      await prisma.order.updateMany({
+      const { count } = await prisma.order.updateMany({
         where: { id: orderId, status: 'processing' },
         data: { status: 'paid', transactionId: orderId, gatewayValId: valId },
       });
+      // This handler and the IPN handler race to make the same transition,
+      // and whichever loses gets count: 0. Since only one of them can win,
+      // the Purchase event has to fire from whichever one actually did the
+      // transition — firing it only from the IPN meant every order where
+      // the customer's browser redirect arrived first (the common case on
+      // a healthy connection) silently never reported a conversion to Meta.
+      // The shared count > 0 guard is what still keeps it to exactly one
+      // event per order, no matter which path wins.
+      if (count > 0) {
+        sendMetaPurchaseEvent({ order, req }).catch(() => {});
+      }
     }
   } catch {
     // Fall through to redirect regardless — the IPN callback below is the

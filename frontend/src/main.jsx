@@ -25,6 +25,15 @@ if ('scrollRestoration' in window.history) {
 }
 window.scrollTo(0, 0);
 
+// iOS Safari only applies :active styles while a finger is down if the
+// document actually has a touch listener attached — without one it skips
+// the pressed state entirely. That would silently disable the whole
+// (hover: none) press-feedback block in index.css on iPhones, which is
+// precisely the audience it exists for, so this empty passive listener is
+// registered purely to switch that behaviour on. Passive, so it never
+// delays or blocks scrolling.
+document.addEventListener('touchstart', () => {}, { passive: true });
+
 initAnalytics();
 initMetaPixel();
 initTikTokPixel();
