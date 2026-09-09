@@ -1,353 +1,609 @@
-import React from 'react';
+import React from "react";
 
-// ==========================================
-// Building & Environment Components
-// ==========================================
-function Windows({ x, y, w, h, cols, rows }) {
-  const pad = 8;
+/**
+ * Noyon Telecom — Premium Animated City Footer
+ * Drop-in React component. No external animation library required.
+ *
+ * Features:
+ * - Premium dark/cinematic skyline
+ * - Warm gold + Noyon-red accent lighting
+ * - Moving car with headlight glow
+ * - Pedaling delivery cyclist
+ * - Twinkling stars + signal pulse
+ * - Moon, clouds, building depth and window glow
+ * - Road reflections
+ * - Respects prefers-reduced-motion
+ */
+
+function Windows({ x, y, w, h, cols, rows, variant = "warm" }) {
+  const pad = 10;
   const cellW = (w - pad * 2) / cols;
   const cellH = (h - pad * 2) / rows;
-  const size = Math.min(cellW, cellH) * 0.45;
+  const size = Math.max(3, Math.min(cellW, cellH) * 0.34);
   const windows = [];
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const seed = (r * 7 + c * 3) % 5;
-      const dark = seed === 0;
-      const dim = seed === 1;
+      const seed = (r * 11 + c * 7 + cols) % 9;
+      if (seed === 0 || seed === 1) continue;
+
       windows.push(
         <rect
           key={`${r}-${c}`}
           x={x + pad + c * cellW + (cellW - size) / 2}
           y={y + pad + r * cellH + (cellH - size) / 2}
           width={size}
-          height={size * 1.3}
-          rx="1"
-          fill={dark ? '#14111d' : dim ? '#ffaa44' : '#ffd276'}
-          opacity={dim ? 0.35 : 1}
-          filter={!dark && !dim ? 'url(#glow-blur-subtle)' : ''}
+          height={size * 1.12}
+          rx="1.5"
+          className={`city-window ${variant}`}
+          opacity={seed === 2 ? 0.45 : seed === 3 ? 0.7 : 1}
         />
       );
     }
   }
-  return <g>{windows}</g>;
+
+  return <>{windows}</>;
 }
 
-function ModernShowroom({ x, base }) {
-  const w = 180;
-  const h = 135;
+function Building({ x, w, h, base, cols = 3, rows = 5, label, main = false }) {
   const y = base - h;
+
   return (
-    <g className="city-showroom">
-      <circle cx={x + w / 2} cy={y + h * 0.6} r="100" fill="url(#warm-interior-glow)" opacity="0.45" />
-      <rect x={x} y={y} width={w} height={h} rx="8" fill="#14141c" stroke="#2a2b38" strokeWidth="2" />
-      
-      {/* Brand Header */}
-      <rect x={x + 10} y={y - 20} width={w - 20} height="28" rx="6" fill="#0b0b10" stroke="#ff8c00" strokeWidth="1.5" />
-      <text x={x + w / 2} y={y - 2} textAnchor="middle" className="city-brand-text">NOYON TELECOM</text>
-      
-      {/* Glass Storefront */}
-      <rect x={x + 8} y={y + 16} width={w - 16} height={h - 22} rx="4" fill="url(#glass-gradient)" stroke="#ffaa44" strokeWidth="1" strokeOpacity="0.4" />
-      
-      {/* Interior Displays */}
-      <rect x={x + 18} y={y + 35} width="40" height="60" rx="3" fill="#1b1c26" stroke="#444" strokeWidth="1" />
-      <rect x={x + 23} y={y + 42} width="30" height="45" rx="2" fill="#ff4422" opacity="0.8" filter="url(#glow-blur)" />
-      
-      <line x1={x + w / 2} y1={y + 16} x2={x + w / 2} y2={base - 6} stroke="#555" strokeWidth="1.5" />
-      <line x1={x + 65} y1={y + 16} x2={x + 65} y2={base - 6} stroke="#333" strokeWidth="1" />
-      <line x1={x + w - 65} y1={y + 16} x2={x + w - 65} y2={base - 6} stroke="#333" strokeWidth="1" />
-      
-      <rect x={x + w - 58} y={y + 35} width="40" height="60" rx="3" fill="#1b1c26" stroke="#444" strokeWidth="1" />
-      <circle cx={x + w - 38} cy={y + 60} r="12" fill="#ffd066" opacity="0.7" filter="url(#glow-blur)" />
-      
-      <polygon points={`${x + 15},${base - 6} ${x + w - 15},${base - 6} ${x + w + 35},${base + 16} ${x - 35},${base + 16}`} fill="url(#entrance-light-beam)" opacity="0.3" />
+    <g className={main ? "building-main" : ""}>
+      <rect x={x} y={y} width={w} height={h} rx="7" className="building" />
+
+      {main && (
+        <>
+          <rect x={x} y={y} width={w} height="5" rx="2.5" className="gold-bar" />
+          <rect x={x + 8} y={y + 8} width={w - 16} height="1" className="building-edge" />
+        </>
+      )}
+
+      <Windows
+        x={x}
+        y={y}
+        w={w}
+        h={h}
+        cols={cols}
+        rows={rows}
+        variant={main ? "main" : "warm"}
+      />
+
+      {label && (
+        <g>
+          <text x={x + w / 2} y={y - 13} textAnchor="middle" className="building-label">
+            {label}
+          </text>
+          {main && (
+            <circle cx={x + w / 2} cy={y - 24} r="2.5" className="signal-dot" />
+          )}
+        </g>
+      )}
     </g>
   );
 }
 
-function Highrise({ x, w, h, base, cols, rows }) {
+function House({ x, w, h, base }) {
   const y = base - h;
+  const roofH = h * 0.43;
+
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx="4" fill="url(#highrise-gradient)" />
-      <Windows x={x} y={y} w={w} h={h} cols={cols} rows={rows} />
+      <path
+        d={`M${x - 8},${y + roofH} L${x + w / 2},${y - 7} L${x + w + 8},${y + roofH} Z`}
+        className="house-roof"
+      />
+      <rect x={x} y={y + roofH} width={w} height={h - roofH} rx="5" className="building house" />
+      <rect
+        x={x + w * 0.62}
+        y={base - h * 0.42}
+        width={w * 0.2}
+        height={h * 0.42}
+        rx="2"
+        className="door"
+      />
+      <rect
+        x={x + w * 0.14}
+        y={y + roofH + h * 0.17}
+        width={w * 0.22}
+        height={w * 0.22}
+        rx="2"
+        className="city-window warm"
+      />
+      <rect
+        x={x + w * 0.42}
+        y={y + roofH + h * 0.17}
+        width={w * 0.22}
+        height={w * 0.22}
+        rx="2"
+        className="city-window dim"
+      />
     </g>
   );
 }
 
-function ExpressHub({ x, w, h, base, label, color = '#e60023' }) {
+function Shop({ x, w, h, base, label }) {
   const y = base - h;
+  const awningH = h * 0.18;
+
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx="4" fill="#161720" stroke="#252633" strokeWidth="1.5" />
-      <rect x={x + 8} y={y + 8} width={w - 16} height="18" rx="3" fill="#0c0d12" stroke={color} strokeWidth="1" />
-      <text x={x + w / 2} y={y + 21} textAnchor="middle" fill={color} fontSize="9" fontWeight="800" letterSpacing="0.8" filter="url(#glow-blur-subtle)">
+      <rect x={x} y={y + awningH} width={w} height={h - awningH} rx="6" className="building shop" />
+      <rect x={x - 3} y={y} width={w + 6} height={awningH} rx="4" className="shop-awning" />
+      <rect x={x + 8} y={y + 7} width={w - 16} height="2" className="shop-light" />
+      <text x={x + w / 2} y={y + awningH - 7} textAnchor="middle" className="shop-label">
         {label}
       </text>
-      <rect x={x + 10} y={y + 34} width={w - 20} height={h - 40} rx="3" fill="#ffb852" fillOpacity="0.25" stroke="#ffaa33" strokeWidth="0.8" />
-      <line x1={x + w / 2} y1={y + 34} x2={x + w / 2} y2={base - 6} stroke="#333" strokeWidth="1" />
+      <rect x={x + w * 0.31} y={base - h * 0.48} width={w * 0.38} height={h * 0.48} rx="3" className="door" />
+      <rect x={x + w * 0.08} y={y + awningH + h * 0.15} width={w * 0.18} height={w * 0.18} rx="2" className="city-window warm" />
+      <rect x={x + w * 0.74} y={y + awningH + h * 0.15} width={w * 0.18} height={w * 0.18} rx="2" className="city-window warm" />
     </g>
   );
 }
 
-function CinematicTree({ x, base }) {
+function Tree({ x, base, big = false }) {
+  const r = big ? 21 : 15;
+  const cy = base - r * 1.85;
+
   return (
     <g>
-      <rect x={x - 2} y={base - 32} width="4" height="26" rx="2" fill="#120a06" />
-      <circle cx={x - 10} cy={base - 40} r="18" fill="#0d2818" opacity="0.9" />
-      <circle cx={x + 10} cy={base - 40} r="18" fill="#143722" opacity="0.9" />
-      <circle cx={x} cy={base - 52} r="22" fill="#1c472c" opacity="0.95" />
+      <rect x={x - 2.5} y={base - r * 1.5} width="5" height={r * 1.5} rx="2" className="trunk" />
+      <circle cx={x - r * 0.48} cy={cy + r * 0.22} r={r * 0.7} className="foliage back" />
+      <circle cx={x + r * 0.48} cy={cy + r * 0.22} r={r * 0.7} className="foliage back" />
+      <circle cx={x} cy={cy - r * 0.2} r={r * 0.82} className="foliage" />
+      <circle cx={x - r * 0.18} cy={cy - r * 0.42} r={r * 0.22} className="leaf-highlight" />
     </g>
   );
 }
 
-function LuxuryLamp({ x, base }) {
+function LampPost({ x, base }) {
   return (
     <g>
-      <line x1={x} y1={base - 6} x2={x} y2={base - 72} stroke="#3c3f50" strokeWidth="2.5" strokeLinecap="round" />
-      <path d={`M${x - 8},${base - 72} Q${x},${base - 80} ${x + 8},${base - 72}`} fill="none" stroke="#555a70" strokeWidth="2" />
-      <circle cx={x} cy={base - 71} r="3" fill="#fff" />
-      <circle cx={x} cy={base - 71} r="9" fill="#ffb43a" opacity="0.75" filter="url(#glow-blur)" />
-      <polygon points={`${x - 4},${base - 68} ${x + 4},${base - 68} ${x + 28},${base + 16} ${x - 28},${base + 16}`} fill="url(#lamp-light-cone)" opacity="0.22" />
+      <rect x={x - 1.8} y={base - 62} width="3.6" height="62" rx="2" className="lamp-pole" />
+      <rect x={x - 6} y={base - 63} width="12" height="2" rx="1" className="lamp-arm" />
+      <circle cx={x} cy={base - 65} r="5" className="lamp-core" />
+      <circle cx={x} cy={base - 65} r="14" className="lamp-halo" />
     </g>
   );
 }
 
-// ==========================================
-// Main Export Component
-// ==========================================
+function Bench({ x, base }) {
+  return (
+    <g className="bench">
+      <rect x={x} y={base - 17} width="34" height="4" rx="2" />
+      <rect x={x} y={base - 25} width="34" height="4" rx="2" />
+      <rect x={x + 3} y={base - 24} width="3" height="12" />
+      <rect x={x + 28} y={base - 24} width="3" height="12" />
+    </g>
+  );
+}
+
+function Cloud({ x, y, scale = 1 }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`} className="cloud">
+      <ellipse cx="50" cy="24" rx="50" ry="17" />
+      <circle cx="26" cy="18" r="19" />
+      <circle cx="48" cy="12" r="24" />
+      <circle cx="72" cy="19" r="18" />
+    </g>
+  );
+}
+
+function Moon({ x, y }) {
+  return (
+    <g className="moon">
+      <circle cx={x} cy={y} r="18" />
+      <circle cx={x + 8} cy={y - 5} r="16" className="moon-cutout" />
+    </g>
+  );
+}
+
+function Stars() {
+  const stars = [
+    [70, 34, 1.4], [145, 61, 1], [230, 30, 1.5], [320, 49, 1],
+    [410, 25, 1.2], [535, 43, 1.3], [640, 24, 1], [760, 58, 1.5],
+    [870, 29, 1.2], [980, 51, 1], [1080, 25, 1.4], [1180, 54, 1],
+    [1320, 31, 1.3], [1370, 67, 1]
+  ];
+
+  return (
+    <>
+      {stars.map(([cx, cy, r], i) => (
+        <circle key={i} cx={cx} cy={cy} r={r} className={`star star-${i % 4}`} />
+      ))}
+    </>
+  );
+}
+
+function SignalPulse({ x, y }) {
+  return (
+    <g className="signal">
+      <circle cx={x} cy={y} r="3" />
+      <path d={`M${x - 9} ${y - 7} Q${x} ${y - 14} ${x + 9} ${y - 7}`} />
+      <path d={`M${x - 15} ${y - 12} Q${x} ${y - 24} ${x + 15} ${y - 12}`} />
+    </g>
+  );
+}
+
+function Car() {
+  return (
+    <div className="car-lane">
+      <div className="car">
+        <div className="car-headlight" />
+        <svg viewBox="0 0 120 52" aria-hidden="true">
+          <path
+            d="M8 35 Q7 23 21 20 L31 9 Q35 5 46 5 H77 Q89 5 96 20 Q110 22 112 34 Q112 40 104 40 H14 Q8 40 8 35Z"
+            className="car-body"
+          />
+          <path d="M33 19 L42 9 H75 Q85 9 91 19Z" className="car-window" />
+          <path d="M61 10 V19" className="car-window-line" />
+          <circle cx="31" cy="40" r="9" className="car-wheel" />
+          <circle cx="91" cy="40" r="9" className="car-wheel" />
+          <circle cx="31" cy="40" r="4" className="car-hub" />
+          <circle cx="91" cy="40" r="4" className="car-hub" />
+          <rect x="99" y="27" width="5" height="4" rx="1" className="car-light" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function Cyclist() {
+  return (
+    <div className="cyclist-lane">
+      <div className="cyclist">
+        <svg viewBox="0 0 195 185" aria-hidden="true">
+          <g className="bike-wheel-roll">
+            <circle cx="45" cy="145" r="35" className="bike-wheel" />
+            <path d="M45 145 L45 110 M45 145 L75 162.5 M45 145 L15 162.5" className="bike-spoke" />
+            <circle cx="45" cy="145" r="4" className="bike-hub" />
+          </g>
+          <g className="bike-wheel-roll">
+            <circle cx="150" cy="145" r="35" className="bike-wheel" />
+            <path d="M150 145 L150 110 M150 145 L180 162.5 M150 145 L120 162.5" className="bike-spoke" />
+            <circle cx="150" cy="145" r="4" className="bike-hub" />
+          </g>
+
+          <path
+            d="M45 145 L105 152 L88 80 L45 145 M88 80 L148 84 L105 152 M148 84 L150 145 M148 84 L150 73"
+            className="bike-frame"
+          />
+          <path d="M76 78 L100 78 M138 72 L163 72" className="bike-frame" />
+
+          <g className="crank">
+            <path d="M105 152 L105 164" className="bike-frame" />
+            <circle cx="105" cy="164" r="5" className="bike-hub" />
+          </g>
+          <circle cx="105" cy="152" r="9" className="bike-chainring" />
+
+          <circle cx="118" cy="18" r="15" className="rider" />
+          <path d="M88 76 L110 34" className="rider-body" />
+          <path d="M108 38 L148 78" className="rider-arm" />
+
+          <g className="thigh">
+            <path d="M88 76 L116.5 119.5" className="rider-leg" />
+            <g className="shin">
+              <path d="M116.5 119.5 L105 164" className="rider-leg" />
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 export default function CityscapeStrip() {
-  const base = 185;
+  const base = 190;
 
   return (
     <div className="cityscape-strip" aria-hidden="true">
       <style>{`
-        .cityscape-strip {
-          position: relative;
-          width: 100%;
-          height: 230px;
-          overflow: hidden;
-          background: #08070d;
-        }
-        
-        .cityscape-skyline {
-          width: 100%;
-          height: 100%;
-          display: block;
-        }
-
-        @media (max-width: 768px) {
-          .cityscape-strip { height: 160px; }
-        }
-
-        .city-brand-text {
-          fill: #ffffff;
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-          font-family: 'Poppins', sans-serif;
-          filter: drop-shadow(0 0 5px rgba(255, 140, 0, 0.8));
+        .cityscape-strip{
+          --bg:#090b10;
+          --gold:#f4b83f;
+          --gold2:#ffd77a;
+          --red:#ef1738;
+          --red2:#ff5368;
+          --road:#10151b;
+          position:relative;
+          width:100%;
+          height:clamp(185px,20vw,235px);
+          overflow:hidden;
+          isolation:isolate;
+          background:
+            radial-gradient(ellipse at 50% 82%,rgba(239,23,56,.10),transparent 35%),
+            linear-gradient(180deg,#080b11 0%,#0b1018 55%,#090c11 100%);
+          border-top:1px solid rgba(255,255,255,.045);
+          border-bottom:1px solid rgba(255,255,255,.055);
+          box-shadow:inset 0 18px 45px rgba(0,0,0,.28);
         }
 
-        /* Traffic Lanes */
-        .cityscape-car-lane {
-          position: absolute;
-          bottom: 12px;
-          left: 0;
-          width: 100%;
-          pointer-events: none;
-          animation: driveLeft 14s linear infinite;
-        }
-        .cityscape-car {
-          width: 85px;
-          transform: scaleX(-1); /* গাড়ি বামে ঘুরানো */
-          filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+        .cityscape-skyline{
+          position:absolute;
+          inset:0;
+          width:100%;
+          height:100%;
+          display:block;
         }
 
-        .cityscape-cyclist-lane {
-          position: absolute;
-          bottom: 10px;
-          left: 0;
-          width: 100%;
-          pointer-events: none;
-          animation: driveLeft 22s linear infinite;
+        .building{
+          fill:url(#buildingGradient);
+          stroke:rgba(255,255,255,.075);
+          stroke-width:1;
         }
-        .cityscape-cyclist {
-          width: 35px;
-          transform: scaleX(-1); /* সাইকেল বামে ঘুরানো */
-          filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
+        .building-main .building{
+          fill:url(#mainBuildingGradient);
+          stroke:rgba(244,184,63,.22);
+        }
+        .building-edge{fill:rgba(255,255,255,.12)}
+        .gold-bar{fill:var(--gold)}
+        .city-window{
+          fill:#ffbd42;
+          filter:url(#windowGlow);
+        }
+        .city-window.main{fill:#ffd873}
+        .city-window.dim{fill:#8c5c20;filter:none}
+        .city-window.warm{fill:#ffb62e}
+        .house-roof{fill:#321321;stroke:rgba(255,255,255,.06);stroke-width:1}
+        .door{fill:#1a1118;stroke:rgba(255,190,70,.1);stroke-width:1}
+        .building-label{
+          fill:#f4f5f7;
+          font:600 12px/1 system-ui,sans-serif;
+          letter-spacing:.9px;
+        }
+        .shop-label{
+          fill:white;
+          font:700 8px/1 system-ui,sans-serif;
+          letter-spacing:.45px;
+        }
+        .shop-awning{fill:var(--red);filter:url(#redGlow)}
+        .shop-light{fill:rgba(255,215,122,.55)}
+        .foliage{fill:#173b31}
+        .foliage.back{fill:#102d26}
+        .leaf-highlight{fill:#2c604d}
+        .trunk{fill:#2a2019}
+        .lamp-pole{fill:#31373d}
+        .lamp-arm{fill:#3b4147}
+        .lamp-core{fill:#ffd778;filter:url(#lampGlow)}
+        .lamp-halo{fill:#ffb52e;opacity:.11;filter:url(#lampBlur)}
+        .bench rect,.bench{fill:#3b3029}
+        .cloud{fill:#111722;opacity:.45}
+        .moon circle:first-child{fill:#ffe7a5;filter:url(#moonGlow)}
+        .moon-cutout{fill:#090c12!important;filter:none!important}
+        .star{fill:#fff4cf;animation:twinkle 3.8s ease-in-out infinite}
+        .star-1{animation-delay:.8s}.star-2{animation-delay:1.7s}.star-3{animation-delay:2.5s}
+        .signal circle{fill:var(--red);filter:url(#redGlow)}
+        .signal path{fill:none;stroke:var(--red);stroke-width:2;stroke-linecap:round;opacity:.8}
+        .signal{animation:signalPulse 2.8s ease-out infinite;transform-origin:center}
+
+        .road{
+          fill:var(--road);
+          stroke:#242a31;
+          stroke-width:1;
+        }
+        .road-line{
+          stroke:#b68130;
+          stroke-width:2;
+          stroke-dasharray:18 14;
+          opacity:.65;
+        }
+        .road-edge{stroke:#383c42;stroke-width:2}
+        .reflection{fill:url(#reflectionGradient);opacity:.22}
+        .reflection-red{fill:var(--red);opacity:.13;filter:url(#softBlur)}
+
+        .car-lane,.cyclist-lane{
+          position:absolute;
+          inset:0;
+          pointer-events:none;
+        }
+        .car{
+          position:absolute;
+          width:78px;
+          left:-100px;
+          top:61%;
+          animation:drive 15s linear infinite;
+          filter:drop-shadow(0 5px 7px rgba(0,0,0,.55));
+        }
+        .car svg{display:block;width:100%;height:auto}
+        .car-body{fill:#e6193a;stroke:#ff6375;stroke-width:1}
+        .car-window{fill:#1c2832;stroke:#73808a;stroke-width:1}
+        .car-window-line{stroke:#65717a;stroke-width:1}
+        .car-wheel{fill:#080a0d;stroke:#4b5258;stroke-width:2}
+        .car-hub{fill:#aab0b5}
+        .car-light{fill:#ffdd8a;filter:url(#lampGlow)}
+        .car-headlight{
+          position:absolute;
+          right:-15px;
+          top:34px;
+          width:32px;
+          height:10px;
+          background:linear-gradient(90deg,transparent,rgba(255,224,145,.25));
+          filter:blur(5px);
         }
 
-        @media (max-width: 768px) {
-          .cityscape-car { width: 70px; }
-          .cityscape-cyclist { width: 28px; }
-          .cityscape-car-lane { bottom: 8px; animation-duration: 10s; }
-          .cityscape-cyclist-lane { bottom: 6px; animation-duration: 16s; }
+        .cyclist{
+          position:absolute;
+          width:55px;
+          left:-75px;
+          top:48%;
+          animation:ride 19s linear infinite;
+          filter:drop-shadow(0 4px 4px rgba(0,0,0,.45));
+        }
+        .cyclist svg{display:block;width:100%;height:auto}
+        .bike-wheel{fill:none;stroke:#f5b52e;stroke-width:4}
+        .bike-spoke{fill:none;stroke:#d99018;stroke-width:3;stroke-linecap:round}
+        .bike-hub,.bike-chainring{fill:#f5b52e}
+        .bike-frame{fill:none;stroke:#f5b52e;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+        .bike-frame-roll{}
+        .rider{fill:#f5b52e}
+        .rider-body,.rider-arm,.rider-leg{fill:none;stroke:#f5b52e;stroke-linecap:round}
+        .rider-body{stroke-width:13}.rider-arm{stroke-width:10}.rider-leg{stroke-width:11}
+        .bike-wheel-roll{transform-box:fill-box;transform-origin:center;animation:wheelSpin .75s linear infinite}
+        .crank{transform-box:fill-box;transform-origin:105px 152px;animation:crankSpin .8s linear infinite}
+        .thigh{transform-box:fill-box;transform-origin:88px 76px;animation:pedalThigh .8s ease-in-out infinite}
+        .shin{transform-box:fill-box;transform-origin:116.5px 119.5px;animation:pedalShin .8s ease-in-out infinite}
+
+        @keyframes drive{
+          0%{transform:translateX(-110px)}
+          100%{transform:translateX(calc(100vw + 150px))}
+        }
+        @keyframes ride{
+          0%{transform:translateX(-100px)}
+          100%{transform:translateX(calc(100vw + 130px))}
+        }
+        @keyframes wheelSpin{to{transform:rotate(360deg)}}
+        @keyframes crankSpin{to{transform:rotate(360deg)}}
+        @keyframes pedalThigh{
+          0%,100%{transform:rotate(17deg)}
+          50%{transform:rotate(-23deg)}
+        }
+        @keyframes pedalShin{
+          0%,100%{transform:rotate(-18deg)}
+          50%{transform:rotate(24deg)}
+        }
+        @keyframes twinkle{
+          0%,100%{opacity:.35;transform:scale(.8)}
+          50%{opacity:1;transform:scale(1.35)}
+        }
+        @keyframes signalPulse{
+          0%{opacity:.2;transform:scale(.8)}
+          35%,70%{opacity:1;transform:scale(1)}
+          100%{opacity:.2;transform:scale(1.08)}
         }
 
-        /* Animation Keyframes (ডান থেকে বামে) */
-        @keyframes driveLeft {
-          0% { transform: translateX(110vw); }
-          100% { transform: translateX(-150px); }
+        @media (max-width:700px){
+          .cityscape-strip{height:180px}
+          .building-label{font-size:9px}
+          .car{width:65px}
+          .cyclist{width:45px}
         }
 
-        /* চাকা ঘোরার অ্যানিমেশন (বাম দিকে চলার জন্য উল্টো ঘুরবে) */
-        .cityscape-wheel-roll {
-          transform-origin: center;
-          animation: wheelSpin 0.7s linear infinite;
+        @media (prefers-reduced-motion:reduce){
+          .cityscape-strip *{
+            animation:none!important;
+            scroll-behavior:auto!important;
+          }
         }
-        .cityscape-crank {
-          transform-origin: 105px 152px;
-          animation: crankSpin 1.4s linear infinite;
-        }
-        @keyframes wheelSpin { 
-          from { transform: rotate(0deg); } 
-          to { transform: rotate(-360deg); } 
-        }
-        @keyframes crankSpin { 
-          from { transform: rotate(0deg); } 
-          to { transform: rotate(-360deg); } 
-        }
-
-        /* সাইকেলের এসভিজি স্টাইলিং */
-        .cityscape-wheel-ring { fill: none; stroke: #ffcc00; stroke-width: 6; }
-        .cityscape-spoke { stroke: #ffcc00; stroke-width: 3.5; }
-        .cityscape-bike-frame { fill: none; stroke: #ffffff; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
-        .cityscape-bike-frame-fill { fill: #ffffff; }
-        .cityscape-rider { stroke: #ffcc00; fill: #ffcc00; }
       `}</style>
 
-      {/* ==========================================
-          BACKGROUND SVG GRAPHICS
-      ========================================== */}
-      <svg viewBox="0 0 1400 220" preserveAspectRatio="xMidYMax slice" className="cityscape-skyline">
+      <svg
+        viewBox="0 0 1400 210"
+        preserveAspectRatio="xMidYMax slice"
+        className="cityscape-skyline"
+      >
         <defs>
-          <linearGradient id="sky-cinema" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0a0814" />
-            <stop offset="60%" stopColor="#221124" />
-            <stop offset="100%" stopColor="#431b2c" />
+          <linearGradient id="skyGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#070a10"/>
+            <stop offset="62%" stopColor="#0d121a"/>
+            <stop offset="100%" stopColor="#12161d"/>
           </linearGradient>
-          <linearGradient id="highrise-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1e1829" />
-            <stop offset="100%" stopColor="#0d0914" />
+
+          <linearGradient id="buildingGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#28121b"/>
+            <stop offset="100%" stopColor="#130c12"/>
           </linearGradient>
-          <linearGradient id="glass-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fff2cc" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#ff9922" stopOpacity="0.15" />
+
+          <linearGradient id="mainBuildingGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#34151d"/>
+            <stop offset="100%" stopColor="#170b11"/>
           </linearGradient>
-          <radialGradient id="warm-interior-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#ffb347" stopOpacity="1" />
-            <stop offset="100%" stopColor="#ffb347" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="lamp-light-cone" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffc04d" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#ffc04d" stopOpacity="0" />
+
+          <linearGradient id="reflectionGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f7bb47"/>
+            <stop offset="100%" stopColor="transparent"/>
           </linearGradient>
-          <linearGradient id="entrance-light-beam" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffc766" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#ffc766" stopOpacity="0" />
-          </linearGradient>
-          <filter id="glow-blur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="5" />
+
+          <filter id="windowGlow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="1.8" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
-          <filter id="glow-blur-subtle" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" />
+          <filter id="lampGlow" x="-300%" y="-300%" width="600%" height="600%">
+            <feGaussianBlur stdDeviation="3" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
+          <filter id="lampBlur"><feGaussianBlur stdDeviation="7"/></filter>
+          <filter id="redGlow"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="moonGlow"><feGaussianBlur stdDeviation="1.2"/></filter>
+          <filter id="softBlur"><feGaussianBlur stdDeviation="4"/></filter>
         </defs>
 
-        <rect x="0" y="0" width="1400" height="220" fill="url(#sky-cinema)" />
+        <rect width="1400" height="210" fill="url(#skyGradient)"/>
 
-        {/* Moon */}
-        <circle cx="1220" cy="42" r="16" fill="#fff5dd" filter="url(#glow-blur-subtle)" />
-        <circle cx="1228" cy="38" r="14" fill="#130d1c" />
+        <Cloud x={70} y={76} scale={0.75}/>
+        <Cloud x={760} y={82} scale={0.65}/>
+        <Cloud x={1110} y={70} scale={0.8}/>
 
-        {/* Back Skyline */}
-        <rect x="50" y="70" width="70" height="120" fill="#120c1a" opacity="0.6" />
-        <rect x="190" y="55" width="80" height="135" fill="#140e1c" opacity="0.5" />
-        <rect x="380" y="45" width="90" height="145" fill="#120c1a" opacity="0.5" />
-        <rect x="760" y="60" width="85" height="130" fill="#150f20" opacity="0.6" />
-        <rect x="990" y="50" width="75" height="140" fill="#120c1a" opacity="0.5" />
-        <rect x="1150" y="75" width="90" height="115" fill="#171022" opacity="0.6" />
+        <Stars/>
+        <Moon x={1260} y={42}/>
 
-        {/* Midground */}
-        <Highrise x="40" w="95" h="120" base={base} cols={3} rows={5} />
-        <CinematicTree x="160" base={base} />
-        <ExpressHub x="190" w="130" h="95" base={base} label="EXPRESS SHOP" color="#ff334b" />
-        <LuxuryLamp x="350" base={base} />
+        {/* Distant skyline */}
+        <g opacity=".34" fill="#171c25">
+          <rect x="0" y="104" width="65" height="86"/>
+          <rect x="76" y="121" width="42" height="69"/>
+          <rect x="130" y="96" width="55" height="94"/>
+          <rect x="200" y="118" width="60" height="72"/>
+          <rect x="276" y="90" width="45" height="100"/>
+          <rect x="338" y="112" width="70" height="78"/>
+          <rect x="425" y="92" width="42" height="98"/>
+          <rect x="480" y="113" width="62" height="77"/>
+          <rect x="560" y="84" width="47" height="106"/>
+          <rect x="622" y="103" width="60" height="87"/>
+          <rect x="700" y="91" width="50" height="99"/>
+          <rect x="768" y="116" width="62" height="74"/>
+          <rect x="846" y="89" width="47" height="101"/>
+          <rect x="905" y="111" width="65" height="79"/>
+          <rect x="985" y="92" width="52" height="98"/>
+          <rect x="1054" y="109" width="70" height="81"/>
+          <rect x="1140" y="85" width="45" height="105"/>
+          <rect x="1200" y="112" width="65" height="78"/>
+          <rect x="1280" y="92" width="52" height="98"/>
+          <rect x="1344" y="115" width="56" height="75"/>
+        </g>
 
-        {/* Noyon Telecom Headquarters */}
-        <ModernShowroom x="410" base={base} />
+        {/* Foreground neighborhood */}
+        <House x={20} w={78} h={70} base={base}/>
+        <Tree x={119} base={base}/>
+        <Shop x={145} w={132} h={94} base={base} label="EXPRESS SHOP"/>
+        <Bench x={296} base={base}/>
 
-        <LuxuryLamp x="625" base={base} />
-        <CinematicTree x="670" base={base} />
-        <Highrise x="705" w="110" h="140" base={base} cols={3} rows={6} />
-        <ExpressHub x="840" w="125" h="95" base={base} label="PARTS HOUSE" color="#ff4422" />
-        <LuxuryLamp x="995" base={base} />
-        <Highrise x="1035" w="120" h="150" base={base} cols={4} rows={6} />
-        <CinematicTree x="1190" base={base} />
-        <Highrise x="1230" w="90" h="115" base={base} cols={2} rows={5} />
+        <Building x={350} w={100} h={116} base={base} cols={3} rows={4}/>
+        <LampPost x={470} base={base}/>
 
-        {/* Wet Road Highlights */}
-        <rect x="0" y={base - 6} width="1400" height="6" fill="#1a1c24" />
-        <line x1="0" y1={base - 6} x2="1400" y2={base - 6} stroke="#3b3f4f" strokeWidth="1" />
-        <rect x="0" y={base} width="1400" height="35" fill="#08090d" />
-        <rect x="0" y={base} width="1400" height="2" fill="#ffb43a" opacity="0.25" />
-        <line x1="0" y1={base + 15} x2="1400" y2={base + 15} stroke="#333845" strokeWidth="2" strokeDasharray="24 18" />
+        <Building
+          x={492}
+          w={156}
+          h={170}
+          base={base}
+          cols={4}
+          rows={6}
+          label="NOYON TELECOM"
+          main
+        />
+        <SignalPulse x={570} y={-4}/>
+
+        <Tree x={670} base={base} big/>
+        <Building x={696} w={92} h={104} base={base} cols={2} rows={4}/>
+        <House x={806} w={80} h={64} base={base}/>
+        <Tree x={904} base={base}/>
+        <Shop x={928} w={118} h={86} base={base} label="PARTS HOUSE"/>
+        <LampPost x={1064} base={base}/>
+        <Building x={1086} w={112} h={142} base={base} cols={3} rows={5}/>
+        <House x={1216} w={80} h={68} base={base}/>
+        <Tree x={1314} base={base}/>
+
+        {/* Ground */}
+        <rect x="0" y={base - 7} width="1400" height="7" fill="#171b20"/>
+        <line x1="0" y1={base - 7} x2="1400" y2={base - 7} className="road-edge"/>
+
+        <rect x="0" y={base} width="1400" height="20" className="road"/>
+        <line x1="0" y1={base + 10} x2="1400" y2={base + 10} className="road-line"/>
+
+        <rect x="500" y={base + 21} width="170" height="14" className="reflection"/>
+        <rect x="760" y={base + 21} width="105" height="10" className="reflection-red"/>
       </svg>
 
-      {/* ==========================================
-          ANIMATED TRAFFIC (CAR)
-      ========================================== */}
-      <div className="cityscape-car-lane">
-        <div className="cityscape-car">
-          <svg viewBox="0 0 130 40">
-            <polygon points="18,24 0,16 0,34" fill="url(#lamp-light-cone)" opacity="0.45" />
-            <path d="M22 23 Q21 14 32 12 Q37 4 52 4 L72 4 Q84 4 88 12 Q100 14 98 23 Q98 26 94 26 L26 26 Q22 26 22 23 Z" fill="#d91b2b" />
-            <path d="M35 12 Q39 7 52 7 L72 7 Q81 7 86 12 Z" fill="#1a0407" />
-            <circle cx="39" cy="26" r="6.5" fill="#0d0e12" stroke="#444" strokeWidth="1.5" />
-            <circle cx="81" cy="26" r="6.5" fill="#0d0e12" stroke="#444" strokeWidth="1.5" />
-            <circle cx="39" cy="26" r="2.5" fill="#bbb" />
-            <circle cx="81" cy="26" r="2.5" fill="#bbb" />
-            <circle cx="97" cy="18" r="2" fill="#ff0000" />
-          </svg>
-        </div>
-      </div>
-
-      {/* ==========================================
-          ANIMATED TRAFFIC (CYCLIST)
-      ========================================== */}
-      <div className="cityscape-cyclist-lane">
-        <div className="cityscape-cyclist">
-          <svg viewBox="0 0 195 185">
-            <g className="cityscape-wheel-roll">
-              <circle cx="45" cy="145" r="35" className="cityscape-wheel-ring" />
-              <path d="M45 145 L45 110 M45 145 L75.3 162.5 M45 145 L14.7 162.5" className="cityscape-spoke" />
-              <circle cx="45" cy="145" r="5" className="cityscape-bike-frame-fill" />
-            </g>
-            <g className="cityscape-wheel-roll">
-              <circle cx="150" cy="145" r="35" className="cityscape-wheel-ring" />
-              <path d="M150 145 L150 110 M150 145 L180.3 162.5 M150 145 L119.7 162.5" className="cityscape-spoke" />
-              <circle cx="150" cy="145" r="5" className="cityscape-bike-frame-fill" />
-            </g>
-            <path d="M45 145 L105 152 M105 152 L88 80 M45 145 L88 80 M105 152 L148 84 M88 80 L148 84 M148 84 L150 145 M148 84 L150 74" className="cityscape-bike-frame" />
-            <path d="M76 78 L100 78 M138 72 L162 72" className="cityscape-bike-frame" />
-            <g className="cityscape-crank">
-              <path d="M105 152 L105 164" className="cityscape-bike-frame" />
-              <circle cx="105" cy="164" r="5" className="cityscape-bike-frame-fill" />
-            </g>
-            <circle cx="105" cy="152" r="10" className="cityscape-bike-frame-fill" />
-            <circle cx="118" cy="18" r="15" className="cityscape-rider" />
-            <path d="M88 76 L110 34" className="cityscape-rider" fill="none" strokeWidth="13" strokeLinecap="round" />
-            <path d="M108 38 L148 78" className="cityscape-rider" fill="none" strokeWidth="10" strokeLinecap="round" />
-            <g className="cityscape-thigh">
-              <path d="M88 76 L116.5 119.5" className="cityscape-rider" fill="none" strokeWidth="11" strokeLinecap="round" />
-              <g className="cityscape-shin">
-                <path d="M116.5 119.5 L105 164" className="cityscape-rider" fill="none" strokeWidth="10" strokeLinecap="round" />
-              </g>
-            </g>
-          </svg>
-        </div>
-      </div>
+      <Car/>
+      <Cyclist/>
     </div>
   );
 }
