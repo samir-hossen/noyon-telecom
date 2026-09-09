@@ -1,258 +1,377 @@
-// Decorative animated street scene for the footer — original artwork (not
-// sourced from anywhere), styled after a flat-vector "city street" scene:
-// soft rounded building silhouettes with small lit windows, a labeled
-// "Noyon Telecom" office, a shop with an awning, houses, trees, a lamp
-// post and bench, and a car + a pedaling delivery cyclist that loop
-// continuously along the road — ties into the "Fast Delivery" branding
-// used elsewhere (FeatureStrip, hero badges).
-
-function Windows({ x, y, w, h, cols, rows }) {
-  const pad = 9;
-  const cellW = (w - pad * 2) / cols;
-  const cellH = (h - pad * 2) / rows;
-  const size = Math.min(cellW, cellH) * 0.4;
-  const windows = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      // A few windows dark/dim rather than every one uniformly lit —
-      // deterministic (not random) so the scene looks the same on every
-      // render, but reads as a lived-in building instead of a grid.
-      const seed = (r * 7 + c * 3) % 5;
-      const dark = seed === 0;
-      const dim = seed === 1;
-      windows.push(
-        <rect
-          key={`${r}-${c}`}
-          x={x + pad + c * cellW + (cellW - size) / 2}
-          y={y + pad + r * cellH + (cellH - size) / 2}
-          width={size}
-          height={size}
-          rx="1.5"
-          className={dark ? 'cityscape-window-off' : 'cityscape-window'}
-          opacity={dim ? 0.5 : undefined}
-        />
-      );
-    }
-  }
-  return <>{windows}</>;
-}
-
-function OfficeBuilding({ x, w, h, base, cols, rows, label, accent }) {
-  const y = base - h;
-  return (
-    <g>
-      <rect x={x} y={y} width={w} height={h} rx="6" className="cityscape-building" />
-      {accent && <rect x={x} y={y} width={w} height={6} rx="3" className="cityscape-accent" />}
-      <Windows x={x} y={y} w={w} h={h} cols={cols} rows={rows} />
-      {label && (
-        <text x={x + w / 2} y={y - 12} textAnchor="middle" className="cityscape-label">
-          {label}
-        </text>
-      )}
-    </g>
-  );
-}
-
-function House({ x, w, h, base }) {
-  const y = base - h;
-  const roofH = h * 0.42;
-  return (
-    <g>
-      <path
-        d={`M${x - 6},${y + roofH} L${x + w / 2},${y - 4} L${x + w + 6},${y + roofH} Z`}
-        className="cityscape-roof"
-      />
-      <rect x={x} y={y + roofH} width={w} height={h - roofH} rx="4" className="cityscape-building" />
-      <rect x={x + w * 0.6} y={base - h * 0.4} width={w * 0.22} height={h * 0.4} rx="2" className="cityscape-door" />
-      <rect x={x + w * 0.16} y={y + roofH + h * 0.18} width={w * 0.22} height={w * 0.22} rx="2" className="cityscape-window" />
-    </g>
-  );
-}
-
-function Shop({ x, w, h, base, label }) {
-  const y = base - h;
-  const awningH = h * 0.18;
-  const stripes = 5;
-  const stripeW = w / stripes;
-  return (
-    <g>
-      <rect x={x} y={y + awningH} width={w} height={h - awningH} rx="4" className="cityscape-building" />
-      <clipPath id={`awning-clip-${x}`}>
-        <path d={`M${x - 4},${y + awningH} Q${x - 4},${y} ${x + 6},${y} L${x + w - 6},${y} Q${x + w + 4},${y} ${x + w + 4},${y + awningH} Z`} />
-      </clipPath>
-      <g clipPath={`url(#awning-clip-${x})`}>
-        {Array.from({ length: stripes }).map((_, i) => (
-          <rect
-            key={i}
-            x={x - 4 + i * stripeW}
-            y={y}
-            width={stripeW}
-            height={awningH}
-            className={i % 2 === 0 ? 'cityscape-awning-a' : 'cityscape-awning-b'}
-          />
-        ))}
-      </g>
-      <rect x={x + w * 0.32} y={base - h * 0.5} width={w * 0.36} height={h * 0.5} rx="2" className="cityscape-door" />
-      <rect x={x + w * 0.08} y={y + awningH + h * 0.16} width={w * 0.18} height={w * 0.18} rx="2" className="cityscape-window" />
-      <rect x={x + w * 0.74} y={y + awningH + h * 0.16} width={w * 0.18} height={w * 0.18} rx="2" className="cityscape-window" />
-      <text x={x + w / 2} y={y + awningH - 7} textAnchor="middle" className="cityscape-shop-label">{label}</text>
-    </g>
-  );
-}
-
-function Tree({ x, base, big }) {
-  const r = big ? 20 : 15;
-  const cy = base - r * 1.5 - r * 0.6;
-  return (
-    <g>
-      <rect x={x - 2.5} y={base - r * 1.5} width="5" height={r * 1.5} rx="2" className="cityscape-trunk" />
-      {/* Three overlapping circles instead of one, for a fuller/organic
-          canopy shape rather than a single perfect ball. */}
-      <circle cx={x - r * 0.45} cy={cy + r * 0.25} r={r * 0.7} className="cityscape-foliage" />
-      <circle cx={x + r * 0.45} cy={cy + r * 0.25} r={r * 0.7} className="cityscape-foliage" />
-      <circle cx={x} cy={cy - r * 0.2} r={r * 0.8} className="cityscape-foliage" />
-    </g>
-  );
-}
-
-function Moon({ x, y }) {
-  return (
-    <g>
-      <circle cx={x} cy={y} r="14" className="cityscape-moon" />
-      {/* A crescent, made by overlapping a bg-colored circle offset to one
-          side rather than a path — simplest way to get a clean crescent. */}
-      <circle cx={x + 6} cy={y - 3} r="12" className="cityscape-moon-shadow" />
-    </g>
-  );
-}
-
-function Star({ x, y, r }) {
-  return <circle cx={x} cy={y} r={r} className="cityscape-star" />;
-}
-
-function LampPost({ x, base }) {
-  return (
-    <g>
-      <rect x={x - 2} y={base - 60} width="4" height="60" rx="2" className="cityscape-lamp-pole" />
-      <circle cx={x} cy={base - 62} r="7" className="cityscape-lamp-glow" />
-    </g>
-  );
-}
-
-function Bench({ x, base }) {
-  return (
-    <g>
-      <rect x={x} y={base - 16} width="34" height="4" rx="2" className="cityscape-bench" />
-      <rect x={x} y={base - 24} width="34" height="4" rx="2" className="cityscape-bench" />
-      <rect x={x + 2} y={base - 24} width="3" height="12" className="cityscape-bench" />
-      <rect x={x + 29} y={base - 24} width="3" height="12" className="cityscape-bench" />
-    </g>
-  );
-}
+import React from 'react';
 
 export default function CityscapeStrip() {
-  const base = 190;
+  const base = 180;
 
   return (
-    <div className="cityscape-strip" aria-hidden="true">
-      <svg viewBox="0 0 1400 210" preserveAspectRatio="xMidYMax slice" className="cityscape-skyline">
+    <div className="cityscape-root" aria-hidden="true">
+      <style>{`
+        .cityscape-root {
+          position: relative;
+          width: 100%;
+          height: 230px;
+          overflow: hidden;
+          background: #09060f;
+        }
+        .cityscape-svg {
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
+        
+        /* Neon & Lighting Styles */
+        .neon-brand-title {
+          font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+          font-size: 13px;
+          font-weight: 800;
+          fill: #ffffff;
+          letter-spacing: 1.8px;
+        }
+        .neon-shop-label {
+          font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+          font-size: 9.5px;
+          font-weight: 800;
+          letter-spacing: 1.2px;
+          fill: #ffffff;
+        }
+
+        /* Continuous Vehicle Movements */
+        .cityscape-car-lane {
+          position: absolute;
+          bottom: 12px;
+          left: 0;
+          width: 100%;
+          pointer-events: none;
+          animation: carDrive 14s linear infinite;
+        }
+        .cityscape-car {
+          width: 95px;
+        }
+
+        .cityscape-cyclist-lane {
+          position: absolute;
+          bottom: 10px;
+          left: 0;
+          width: 100%;
+          pointer-events: none;
+          animation: cyclistRide 24s linear infinite;
+        }
+        .cityscape-cyclist {
+          width: 38px;
+        }
+
+        /* Bicycle Rig & Spin */
+        .cityscape-wheel-roll {
+          transform-origin: center;
+          animation: wheelSpin 0.7s linear infinite;
+        }
+        .cityscape-crank {
+          transform-origin: 105px 152px;
+          animation: crankSpin 1.4s linear infinite;
+        }
+        .cityscape-wheel-ring {
+          fill: none;
+          stroke: #ffbb00;
+          stroke-width: 6;
+        }
+        .cityscape-spoke {
+          stroke: #ffbb00;
+          stroke-width: 3.5;
+        }
+        .cityscape-bike-frame {
+          fill: none;
+          stroke: #f3f4f6;
+          stroke-width: 7;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+        .cityscape-bike-frame-fill {
+          fill: #f3f4f6;
+        }
+        .cityscape-rider {
+          stroke: #ffcc00;
+          fill: #ffcc00;
+        }
+
+        @keyframes carDrive {
+          0% { transform: translateX(110vw); }
+          100% { transform: translateX(-180px); }
+        }
+        @keyframes cyclistRide {
+          0% { transform: translateX(115vw); }
+          100% { transform: translateX(-150px); }
+        }
+        @keyframes wheelSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+        @keyframes crankSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+      `}</style>
+
+      <svg viewBox="0 0 1440 230" preserveAspectRatio="xMidYMax slice" className="cityscape-svg">
         <defs>
-          {/* Subtle top-to-bottom shading on every building for a little
-              depth, instead of flat single-tone silhouettes. */}
-          <linearGradient id="cityscape-building-shade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3a1220" />
-            <stop offset="100%" stopColor="#20090f" />
+          {/* Sunset Dusk Sky */}
+          <linearGradient id="sky-dusk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0b0816" />
+            <stop offset="35%" stopColor="#250e2b" />
+            <stop offset="68%" stopColor="#5d1d36" />
+            <stop offset="90%" stopColor="#ba4328" />
+            <stop offset="100%" stopColor="#e8702b" />
           </linearGradient>
+
+          {/* Distant Skyline Gradient */}
+          <linearGradient id="skyline-far" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#1f1124" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#110815" stopOpacity="0.95" />
+          </linearGradient>
+
+          {/* Noyon Telecom Interior Glow */}
+          <linearGradient id="interior-gold-glow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff6df" stopOpacity="0.8" />
+            <stop offset="50%" stopColor="#ffb944" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#ff7a18" stopOpacity="0.15" />
+          </linearGradient>
+
+          {/* Red Shop Interior Glow */}
+          <linearGradient id="shop-red-glow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ff8585" stopOpacity="0.75" />
+            <stop offset="100%" stopColor="#c71b2d" stopOpacity="0.2" />
+          </linearGradient>
+
+          {/* Streetlamp Light Cone */}
+          <linearGradient id="lamp-cone" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ffd269" stopOpacity="0.9" />
+            <stop offset="70%" stopColor="#ffae19" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#ff9900" stopOpacity="0" />
+          </linearGradient>
+
+          {/* Wet Road Ambient Ground Reflection */}
+          <radialGradient id="wet-road-reflection" cx="50%" cy="10%" r="50%">
+            <stop offset="0%" stopColor="#ff9e3b" stopOpacity="0.45" />
+            <stop offset="60%" stopColor="#ff6200" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
+
+          <radialGradient id="wet-red-reflection" cx="50%" cy="10%" r="50%">
+            <stop offset="0%" stopColor="#ff334b" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
+
+          {/* Soft Glow Filter */}
+          <filter id="cinematic-blur" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
+          </filter>
+          <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+          </filter>
         </defs>
-        {/* Night sky — a moon + scattered stars above the skyline, filling
-            the otherwise-empty upper half of the scene. */}
-        <Moon x={1250} y={38} />
-        <Star x={90} y={30} r="1.6" />
-        <Star x={260} y={55} r="1.2" />
-        <Star x={440} y={28} r="1.4" />
-        <Star x={620} y={50} r="1.1" />
-        <Star x={780} y={32} r="1.6" />
-        <Star x={950} y={58} r="1.2" />
-        <Star x={1100} y={26} r="1.4" />
-        <Star x={1360} y={65} r="1.2" />
 
-        <House x={20} w={80} h={70} base={base} />
-        <Tree x={122} base={base} />
-        <Shop x={146} w={132} h={94} base={base} label="EXPRESS SHOP" />
-        <Bench x={296} base={base} />
-        <OfficeBuilding x={352} w={100} h={118} base={base} cols={3} rows={4} />
-        <LampPost x={470} base={base} />
-        <OfficeBuilding x={492} w={156} h={170} base={base} cols={4} rows={6} label="NOYON TELECOM" accent />
-        <Tree x={670} base={base} big />
-        <OfficeBuilding x={696} w={92} h={104} base={base} cols={2} rows={4} />
-        <House x={806} w={80} h={64} base={base} />
-        <Tree x={904} base={base} />
-        <Shop x={928} w={118} h={86} base={base} label="PARTS HOUSE" />
-        <LampPost x={1064} base={base} />
-        <OfficeBuilding x={1086} w={112} h={142} base={base} cols={3} rows={5} />
-        <House x={1216} w={80} h={68} base={base} />
-        <Tree x={1314} base={base} />
+        {/* 1. Dramatic Sky Backdrop */}
+        <rect x="0" y="0" width="1440" height="230" fill="url(#sky-dusk)" />
 
-        <rect x="0" y={base - 6} width="1400" height="6" className="cityscape-sidewalk" />
-        <rect x="0" y={base} width="1400" height="16" className="cityscape-road" />
-        <line x1="0" y1={base + 8} x2="1400" y2={base + 8} className="cityscape-lane" strokeDasharray="18 14" />
+        {/* Soft Sunset Clouds */}
+        <ellipse cx="280" cy="115" rx="190" ry="24" fill="#3f132a" opacity="0.45" filter="url(#cinematic-blur)" />
+        <ellipse cx="850" cy="105" rx="260" ry="30" fill="#4a152e" opacity="0.4" filter="url(#cinematic-blur)" />
+        <ellipse cx="1200" cy="95" rx="160" ry="20" fill="#360f26" opacity="0.5" filter="url(#cinematic-blur)" />
+
+        {/* Glowing Crescent Moon */}
+        <circle cx="1225" cy="46" r="16" fill="#fffbe8" filter="url(#soft-glow)" />
+        <circle cx="1232" cy="42" r="14" fill="#140b1e" />
+
+        {/* 2. Deep Skyline Silhouettes */}
+        <rect x="40" y="70" width="65" height="120" rx="2" fill="url(#skyline-far)" />
+        <rect x="115" y="55" width="80" height="135" rx="2" fill="url(#skyline-far)" />
+        <rect x="260" y="65" width="70" height="125" rx="2" fill="url(#skyline-far)" />
+        <rect x="360" y="45" width="95" height="145" rx="2" fill="url(#skyline-far)" />
+        <rect x="740" y="50" width="85" height="140" rx="2" fill="url(#skyline-far)" />
+        <rect x="980" y="40" width="90" height="150" rx="2" fill="url(#skyline-far)" />
+        <rect x="1140" y="65" width="75" height="125" rx="2" fill="url(#skyline-far)" />
+        <rect x="1290" y="50" width="85" height="140" rx="2" fill="url(#skyline-far)" />
+
+        {/* Background Skyline Tiny Window Dots */}
+        {[80, 140, 280, 390, 760, 1010, 1160, 1320].map((wx, i) => (
+          <g key={i} opacity="0.45">
+            <rect x={wx} y={80} width="2.5" height="4" fill="#ffd080" />
+            <rect x={wx + 10} y={92} width="2.5" height="4" fill="#ffd080" />
+            <rect x={wx + 5} y={110} width="2.5" height="4" fill="#ffd080" />
+            <rect x={wx + 16} y={125} width="2.5" height="4" fill="#ffd080" />
+          </g>
+        ))}
+
+        {/* 3. Left Cottage & Garden */}
+        <path d={`M40,${base - 38} L75,${base - 62} L110,${base - 38} Z`} fill="#1c121d" stroke="#0e070f" strokeWidth="1.5" />
+        <rect x="48" y={base - 38} width="54" height="34" rx="2" fill="#241825" />
+        <rect x="64" y={base - 26} width="14" height="22" rx="1.5" fill="#ffb444" opacity="0.8" filter="url(#soft-glow)" />
+
+        {/* Trees Left */}
+        <circle cx="130" cy={base - 40} r="24" fill="#0d2417" />
+        <circle cx="145" cy={base - 48} r="28" fill="#133621" />
+
+        {/* Bench Left */}
+        <rect x="180" y={base - 14} width="28" height="3" rx="1" fill="#321e16" />
+        <rect x="180" y={base - 20} width="28" height="3" rx="1" fill="#321e16" />
+        <rect x="183" y={base - 20} width="2.5" height="9" fill="#111" />
+        <rect x="202" y={base - 20} width="2.5" height="9" fill="#111" />
+
+        {/* 4. "EXPRESS SHOP" (Left Retail Hub) */}
+        <g id="express-shop">
+          <rect x="230" y={base - 84} width="150" height="80" rx="5" fill="#18131d" stroke="#2b1c2b" strokeWidth="2" />
+          <rect x="238" y={base - 100} width="134" height="22" rx="4" fill="#b11a2a" stroke="#ff3850" strokeWidth="1.5" filter="url(#soft-glow)" />
+          <text x="305" y={base - 85} textAnchor="middle" className="neon-shop-label">EXPRESS SHOP</text>
+          {/* Glass display */}
+          <rect x="242" y={base - 72} width="126" height="66" rx="3" fill="url(#shop-red-glow)" stroke="#ff4d63" strokeWidth="1" strokeOpacity="0.6" />
+          {/* Interior frames */}
+          <line x1="284" y1={base - 72} x2="284" y2={base - 6} stroke="#381d26" strokeWidth="1.5" />
+          <line x1="326" y1={base - 72} x2="326" y2={base - 6} stroke="#381d26" strokeWidth="1.5" />
+          <rect x="290" y={base - 58} width="30" height="52" rx="2" fill="#ffd470" opacity="0.45" filter="url(#soft-glow)" />
+        </g>
+
+        {/* Streetlamp 1 */}
+        <g id="lamp-1">
+          <line x1="405" y1={base - 4} x2="405" y2={base - 75} stroke="#2c2d38" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="405" cy={base - 76} r="4" fill="#fffcee" />
+          <circle cx="405" cy={base - 76} r="14" fill="#ffa71a" opacity="0.75" filter="url(#cinematic-blur)" />
+          <polygon points={`398,${base - 74} 412,${base - 74} 445,${base + 45} 365,${base + 45}`} fill="url(#lamp-cone)" opacity="0.4" />
+        </g>
+
+        {/* Trees & Bench mid */}
+        <circle cx="445" cy={base - 44} r="26" fill="#11311f" />
+        <circle cx="465" cy={base - 52} r="28" fill="#19472b" />
+
+        {/* 5. CENTERPIECE: NOYON TELECOM SHOWROOM */}
+        <g id="noyon-telecom-hq">
+          {/* Exterior Glow Halo */}
+          <ellipse cx="610" cy={base - 50} rx="160" ry="85" fill="#ff9900" opacity="0.22" filter="url(#cinematic-blur)" />
+
+          {/* Building Architecture Frame */}
+          <rect x="495" y={base - 128} width="230" height="124" rx="8" fill="#111219" stroke="#2e3142" strokeWidth="2.5" />
+
+          {/* Glowing Facade Header Sign */}
+          <rect x="508" y={base - 146} width="204" height="30" rx="6" fill="#090a10" stroke="#ff9000" strokeWidth="2" filter="url(#soft-glow)" />
+          {/* Noyon Icon Logo */}
+          <rect x="522" y={base - 138} width="15" height="15" rx="4" fill="#e60023" />
+          <path d={`M526,${base - 127} L526,${base - 134} Q529.5,${base - 137} 533,${base - 134} L533,${base - 127}`} fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+          {/* Main Name */}
+          <text x="618" y={base - 126} textAnchor="middle" className="neon-brand-title">Noyon Telecom</text>
+
+          {/* Floor to Ceiling Architectural Glass Storefront */}
+          <rect x="507" y={base - 96} width="206" height="92" rx="4" fill="url(#interior-gold-glow)" stroke="#ffb944" strokeWidth="1.5" strokeOpacity="0.6" />
+
+          {/* Interior Elements: Display Screen / Mobile Parts Wall */}
+          <rect x="520" y={base - 78} width="50" height="66" rx="3" fill="#181a24" stroke="#484b5c" strokeWidth="1" />
+          <rect x="526" y={base - 72} width="38" height="50" rx="2" fill="#ff385c" opacity="0.85" filter="url(#soft-glow)" />
+
+          {/* Glass Doors (Modern Twin Sliders) */}
+          <line x1="610" y1={base - 96} x2="610" y2={base - 4} stroke="#44495c" strokeWidth="2" />
+          <line x1="575" y1={base - 96} x2="575" y2={base - 4} stroke="#2c2f3d" strokeWidth="1.5" />
+          <line x1="645" y1={base - 96} x2="645" y2={base - 4} stroke="#2c2f3d" strokeWidth="1.5" />
+
+          {/* Right Display Counter */}
+          <rect x="650" y={base - 78} width="50" height="66" rx="3" fill="#181a24" stroke="#484b5c" strokeWidth="1" />
+          <circle cx="675" cy={base - 50} r="16" fill="#ffd066" opacity="0.8" filter="url(#soft-glow)" />
+
+          {/* Front Entrance Light Flood onto Street */}
+          <polygon points={`507,${base - 4} 713,${base - 4} 765,${base + 48} 455,${base + 48}`} fill="url(#lamp-cone)" opacity="0.45" />
+        </g>
+
+        {/* Mid-Right Tree & Lamp */}
+        <circle cx="755" cy={base - 46} r="26" fill="#102e1d" />
+        <circle cx="778" cy={base - 55} r="30" fill="#19472b" />
+
+        {/* Streetlamp 2 */}
+        <g id="lamp-2">
+          <line x1="815" y1={base - 4} x2="815" y2={base - 75} stroke="#2c2d38" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="815" cy={base - 76} r="4" fill="#fffcee" />
+          <circle cx="815" cy={base - 76} r="14" fill="#ffa71a" opacity="0.75" filter="url(#cinematic-blur)" />
+          <polygon points={`808,${base - 74} 822,${base - 74} 855,${base + 45} 775,${base + 45}`} fill="url(#lamp-cone)" opacity="0.4" />
+        </g>
+
+        {/* 6. "PARTS HOUSE" (Right Wholesale Center) */}
+        <g id="parts-house">
+          <rect x="850" y={base - 84} width="150" height="80" rx="5" fill="#18131d" stroke="#2b1c2b" strokeWidth="2" />
+          <rect x="858" y={base - 100} width="134" height="22" rx="4" fill="#b11a2a" stroke="#ff3850" strokeWidth="1.5" filter="url(#soft-glow)" />
+          <text x="925" y={base - 85} textAnchor="middle" className="neon-shop-label">PARTS HOUSE</text>
+          <rect x="862" y={base - 72} width="126" height="66" rx="3" fill="url(#shop-red-glow)" stroke="#ff4d63" strokeWidth="1" strokeOpacity="0.6" />
+          <line x1="904" y1={base - 72} x2="904" y2={base - 6} stroke="#381d26" strokeWidth="1.5" />
+          <line x1="946" y1={base - 72} x2="946" y2={base - 6} stroke="#381d26" strokeWidth="1.5" />
+          <rect x="910" y={base - 58} width="30" height="52" rx="2" fill="#ffd470" opacity="0.45" filter="url(#soft-glow)" />
+        </g>
+
+        {/* Streetlamp 3 */}
+        <g id="lamp-3">
+          <line x1="1035" y1={base - 4} x2="1035" y2={base - 75} stroke="#2c2d38" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="1035" cy={base - 76} r="4" fill="#fffcee" />
+          <circle cx="1035" cy={base - 76} r="14" fill="#ffa71a" opacity="0.75" filter="url(#cinematic-blur)" />
+          <polygon points={`1028,${base - 74} 1042,${base - 74} 1075,${base + 45} 995,${base + 45}`} fill="url(#lamp-cone)" opacity="0.4" />
+        </g>
+
+        {/* Trees Right */}
+        <circle cx="1075" cy={base - 44} r="25" fill="#123320" />
+        <circle cx="1100" cy={base - 52} r="28" fill="#1b4b2e" />
+
+        {/* Right Pavilion Cottage */}
+        <path d={`M1135,${base - 38} L1170,${base - 62} L1205,${base - 38} Z`} fill="#1c121d" stroke="#0e070f" strokeWidth="1.5" />
+        <rect x="1143" y={base - 38} width="54" height="34" rx="2" fill="#241825" />
+        <rect x="1159" y={base - 26} width="14" height="22" rx="1.5" fill="#ffb444" opacity="0.8" filter="url(#soft-glow)" />
+
+        {/* Streetlamp 4 */}
+        <g id="lamp-4">
+          <line x1="1235" y1={base - 4} x2="1235" y2={base - 75} stroke="#2c2d38" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="1235" cy={base - 76} r="4" fill="#fffcee" />
+          <circle cx="1235" cy={base - 76} r="14" fill="#ffa71a" opacity="0.75" filter="url(#cinematic-blur)" />
+          <polygon points={`1228,${base - 74} 1242,${base - 74} 1275,${base + 45} 1195,${base + 45}`} fill="url(#lamp-cone)" opacity="0.4" />
+        </g>
+
+        <circle cx="1285" cy={base - 44} r="25" fill="#123320" />
+        <circle cx="1310" cy={base - 54} r="30" fill="#1b4b2e" />
+
+        {/* 7. Sidewalk Curb */}
+        <rect x="0" y={base - 5} width="1440" height="6" fill="#181a24" />
+        <line x1="0" y1={base - 5} x2="1440" y2={base - 5} stroke="#3b3e52" strokeWidth="1.5" />
+
+        {/* 8. Wet Asphalt Ground with Mirror Reflections */}
+        <rect x="0" y={base + 1} width="1440" height="49" fill="#07080c" />
+        
+        {/* Soft Wet Pavement Glows directly under lit shops */}
+        <rect x="230" y={base + 1} width="150" height="49" fill="url(#wet-red-reflection)" />
+        <rect x="470" y={base + 1} width="280" height="49" fill="url(#wet-road-reflection)" />
+        <rect x="850" y={base + 1} width="150" height="49" fill="url(#wet-red-reflection)" />
+
+        {/* Polished Road Edge Light & Lane Marks */}
+        <line x1="0" y1={base + 1} x2="1440" y2={base + 1} stroke="#ffd27d" strokeWidth="1.5" strokeOpacity="0.4" />
+        <line x1="0" y1={base + 24} x2="1440" y2={base + 24} stroke="#2e3344" strokeWidth="2" strokeDasharray="30 20" />
       </svg>
 
-      {/* The animation runs on this full-width "lane" wrapper via
-          `transform`, not on the car itself via `left` — mobile browsers
-          (especially Safari/WebKit) render `left`-based animation far less
-          smoothly than GPU-composited `transform`, which on a phone could
-          drop enough frames to look like it isn't moving at all. Percentage
-          values in `transform: translateX()` are relative to the animated
-          element's own box, so the lane has to be the full-width element
-          for `translateX(100%)` to mean "the strip's full width" — the car
-          itself just sits at a static offset inside it. */}
+      {/* 9. Car with Headlights & Taillights */}
       <div className="cityscape-car-lane">
         <div className="cityscape-car">
-          <svg viewBox="0 0 84 36">
-            <path
-              d="M4 24 Q3 15 14 13 Q19 5 34 5 L52 5 Q64 5 68 13 Q79 15 78 24 Q78 27 74 27 L8 27 Q4 27 4 24 Z"
-              className="cityscape-car-body"
-            />
-            <path d="M17 13 Q21 8 34 8 L52 8 Q61 8 66 13 Z" className="cityscape-car-roof" />
-            <circle cx="21" cy="28" r="7" className="cityscape-wheel" />
-            <circle cx="61" cy="28" r="7" className="cityscape-wheel" />
-            <circle cx="21" cy="28" r="3" className="cityscape-hubcap" />
-            <circle cx="61" cy="28" r="3" className="cityscape-hubcap" />
+          <svg viewBox="0 0 130 40">
+            {/* Front Headlight Light Beam */}
+            <polygon points="20,24 0,14 0,34" fill="url(#lamp-cone)" opacity="0.6" />
+            
+            {/* Red Sedan Chassis */}
+            <path d="M22 23 Q21 14 32 12 Q37 4 52 4 L72 4 Q84 4 88 12 Q100 14 98 23 Q98 26 94 26 L26 26 Q22 26 22 23 Z" fill="#d91829" />
+            <path d="M35 12 Q39 7 52 7 L72 7 Q81 7 86 12 Z" fill="#180407" />
+            
+            {/* Wheels */}
+            <circle cx="39" cy="26" r="6.5" fill="#0e0f14" stroke="#4b4d5a" strokeWidth="1.5" />
+            <circle cx="81" cy="26" r="6.5" fill="#0e0f14" stroke="#4b4d5a" strokeWidth="1.5" />
+            <circle cx="39" cy="26" r="2.5" fill="#ddd" />
+            <circle cx="81" cy="26" r="2.5" fill="#ddd" />
+            
+            {/* Glowing Taillight */}
+            <circle cx="97" cy="18" r="2.5" fill="#ff0022" filter="url(#soft-glow)" />
           </svg>
         </div>
       </div>
 
-      {/* Delivery cyclist — deliberately minimal, icon-style (closer to a
-          map "bike share" pictogram than a detailed illustration). The
-          previous version packed in a chainring, crank/pedals, a cap, and
-          a delivery bag, which at this element's actual ~50px display
-          size just merged into noise — impossible to tell it was a bike
-          at all. Fewer, bolder strokes read far more clearly this small:
-          wheel rings carrying just three thick spokes each, a single clean
-          frame outline, and a simple rider silhouette (head + one back/arm
-          curve + one leg). Ties into the "Fast Delivery" branding used
-          elsewhere. */}
-      {/* Drawn on a roughly 1-unit-per-cm grid (viewBox ~1.95m x 1.85m) so
-          the parts are in real proportion to each other: 70cm wheels,
-          105cm wheelbase, ~100cm saddle height, rider head at ~1.7m. The
-          previous version was drawn freehand and, once rendered, came out
-          nearly twice the car's height — a bicycle standing taller than a
-          car. Sizing in CSS now scales this against the car's own length
-          so the two stay in proportion on screen too. */}
+      {/* 10. Delivery Cyclist */}
       <div className="cityscape-cyclist-lane">
         <div className="cityscape-cyclist">
           <svg viewBox="0 0 195 185">
-            {/* Each wheel is its own <g> so it can spin about its own centre
-                while the lane carries it across. Three bold spokes, not a
-                realistic spoke count — the wheel renders about 14px across,
-                where a real lacing pattern is just grey mush, but three
-                thick struts read clearly as a wheel turning. Without any
-                spoke at all (the previous version) a plain ring is
-                radially symmetric, so it can rotate all it likes and still
-                look like a static disc sliding along the road — which is
-                the main reason the whole strip read as two cut-outs being
-                dragged past rather than a bike being ridden. */}
             <g className="cityscape-wheel-roll">
               <circle cx="45" cy="145" r="35" className="cityscape-wheel-ring" />
               <path d="M45 145 L45 110 M45 145 L75.3 162.5 M45 145 L14.7 162.5" className="cityscape-spoke" />
@@ -263,50 +382,16 @@ export default function CityscapeStrip() {
               <path d="M150 145 L150 110 M150 145 L180.3 162.5 M150 145 L119.7 162.5" className="cityscape-spoke" />
               <circle cx="150" cy="145" r="5" className="cityscape-bike-frame-fill" />
             </g>
-
-            {/* Diamond frame: rear triangle (chain stay, seat stay, seat
-                tube) + front triangle (top tube, down tube), then the head
-                tube/stem and fork. */}
-            <path
-              d="M45 145 L105 152 M105 152 L88 80 M45 145 L88 80 M105 152 L148 84 M88 80 L148 84 M148 84 L150 145 M148 84 L150 74"
-              className="cityscape-bike-frame"
-            />
-            {/* Saddle and handlebar */}
+            <path d="M45 145 L105 152 M105 152 L88 80 M45 145 L88 80 M105 152 L148 84 M88 80 L148 84 M148 84 L150 145 M148 84 L150 74" className="cityscape-bike-frame" />
             <path d="M76 78 L100 78 M138 72 L162 72" className="cityscape-bike-frame" />
-            {/* Crank arm + pedal, on its own rotating group about the bottom
-                bracket, so the foot visibly has something driving it round. */}
             <g className="cityscape-crank">
               <path d="M105 152 L105 164" className="cityscape-bike-frame" />
               <circle cx="105" cy="164" r="5" className="cityscape-bike-frame-fill" />
             </g>
-            {/* Chainring at the bottom bracket */}
             <circle cx="105" cy="152" r="10" className="cityscape-bike-frame-fill" />
-
-            {/* Rider — hip at the saddle, torso rising clear of the frame */}
             <circle cx="118" cy="18" r="15" className="cityscape-rider" />
             <path d="M88 76 L110 34" className="cityscape-rider" fill="none" strokeWidth="13" strokeLinecap="round" />
             <path d="M108 38 L148 78" className="cityscape-rider" fill="none" strokeWidth="10" strokeLinecap="round" />
-
-            {/* The leg is rigged as two bones rather than one static
-                polyline, because a cyclist coasting past with a rigid leg is
-                exactly what made this read as a cut-out being dragged along
-                instead of somebody riding. The shin group is nested INSIDE
-                the thigh group, so the thigh's rotation carries the knee (and
-                with it the shin's own rotation origin) along automatically —
-                that nesting is what keeps the joint attached instead of the
-                shin tearing away from the knee as the thigh swings.
-
-                These coordinates are not eyeballed: hip (88,76), knee
-                (116.5,119.5) and foot (105,164) are the rest pose solved by
-                2-bone inverse kinematics for a foot sitting on the pedal at
-                the bottom of a 12-unit crank, and the keyframe angles in the
-                CSS come from the same solve run at 45-degree crank
-                increments. The leg also had to grow (thigh 52, shin 46,
-                against the previous 46.6/36.7): at the old lengths the foot
-                only just reached the bottom bracket with the leg almost
-                straight, so there was no slack left to pedal with at all —
-                the first attempt at this animation moved the foot barely 2px
-                and read as a twitch rather than a pedal stroke. */}
             <g className="cityscape-thigh">
               <path d="M88 76 L116.5 119.5" className="cityscape-rider" fill="none" strokeWidth="11" strokeLinecap="round" />
               <g className="cityscape-shin">
