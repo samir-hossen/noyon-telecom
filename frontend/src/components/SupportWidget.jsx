@@ -17,7 +17,7 @@ const CHANNELS = [
     key: 'messenger',
     label: 'Messenger',
     color: '#0084FF',
-    href="https://m.me/100082949449548",
+    href: 'https://m.me/100082949449548',
     icon: (
       <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.15 2 11.27c0 2.9 1.44 5.49 3.7 7.19V22l3.38-1.86c.9.25 1.87.38 2.92.38 5.52 0 10-4.15 10-9.27S17.52 2 12 2Zm.99 12.49-2.55-2.72-4.98 2.72 5.48-5.82 2.61 2.72 4.92-2.72-5.48 5.82Z"/>
