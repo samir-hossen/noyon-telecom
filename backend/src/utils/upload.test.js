@@ -136,7 +136,10 @@ test('upload middleware — file count limits still enforced', async (t) => {
     }
     const res = await req;
     assert.equal(res.status, 400);
-    assert.match(res.body.error, /unexpected field/i);
+    // multer 2.4.0 reworded this from "Unexpected field" to "Unexpected file
+    // field" (see LIMIT_UNEXPECTED_FILE) — same rejection, just a wording
+    // change, so match loosely on "unexpected" rather than the full phrase.
+    assert.match(res.body.error, /unexpected.*field/i);
   });
 });
 
