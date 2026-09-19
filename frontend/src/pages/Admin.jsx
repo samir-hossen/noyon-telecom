@@ -1190,6 +1190,11 @@ export default function Admin() {
                     <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
                       {o.shipping?.name} · {o.shipping?.city} · {new Date(o.createdAt).toLocaleString()}
                     </div>
+                    {o.courierTrackingCode && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: 2 }}>
+                        📦 Steadfast: {o.courierTrackingCode} {o.courierStatus ? `(${o.courierStatus})` : ''}
+                      </div>
+                    )}
                   </div>
                   <select
                     className="select"

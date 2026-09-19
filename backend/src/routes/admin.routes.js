@@ -13,6 +13,7 @@ import { sendSms } from '../utils/sms.js';
 import { invalidateProductCache, cache } from '../utils/cache.js';
 import { getDeliveryFee, setDeliveryFee, getOnlinePaymentEnabled, setOnlinePaymentEnabled, getAnnouncement, setAnnouncement } from '../utils/settings.js';
 import { isSslcommerzConfigured } from '../utils/sslcommerz.js';
+import { isSteadfastConfigured, createConsignment } from '../utils/steadfast.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
 
 const router = Router();
@@ -621,7 +622,11 @@ const ORDER_STATUS_MESSAGES = {
   cancelled: { subject: 'Your order was cancelled', text: 'Your order has been cancelled. If this is unexpected, please contact us and we\u2019ll help sort it out.' },
 };
 
-async function notifyOrderStatus(order) {
+// Exported so the Steadfast delivery-status webhook (see
+// routes/webhooks.routes.js) can reuse the same customer email/SMS notice
+// when a courier-reported "delivered" promotes Order.status itself, instead
+// of duplicating this logic for a second, non-admin-initiated status change.
+export async function notifyOrderStatus(order) {
   const notice = ORDER_STATUS_MESSAGES[order.status];
   if (!notice) return; // "processing" is the default state customers already saw at checkout — no email needed.
   const to = order.user?.email || order.guestEmail;
@@ -690,7 +695,43 @@ router.patch('/orders/:id/status', requireCsrf, async (req, res, next) => {
     // cache so that's reflected right away rather than after the TTL.
     if (updated.restocked) invalidateProductCache();
     notifyOrderStatus(updated.order); // fire-and-forget — don't make the admin wait on outbound email
-    res.json({ order: serializeOrder(updated.order) });
+
+    let order = updated.order;
+    // Book the courier the moment an order is marked shipped — but only
+    // once per order (a re-save of an already-shipped order must not create
+    // a second, duplicate parcel). Kept outside the transaction above since
+    // it's a real network call to a third party; if it fails, the status
+    // change itself still stands and the admin sees the error to retry
+    // manually (see the Steadfast panel) rather than the whole request
+    // rolling back over a courier hiccup.
+    if (status === 'shipped' && !order.courierConsignmentId && isSteadfastConfigured()) {
+      try {
+        const shipping = order.shipping || {};
+        const consignment = await createConsignment({
+          invoice: order.id,
+          recipientName: shipping.name || 'Customer',
+          recipientPhone: shipping.phone,
+          recipientAddress: [shipping.address, shipping.city].filter(Boolean).join(', '),
+          codAmount: order.paymentMethod === 'cod' ? order.total : 0,
+        });
+        order = await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            courierConsignmentId: consignment.consignment_id,
+            courierTrackingCode: consignment.tracking_code,
+            courierStatus: consignment.status || 'pending',
+          },
+          include: { items: true },
+        });
+      } catch (err) {
+        // Never let a courier-side failure block the status change the
+        // admin actually asked for — same reasoning as the email/SMS
+        // failures above.
+        console.error('Failed to create Steadfast consignment for order:', order.id, err.message);
+      }
+    }
+
+    res.json({ order: serializeOrder(order) });
   } catch (err) {
     next(err);
   }

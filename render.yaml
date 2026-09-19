@@ -65,6 +65,13 @@ services:
         sync: false
       - key: SSLCOMMERZ_IS_LIVE
         value: "false"
+      # Steadfast Courier (order shipment + delivery tracking)
+      - key: STEADFAST_API_KEY
+        sync: false
+      - key: STEADFAST_SECRET_KEY
+        sync: false
+      - key: STEADFAST_WEBHOOK_SECRET
+        sync: false
       # Optional — reCAPTCHA, SMS, Meta CAPI, Sentry
       - key: RECAPTCHA_SECRET_KEY
         sync: false

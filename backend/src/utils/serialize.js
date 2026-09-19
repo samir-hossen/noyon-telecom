@@ -106,6 +106,8 @@ export function serializeOrder(o) {
     total: o.total,
     status: o.status,
     transactionId: o.transactionId ?? null,
+    courierTrackingCode: o.courierTrackingCode ?? null,
+    courierStatus: o.courierStatus ?? null,
     createdAt: o.createdAt,
     items: o.items.map((i) => ({
       productId: i.productId,

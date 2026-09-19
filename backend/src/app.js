@@ -23,6 +23,7 @@ import dealerRoutes from './routes/dealer.routes.js';
 import newsletterRoutes from './routes/newsletter.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import bannersRoutes from './routes/banners.routes.js';
+import webhooksRoutes from './routes/webhooks.routes.js';
 
 const app = express();
 
@@ -121,6 +122,7 @@ app.use('/api/dealer', dealerRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/banners', bannersRoutes);
+app.use('/api/webhooks', webhooksRoutes);
 // Sitemap/feed are also exposed under /api since that's this backend's only
 // public prefix; see sitemap.routes.js and robots.txt for how these get
 // surfaced at the storefront's actual root domain in production.

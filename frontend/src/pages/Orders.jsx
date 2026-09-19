@@ -187,6 +187,11 @@ export default function Orders() {
               <span className={`status-badge status-${o.status}`}>{t(`order.status.${o.status}`, o.status)}</span>
             </div>
             <OrderTracker status={o.status} />
+            {o.courierTrackingCode && (
+              <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 12 }}>
+                {t('orders.courierTrackingCode', null, { code: o.courierTrackingCode })}
+              </div>
+            )}
             {o.items.map((i) => (
               <div className="mini-item" key={i.productId}>
                 <img src={resolveImg(i.img)} alt={i.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />

@@ -194,6 +194,19 @@ model Order {
   gatewayValId  String?
   createdAt     DateTime    @default(now())
 
+  // Steadfast Courier consignment, created automatically the moment an
+  // admin marks an order 'shipped' (see admin.routes.js) — see
+  // utils/steadfast.js. All three stay null for an order that was
+  // cancelled before shipping or shipped through some other channel.
+  courierConsignmentId Int?
+  courierTrackingCode  String?
+  // Steadfast's own delivery_status string (e.g. "pending", "delivered",
+  // "cancelled") — kept separate from Order.status because a courier can
+  // report intermediate states (e.g. "in_review") this app doesn't have an
+  // equivalent OrderStatus for; only "delivered" currently promotes
+  // Order.status (see the webhook handler in routes/webhooks.routes.js).
+  courierStatus        String?
+
   items OrderItem[]
 
   @@index([userId])
@@ -202,6 +215,9 @@ model Order {
   // table scan once order volume grows past a few thousand rows.
   @@index([status])
   @@index([createdAt])
+  // Looked up by the Steadfast delivery-status webhook (see
+  // routes/webhooks.routes.js), which only gives us the consignment id.
+  @@index([courierConsignmentId])
 }
 
 model OrderItem {

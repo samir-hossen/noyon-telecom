@@ -392,6 +392,8 @@ const translations = {
     'orderConf.continueShopping': 'Continue shopping',
     'orderConf.printInvoice': 'Print Invoice',
     'orderConf.viewMyOrders': 'View my orders',
+    'orderConf.courierTitle': 'Parcel booked with Steadfast Courier',
+    'orderConf.courierTrackingCode': 'Tracking code: {{code}}',
 
     'orders.pageTitle': 'Your Orders',
     'orders.pageMeta': 'View your order history, tracking status, and past purchases.',
@@ -408,6 +410,7 @@ const translations = {
     'orders.memberSince': 'Member since {{date}}',
     'orders.totalOrders': 'Total orders',
     'orders.totalSpent': 'Total spent',
+    'orders.courierTrackingCode': 'Steadfast tracking code: {{code}}',
 
     'order.status.processing': 'Processing',
     'order.status.paid': 'Paid',
@@ -1165,6 +1168,8 @@ const translations = {
     'orderConf.continueShopping': 'কেনাকাটা চালিয়ে যান',
     'orderConf.printInvoice': 'ইনভয়েস প্রিন্ট করুন',
     'orderConf.viewMyOrders': 'আমার অর্ডারসমূহ দেখুন',
+    'orderConf.courierTitle': 'স্টেডফাস্ট কুরিয়ারে পার্সেল বুক করা হয়েছে',
+    'orderConf.courierTrackingCode': 'ট্র্যাকিং কোড: {{code}}',
 
     'orders.pageTitle': 'আপনার অর্ডারসমূহ',
     'orders.pageMeta': 'আপনার অর্ডার হিস্টোরি, ট্র্যাকিং স্ট্যাটাস এবং আগের কেনাকাটা দেখুন।',
@@ -1181,6 +1186,7 @@ const translations = {
     'orders.memberSince': '{{date}} থেকে সদস্য',
     'orders.totalOrders': 'মোট অর্ডার',
     'orders.totalSpent': 'মোট খরচ',
+    'orders.courierTrackingCode': 'স্টেডফাস্ট ট্র্যাকিং কোড: {{code}}',
 
     'order.status.processing': 'প্রসেসিং চলছে',
     'order.status.paid': 'পেমেন্ট সম্পন্ন',

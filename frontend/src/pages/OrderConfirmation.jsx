@@ -145,6 +145,13 @@ export default function OrderConfirmation() {
           </div>
         </div>
 
+        {order.courierTrackingCode && (
+          <div className="card" style={{ padding: '14px 18px', marginTop: 18, textAlign: 'left' }}>
+            <strong>{t('orderConf.courierTitle')}</strong>
+            <div style={{ color: 'var(--muted)', marginTop: 4 }}>{t('orderConf.courierTrackingCode', null, { code: order.courierTrackingCode })}</div>
+          </div>
+        )}
+
         {!order.userId && (
           <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: 18 }}>
             {t('orderConf.guestSentPre', null, { email: order.guestEmail || order.shipping?.email })}
