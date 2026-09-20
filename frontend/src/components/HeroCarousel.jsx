@@ -191,15 +191,25 @@ export default function HeroCarousel() {
         </div>
       ) : (
         <div className="hero-track" style={{ transform: `translateX(-${index * 100}%)` }}>
-          {SLIDES.map((s, i) => (
+          {SLIDES.map((s, i) => {
+            // All three slides sit in the DOM at once (for the slide
+            // transition), so rendering every one as <h1> gave the
+            // homepage three H1s — a real on-page SEO ding (diluted
+            // topical signal on the single most important page on the
+            // site). Only the first slide (present at first paint, before
+            // the auto-rotate timer ever fires) is a real H1; the rest use
+            // <p> with the same class, so the visual style is identical
+            // either way.
+            const HeadingTag = i === 0 ? 'h1' : 'p';
+            return (
             <div className="hero-grid" key={i} aria-hidden={i !== index} {...inactiveProps(i !== index)}>
               <div className="hero-copy">
                 <span className="eyebrow">{t(s.eyebrowKey)}</span>
-                <h1 className="hero-title">
+                <HeadingTag className="hero-title">
                   {t(s.titleTopKey)}
                   <br />
                   <em>{t(s.titleEmKey)}</em> {t(s.titleRestKey)}
-                </h1>
+                </HeadingTag>
                 <p className="hero-sub">{t(s.subKey)}</p>
                 <div className="hero-badges">
                   <span className="hero-badge">
@@ -242,7 +252,8 @@ export default function HeroCarousel() {
                 <div className="hero-stripe">{t(s.stripeKey)}</div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
