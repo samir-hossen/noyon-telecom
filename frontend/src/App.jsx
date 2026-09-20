@@ -34,6 +34,8 @@ const RefundPolicy = lazy(() => import('./pages/RefundPolicy.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
 const AboutUs = lazy(() => import('./pages/AboutUs.jsx'));
 const RequestQuote = lazy(() => import('./pages/RequestQuote.jsx'));
+const Blog = lazy(() => import('./pages/Blog.jsx'));
+const BlogPost = lazy(() => import('./pages/BlogPost.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
 function RouteFallback() {
@@ -107,6 +109,8 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/request-quote" element={<RequestQuote />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           {/* Checkout and order confirmation are open to guests too — cart items
               are either read from the server cart (logged in) or sent straight
               from the browser's local guest cart. See CartContext for details. */}

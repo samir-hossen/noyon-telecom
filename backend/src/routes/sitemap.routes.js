@@ -66,6 +66,19 @@ router.get('/sitemap-index.xml', (req, res) => {
 // added/retired — exactly the "static sitemap that goes outdated" problem.
 // Pure and DB-free (categories/brands passed in) so it's unit-testable
 // without a database — see sitemap.routes.test.js.
+// Kept in sync by hand with frontend/src/content/blogPosts.js — the
+// frontend and backend are separate deployable packages (no shared import
+// between them), and this list only changes when a new guide is published,
+// which is rare enough that a manual mirror here is simpler than wiring up
+// a build-time sync for it.
+const BLOG_SLUGS = [
+  'oled-vs-lcd-display-kena-guide',
+  'original-vs-copy-battery-chenar-upay',
+  'charging-port-noshto-hoyar-karon',
+  'mobile-servicing-business-suru-korte-parts-stock',
+  'paikari-mobile-parts-kenar-age-7-bishoy',
+];
+
 export function buildPagesSitemapXml({ siteUrl, categories, brands }) {
   const entries = [
     { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
@@ -73,6 +86,8 @@ export function buildPagesSitemapXml({ siteUrl, categories, brands }) {
     ...categories.map((c) => ({ loc: `${siteUrl}/shop?category=${encodeURIComponent(c)}`, priority: '0.7' })),
     ...brands.map((b) => ({ loc: `${siteUrl}/shop?brand=${encodeURIComponent(b)}`, priority: '0.6' })),
     { loc: `${siteUrl}/about`, priority: '0.6' },
+    { loc: `${siteUrl}/blog`, priority: '0.7', changefreq: 'weekly' },
+    ...BLOG_SLUGS.map((slug) => ({ loc: `${siteUrl}/blog/${slug}`, priority: '0.6' })),
     { loc: `${siteUrl}/request-quote`, priority: '0.6' },
     // NOT /register: robots.txt disallows it (it's the auth/signup form),
     // so listing it here would tell Google to index a URL it's also told
