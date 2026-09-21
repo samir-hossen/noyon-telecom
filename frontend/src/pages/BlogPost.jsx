@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { getPostBySlug } from '../content/blogPosts';
+import { getPostBySlug, getAllPosts } from '../content/blogPosts';
 import { usePageMeta } from '../hooks/usePageTitle';
 
 function ContentBlock({ block, i }) {
@@ -82,7 +82,37 @@ export default function BlogPost() {
 
       <div className="form-panel wide" style={{ maxWidth: 760 }}>
         {post.content.map((block, i) => <ContentBlock key={i} block={block} i={i} />)}
+
+        {post.relatedCategories?.length > 0 && (
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+            <strong style={{ fontSize: '0.9rem' }}>সংশ্লিষ্ট ক্যাটাগরি:</strong>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
+              {post.relatedCategories.map((cat) => (
+                <Link key={cat} to={`/shop?category=${encodeURIComponent(cat)}`} className="btn btn-outline btn-sm">
+                  {cat}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {post.relatedSlugs?.length > 0 && (
+        <div className="form-panel wide" style={{ maxWidth: 760, marginTop: 20 }}>
+          <strong style={{ fontSize: '0.9rem' }}>আরও পড়ুন:</strong>
+          <div style={{ marginTop: 10 }}>
+            {post.relatedSlugs.map((slug) => {
+              const related = getAllPosts().find((p) => p.slug === slug);
+              if (!related) return null;
+              return (
+                <p key={slug} style={{ marginBottom: 6 }}>
+                  <Link to={`/blog/${related.slug}`}>{related.title}</Link>
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="form-panel wide" style={{ maxWidth: 760, marginTop: 20, textAlign: 'center' }}>
         <p style={{ marginBottom: 16 }}>দরকারি পার্টস খুঁজছেন? পুরো ক্যাটালগ ঘুরে দেখুন।</p>

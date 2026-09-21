@@ -14,6 +14,8 @@
 const blogPosts = [
   {
     slug: 'oled-vs-lcd-display-kena-guide',
+    relatedCategories: ['OLED', 'LCD', 'Display'],
+    relatedSlugs: ['original-vs-copy-battery-chenar-upay'],
     title: 'OLED নাকি LCD ডিসপ্লে — পাইকারি কেনার আগে যা জানা জরুরি',
     metaDescription: 'OLED ও LCD মোবাইল ডিসপ্লের মধ্যে পার্থক্য, কোনটা কোন ফোনের জন্য উপযুক্ত, আর পাইকারি অর্ডার করার আগে কোয়ালিটি যাচাইয়ের সহজ উপায়।',
     publishedDate: '2026-08-01',
@@ -34,6 +36,8 @@ const blogPosts = [
   },
   {
     slug: 'original-vs-copy-battery-chenar-upay',
+    relatedCategories: ['Battery'],
+    relatedSlugs: ['charging-port-noshto-hoyar-karon', 'paikari-mobile-parts-kenar-age-7-bishoy'],
     title: 'অরিজিনাল ও কপি মোবাইল ব্যাটারি চেনার ৫টি সহজ উপায়',
     metaDescription: 'মোবাইল ব্যাটারি কেনার সময় অরিজিনাল আর কপি ব্যাটারির মধ্যে পার্থক্য বোঝার ৫টি ব্যবহারিক টেকনিক, যা যেকোনো সার্ভিসিং দোকানে কাজে লাগবে।',
     publishedDate: '2026-08-10',
@@ -54,6 +58,8 @@ const blogPosts = [
   },
   {
     slug: 'charging-port-noshto-hoyar-karon',
+    relatedCategories: ['Charging Port', 'Flex'],
+    relatedSlugs: ['original-vs-copy-battery-chenar-upay'],
     title: 'চার্জিং পোর্ট নষ্ট হওয়ার প্রধান কারণ ও সমাধান',
     metaDescription: 'মোবাইলের চার্জিং পোর্ট কেন নষ্ট হয়, কোন কোন লক্ষণ দেখে বোঝা যায় পোর্ট বদলানো দরকার, আর সার্ভিসিং-এর সময় কী কী খেয়াল রাখবেন।',
     publishedDate: '2026-08-18',
@@ -75,6 +81,8 @@ const blogPosts = [
   },
   {
     slug: 'mobile-servicing-business-suru-korte-parts-stock',
+    relatedCategories: ['Display', 'Battery', 'Repair Tools'],
+    relatedSlugs: ['paikari-mobile-parts-kenar-age-7-bishoy'],
     title: 'মোবাইল সার্ভিসিং ব্যবসা শুরু করতে যেসব পার্টস স্টকে রাখা জরুরি',
     metaDescription: 'নতুন মোবাইল সার্ভিসিং সেন্টার বা দোকান শুরু করার সময় কোন কোন পার্টস প্রথমে স্টক করা উচিত — একটা প্র্যাকটিক্যাল চেকলিস্ট।',
     publishedDate: '2026-08-25',
@@ -95,6 +103,8 @@ const blogPosts = [
   },
   {
     slug: 'paikari-mobile-parts-kenar-age-7-bishoy',
+    relatedCategories: [],
+    relatedSlugs: ['mobile-servicing-business-suru-korte-parts-stock', 'oled-vs-lcd-display-kena-guide'],
     title: 'পাইকারি দামে মোবাইল পার্টস কেনার আগে ৭টি বিষয় যাচাই করুন',
     metaDescription: 'মোবাইল পার্টসের পাইকারি সাপ্লায়ার বাছাই করার সময় দাম ছাড়াও যে বিষয়গুলো যাচাই করা উচিত, তার একটা সম্পূর্ণ চেকলিস্ট।',
     publishedDate: '2026-09-02',
@@ -121,6 +131,15 @@ export function getAllPosts() {
 
 export function getPostBySlug(slug) {
   return blogPosts.find((p) => p.slug === slug) || null;
+}
+
+// Used by ProductDetail to link back to a relevant guide (e.g. a Battery
+// product page linking to the "spot a fake battery" post) — the reverse
+// direction of the "related categories" links a post shows toward /shop,
+// so the two content types reinforce each other instead of only ever
+// linking one way.
+export function getPostForCategory(category) {
+  return blogPosts.find((p) => p.relatedCategories?.includes(category)) || null;
 }
 
 export default blogPosts;

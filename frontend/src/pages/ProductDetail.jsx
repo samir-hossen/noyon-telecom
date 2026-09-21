@@ -11,6 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import ProductCard from '../components/ProductCard.jsx';
 import { trackViewItem, trackRequestQuote } from '../ecommerce.js';
+import { getPostForCategory } from '../content/blogPosts';
 
 const RECENTLY_VIEWED_KEY = 'nt-recently-viewed';
 const RECENTLY_VIEWED_MAX = 8;
@@ -450,6 +451,15 @@ export default function ProductDetail() {
           )}
 
           <p className="pd-desc">{product.desc}</p>
+
+          {(() => {
+            const guide = getPostForCategory(product.category);
+            return guide ? (
+              <p style={{ fontSize: '0.85rem', marginBottom: 14 }}>
+                📘 <Link to={`/blog/${guide.slug}`}>{guide.title}</Link>
+              </p>
+            ) : null;
+          })()}
 
           <div className="pd-qty">
             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('pd.quantityLabel', null, { moq: product.moq || 1 })}</span>
