@@ -95,7 +95,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          {/* :slug is optional and purely cosmetic (SEO/readability) — the
+              actual lookup is always by :id, so an old bookmarked/shared
+              link with no slug at all still works unchanged. */}
+          <Route path="/product/:id/:slug?" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/login" element={<Login />} />

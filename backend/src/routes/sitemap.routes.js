@@ -3,6 +3,7 @@ import prisma from '../prismaClient.js';
 import { getOrSet } from '../utils/cache.js';
 import { getActiveCategories, getActiveBrands } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS } from './products.routes.js';
+import { productPath } from '../utils/slug.js';
 
 const router = Router();
 // Set SITE_URL in the backend .env to your real storefront domain in production.
@@ -143,11 +144,11 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
     // so a newly-added product's URL doesn't wait out the TTL to appear.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('sitemap:products-xml', 300, async () => {
-      const products = await prisma.product.findMany({ where: { published: true }, select: { id: true, updatedAt: true, createdAt: true } });
+      const products = await prisma.product.findMany({ where: { published: true }, select: { id: true, name: true, updatedAt: true, createdAt: true } });
       const urls = products
         .map(
           (p) => `  <url>
-    <loc>${SITE_URL}/product/${p.id}</loc>
+    <loc>${SITE_URL}${productPath(p)}</loc>
     <lastmod>${new Date(p.updatedAt || p.createdAt).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

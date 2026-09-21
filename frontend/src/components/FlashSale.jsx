@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { resolveImg } from '../api';
+import { productUrl } from '../utils/slug';
 import { formatPrice } from '../utils/currency';
 import { useLanguage } from '../context/LanguageContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -92,7 +93,7 @@ export default function FlashSale({ products, onAdd }) {
             const pct = Math.round(((p.compareAt - p.price) / p.compareAt) * 100);
             return (
               <div className="deal-card" key={p.id}>
-                <Link to={`/product/${p.id}`} className="deal-img">
+                <Link to={productUrl(p)} className="deal-img">
                   <span className="deal-badge">-{pct}%</span>
                   <img
                     src={resolveImg(p.img, 300)}
@@ -111,7 +112,7 @@ export default function FlashSale({ products, onAdd }) {
                   {ids?.has(p.id) ? '♥' : '♡'}
                 </button>
                 <div className="deal-body">
-                  <Link to={`/product/${p.id}`}><span className="card-name" style={{ fontSize: '0.94rem' }}>{p.name}</span></Link>
+                  <Link to={productUrl(p)}><span className="card-name" style={{ fontSize: '0.94rem' }}>{p.name}</span></Link>
                   <div className="card-price" style={{ marginTop: 6 }}>
                     <span className="now">{formatPrice(p.price)}</span>
                     <span className="was">{formatPrice(p.compareAt)}</span>

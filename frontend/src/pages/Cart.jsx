@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, resolveImg } from '../api';
+import { productUrl } from '../utils/slug';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
@@ -95,11 +96,11 @@ export default function Cart() {
         <div>
           {items.map((item) => (
             <div className="cart-row" key={item.productId}>
-              <Link to={`/product/${item.productId}`}>
+              <Link to={productUrl({ id: item.productId, name: item.product.name })}>
                 <img src={resolveImg(item.product.img)} alt={item.product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
               </Link>
               <div>
-                <Link to={`/product/${item.productId}`}>
+                <Link to={productUrl({ id: item.productId, name: item.product.name })}>
                   <div className="cart-row-name">{item.product.name}</div>
                 </Link>
                 <div className="cart-row-cat">{item.product.category}</div>

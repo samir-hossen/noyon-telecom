@@ -2,6 +2,7 @@ import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import { escapeXml, SITE_URL } from './sitemap.routes.js';
 import { getOrSet } from '../utils/cache.js';
+import { productPath } from '../utils/slug.js';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ export function buildMerchantFeedXml({ products, siteUrl }) {
     // it's excluded from the feed entirely until a photo is added.
     .filter((p) => p.img)
     .map((p) => {
-      const link = `${siteUrl}/product/${p.id}`;
+      const link = `${siteUrl}${productPath(p)}`;
       const image = p.img.startsWith('http') ? p.img : `${siteUrl}${p.img}`;
       return `    <item>
       <g:id>${escapeXml(p.id)}</g:id>

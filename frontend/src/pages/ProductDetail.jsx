@@ -12,6 +12,7 @@ import { usePageMeta } from '../hooks/usePageTitle';
 import ProductCard from '../components/ProductCard.jsx';
 import { trackViewItem, trackRequestQuote } from '../ecommerce.js';
 import { getPostForCategory } from '../content/blogPosts';
+import { productUrl } from '../utils/slug';
 
 const RECENTLY_VIEWED_KEY = 'nt-recently-viewed';
 const RECENTLY_VIEWED_MAX = 8;
@@ -147,7 +148,7 @@ export default function ProductDetail() {
     // default (the site-wide og:image set in index.html) in place, which is
     // a real, fetchable image — a better fallback than a broken one.
     product && product.img ? resolveImg(product.img) : undefined,
-    product ? `/product/${product.id}` : undefined,
+    product ? productUrl(product) : undefined,
     product
       ? [
           {
@@ -166,7 +167,7 @@ export default function ProductDetail() {
                 priceCurrency: 'BDT',
                 price: product.price,
                 availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-                url: `${window.location.origin}/product/${product.id}`,
+                url: `${window.location.origin}${productUrl(product)}`,
               },
               ...(product.reviewCount > 0
                 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
@@ -182,7 +183,7 @@ export default function ProductDetail() {
                 { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin },
                 { '@type': 'ListItem', position: 2, name: 'Shop', item: `${window.location.origin}/shop` },
                 { '@type': 'ListItem', position: 3, name: product.category, item: `${window.location.origin}/shop?category=${encodeURIComponent(product.category)}` },
-                { '@type': 'ListItem', position: 4, name: product.name, item: `${window.location.origin}/product/${product.id}` },
+                { '@type': 'ListItem', position: 4, name: product.name, item: `${window.location.origin}${productUrl(product)}` },
               ],
             },
           },

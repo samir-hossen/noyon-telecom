@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
+import { productUrl } from '../utils/slug';
 
 export default function ProductCard({ product, onAdd }) {
   const { user } = useAuth();
@@ -47,7 +48,7 @@ export default function ProductCard({ product, onAdd }) {
 
   return (
     <div className="card">
-      <Link to={`/product/${product.id}`}>
+      <Link to={productUrl(product)}>
         <div className="card-img">
           {outOfStock ? (
             <span className="card-tag" style={{ background: 'var(--muted)' }}>{t('card.soldOut')}</span>
@@ -70,7 +71,7 @@ export default function ProductCard({ product, onAdd }) {
       </Link>
       <div className="card-body">
         <span className="card-cat">{product.category}</span>
-        <Link to={`/product/${product.id}`}>
+        <Link to={productUrl(product)}>
           <h3 className="card-name">{product.name}</h3>
         </Link>
         {product.reviewCount > 0 && (

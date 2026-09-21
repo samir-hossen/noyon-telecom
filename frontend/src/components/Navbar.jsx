@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api, resolveImg } from '../api';
+import { productUrl } from '../utils/slug';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 
@@ -147,7 +148,7 @@ export default function Navbar() {
                 {suggestions.map((p) => (
                   <Link
                     key={p.id}
-                    to={`/product/${p.id}`}
+                    to={productUrl(p)}
                     className="nav-suggest-item"
                     onClick={() => setSuggestOpen(false)}
                   >
