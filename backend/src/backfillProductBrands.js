@@ -26,7 +26,10 @@ export async function backfillProductBrands() {
   for (const p of candidates) {
     const brand = detectBrandFromText(p.name);
     if (!brand) continue;
-    await prisma.product.update({ where: { id: p.id }, data: { brand } });
+    // Raw SQL rather than prisma.product.update() — see backfillProductSlugs.js
+    // for why: Prisma's `@updatedAt` would otherwise bump `updatedAt` to "now"
+    // on every backfilled row, corrupting the sitemap's lastmod signal.
+    await prisma.$executeRaw`UPDATE "Product" SET "brand" = ${brand} WHERE "id" = ${p.id}`;
     fixed += 1;
   }
 

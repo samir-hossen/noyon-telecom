@@ -121,4 +121,18 @@ export async function getActiveBrands(prisma, allBrands) {
   return allBrands.filter((b) => active.has(b));
 }
 
+// Every real (brand, category) combination with at least one published
+// product — powers the /brand/<brand>/<category> sitemap entries. Not a
+// naive cross-product of every brand × every category (most combinations
+// have zero matching products, which would submit a wall of thin/empty
+// pages to Google) — only ones the catalog actually has.
+export async function getActiveBrandCategoryPairs(prisma) {
+  const rows = await prisma.$queryRaw`
+    SELECT DISTINCT brand, jsonb_array_elements_text(categories) AS category
+    FROM "Product"
+    WHERE published = true AND brand IS NOT NULL
+  `;
+  return rows.map((r) => ({ brand: r.brand, category: r.category }));
+}
+
 export { MAX_LIMIT };

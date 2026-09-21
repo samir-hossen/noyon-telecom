@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import { getOrSet } from '../utils/cache.js';
-import { getActiveCategories, getActiveBrands } from '../utils/productQuery.js';
+import { getActiveCategories, getActiveBrands, getActiveBrandCategoryPairs } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS } from './products.routes.js';
 import { productPath, slugify } from '../utils/slug.js';
 
@@ -78,7 +78,7 @@ const BLOG_SLUGS = [
   'paikari-mobile-parts-kenar-age-7-bishoy',
 ];
 
-export function buildPagesSitemapXml({ siteUrl, categories, brands }) {
+export function buildPagesSitemapXml({ siteUrl, categories, brands, brandCategoryPairs = [] }) {
   const entries = [
     { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
     { loc: `${siteUrl}/shop`, priority: '0.9', changefreq: 'daily' },
@@ -89,6 +89,10 @@ export function buildPagesSitemapXml({ siteUrl, categories, brands }) {
     // gets submitted to Google.
     ...categories.map((c) => ({ loc: `${siteUrl}/category/${slugify(c)}`, priority: '0.7' })),
     ...brands.map((b) => ({ loc: `${siteUrl}/brand/${slugify(b)}`, priority: '0.6' })),
+    // /brand/<brand>/<category> (e.g. /brand/samsung/display) — the route
+    // already existed and resolves fine, it just wasn't submitted anywhere,
+    // so Google had no way to discover it on its own.
+    ...brandCategoryPairs.map((p) => ({ loc: `${siteUrl}/brand/${slugify(p.brand)}/${slugify(p.category)}`, priority: '0.5' })),
     { loc: `${siteUrl}/about`, priority: '0.6' },
     { loc: `${siteUrl}/blog`, priority: '0.7', changefreq: 'weekly' },
     ...BLOG_SLUGS.map((slug) => ({ loc: `${siteUrl}/blog/${slug}`, priority: '0.6' })),
@@ -120,11 +124,12 @@ router.get('/sitemap-pages.xml', async (req, res, next) => {
     // too, so a newly active category/brand doesn't wait out the TTL.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('sitemap:pages-xml', 300, async () => {
-      const [categories, brands] = await Promise.all([
+      const [categories, brands, brandCategoryPairs] = await Promise.all([
         getActiveCategories(prisma, ALL_CATEGORIES),
         getActiveBrands(prisma, ALL_BRANDS),
+        getActiveBrandCategoryPairs(prisma),
       ]);
-      return buildPagesSitemapXml({ siteUrl: SITE_URL, categories, brands });
+      return buildPagesSitemapXml({ siteUrl: SITE_URL, categories, brands, brandCategoryPairs });
     });
     res.set('Content-Type', 'application/xml');
     res.send(xml);

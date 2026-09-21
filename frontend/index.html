@@ -17,7 +17,17 @@
       content="বাংলাদেশে মোবাইল স্পেয়ার পার্টস পাইকারি বিক্রেতা — ডিসপ্লে, ব্যাটারি, চার্জিং পোর্ট, ব্যাক গ্লাস। Wholesale mobile phone spare parts in Bangladesh for dealers, shops and service centers — displays, batteries, back glass, charging ports and more."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://noyontelecom.com/" />
+    <!-- No canonical here on purpose: this same file is served for every
+         route (client-rendered SPA on static hosting — see render.yaml's
+         SPA catch-all rewrite), so a hardcoded canonical here would be
+         wrong for every page except "/" the moment a crawler reads the raw
+         HTML before JS runs. usePageMeta (hooks/usePageTitle.js) sets the
+         real, correct canonical for every page once React mounts,
+         including this one (Home.jsx's own usePageMeta call correctly
+         self-canonicalizes to "/"). Leaving this tag out entirely is a
+         better signal than an actively wrong one — Google explicitly
+         tolerates a missing canonical (it infers self-canonical) far
+         better than a contradicting one. -->
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -37,7 +47,12 @@
       property="og:description"
       content="বাংলাদেশে মোবাইল স্পেয়ার পার্টস পাইকারি বিক্রেতা — ডিসপ্লে, ব্যাটারি, চার্জিং পোর্ট। Bangladesh's trusted wholesale importer & distributor of mobile phone spare parts for dealers, shops and service centers."
     />
-    <meta property="og:url" content="https://noyontelecom.com/" />
+    <!-- No og:url here on purpose, same reasoning as the missing canonical
+         above — a hardcoded homepage URL would be wrong for every other
+         page's share preview (e.g. WhatsApp showing the homepage when
+         someone shares a product link) if a non-JS scraper reads this
+         before usePageMeta sets the real one; most scrapers fall back to
+         the actual fetched URL when og:url is absent, which is correct. -->
     <meta property="og:image" content="https://noyontelecom.com/logo-full.png" />
     <meta property="og:image:width" content="1210" />
     <meta property="og:image:height" content="690" />

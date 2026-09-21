@@ -36,6 +36,16 @@ function pushRecentlyViewed(id) {
   }
 }
 
+// A plain slice(0, n) cuts mid-word ("...confirm exact co" from
+// "...confirm exact compatibility") — this backs off to the last full word
+// instead, so a truncated description always ends on a whole word.
+function truncateAtWordBoundary(text, maxLen) {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 20 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 // "Buy X at ৳1,234 in Bangladesh. <real description>. In stock. Order from
 // Noyon Telecom." — built entirely from this product's own DB fields (price,
 // desc, stock), never invented. Mirrors the "[Product] Price in Bangladesh"
@@ -46,7 +56,7 @@ function buildMetaDescription(product, t) {
   const priceUnavailable = !product.price || product.price <= 0;
   const priceText = priceUnavailable ? '' : `at ${formatPrice(product.price)} `;
   const stockText = product.stock > 0 ? 'In stock.' : 'Currently out of stock.';
-  const detail = product.desc ? product.desc.slice(0, 90) : t('pd.metaFallback', null, { category: product.category });
+  const detail = product.desc ? truncateAtWordBoundary(product.desc, 90) : t('pd.metaFallback', null, { category: product.category });
   return `Buy ${product.name} ${priceText}in Bangladesh. ${detail} ${stockText} Order from Noyon Telecom.`;
 }
 
@@ -163,13 +173,21 @@ export default function ProductDetail() {
               sku: product.sku || undefined,
               mpn: product.sku || undefined,
               brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
-              offers: {
-                '@type': 'Offer',
-                priceCurrency: 'BDT',
-                price: product.price,
-                availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-                url: `${window.location.origin}${productUrl(product)}`,
-              },
+              // A product with no real price yet (the "contact for price"
+              // convention — price: 0) must not claim a fake ৳0 Offer at
+              // all: Google's Merchant/Rich Results policy treats a
+              // misleading price as grounds to disapprove the listing.
+              ...(product.price > 0
+                ? {
+                    offers: {
+                      '@type': 'Offer',
+                      priceCurrency: 'BDT',
+                      price: product.price,
+                      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                      url: `${window.location.origin}${productUrl(product)}`,
+                    },
+                  }
+                : {}),
               ...(product.reviewCount > 0
                 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
                 : {}),

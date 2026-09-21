@@ -32,7 +32,12 @@ export async function backfillProductSlugs() {
   for (const p of needsSlug) {
     const slug = uniqueSlugFromSet(p.name, existingSlugs);
     existingSlugs.add(slug);
-    await prisma.product.update({ where: { id: p.id }, data: { slug } });
+    // Raw SQL rather than prisma.product.update() — Prisma's `@updatedAt`
+    // silently bumps `updatedAt` to "now" on any Client-API update unless
+    // you explicitly override it, which previously made every backfilled
+    // product's sitemap lastmod jump to this script's run time instead of
+    // its real last content change. Raw SQL touches only the column named.
+    await prisma.$executeRaw`UPDATE "Product" SET "slug" = ${slug} WHERE "id" = ${p.id}`;
     fixed += 1;
   }
 

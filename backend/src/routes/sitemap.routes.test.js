@@ -43,4 +43,17 @@ test('buildPagesSitemapXml', async (t) => {
     const xml = buildPagesSitemapXml({ siteUrl: 'https://example.com', categories: [], brands: [] });
     assert.doesNotMatch(xml, /\/register</);
   });
+
+  await t.test('adds a /brand/<brand>/<category> URL for each real combination, none if there are none', () => {
+    const withPairs = buildPagesSitemapXml({
+      siteUrl: 'https://example.com',
+      categories: [],
+      brands: [],
+      brandCategoryPairs: [{ brand: 'Samsung', category: 'Display' }],
+    });
+    assert.match(withPairs, /<loc>https:\/\/example\.com\/brand\/samsung\/display<\/loc>/);
+
+    const withoutPairs = buildPagesSitemapXml({ siteUrl: 'https://example.com', categories: [], brands: [] });
+    assert.doesNotMatch(withoutPairs, /\/brand\/[a-z-]+\/[a-z-]+</);
+  });
 });
