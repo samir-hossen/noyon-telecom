@@ -108,7 +108,37 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
+    # Render does not read a Netlify-style _redirects file at all (one left
+    # over from a prior attempt was always inert — confirmed by testing, not
+    # just theory: rules added there had zero live effect, even after
+    # deleting a static file that would've otherwise shadowed it at the same
+    # path). This `routes` list is the only mechanism Render actually reads,
+    # via the dashboard/API (matching this list is documentation — this
+    # service isn't on live Blueprint auto-sync, so these were actually
+    # applied via the Render API, not by pushing this file).
+    # This service was created before these existed, so its pre-existing
+    # catch-all `rewrite` had priority 0 and matched every path — including
+    # /sitemap.xml — before Render ever reached a rule below it. Each
+    # `redirect` entry needs a lower priority number than the catch-all
+    # (explicitly set via the API/dashboard, not by list order — order alone
+    # did not determine precedence) so noyontelecom.com/sitemap.xml etc.
+    # actually resolve under the storefront's own domain (a real 301, not a
+    # same-origin proxy — a static site can only redirect to an external
+    # URL, never fetch-and-inline one) instead of falling through to the SPA
+    # shell.
     routes:
+      - type: redirect
+        source: /sitemap.xml
+        destination: https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
+      - type: redirect
+        source: /sitemap-pages.xml
+        destination: https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml
+      - type: redirect
+        source: /sitemap-products.xml
+        destination: https://noyon-telecom-api.onrender.com/api/sitemap-products.xml
+      - type: redirect
+        source: /google-merchant.xml
+        destination: https://noyon-telecom-api.onrender.com/api/google-merchant.xml
       - type: rewrite
         source: /*
         destination: /index.html

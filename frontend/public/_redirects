@@ -1,16 +1,10 @@
-# Real 301 redirects (not a proxy — a prior attempt at a same-origin proxy
-# rewrite for these paths silently fell through to the SPA catch-all instead,
-# since Render's static-site _redirects can serve/rewrite only files that
-# exist in this same static site, never fetch-and-inline an external URL).
-# A 301 needs no fetching — it's just a redirect response — so it works fine
-# here and gets sitemap.xml/robots-declared paths resolving under the
-# storefront's own domain instead of only the backend's onrender.com one:
-# visiting noyontelecom.com/sitemap.xml shows the real XML (browser follows
-# the redirect), and Search Console follows a submitted sitemap's redirect
-# the same way.
-/sitemap.xml            https://noyon-telecom-api.onrender.com/api/sitemap-index.xml     301
-/sitemap-pages.xml      https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml      301
-/sitemap-products.xml   https://noyon-telecom-api.onrender.com/api/sitemap-products.xml   301
-/google-merchant.xml    https://noyon-telecom-api.onrender.com/api/google-merchant.xml    301
-
+# Render's static sites do NOT read this Netlify-style file at all — confirmed
+# empirically, not just in docs: sitemap/robots redirect rules added here had
+# zero effect live even after removing a static file that would otherwise have
+# shadowed them at the same path. The `routes` list in ../../render.yaml (a
+# `type: redirect`/`type: rewrite` array) is the only mechanism Render's static
+# sites actually read for this. This file is kept only for the one rule Render
+# *does* apply automatically for a Vite SPA regardless (client-side routing
+# still works without it), and as a historical note so nobody re-adds rules
+# here expecting them to take effect.
 /*    /index.html   200

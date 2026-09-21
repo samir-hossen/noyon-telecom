@@ -20,13 +20,11 @@ if (process.env.NODE_ENV === 'production' && !process.env.SITE_URL) {
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
 // /api/sitemap-pages.xml and /api/sitemap-products.xml below are served by
 // THIS backend, not the frontend — they need the backend's own public URL.
-// (A same-origin proxy through the frontend's _redirects was tried and
-// reverted — Render's static-site _redirects doesn't actually proxy to an
-// external absolute URL despite matching Netlify's documented syntax; it
-// silently fell through to the SPA catch-all instead, serving index.html
-// in place of the XML. See the API-domain Search Console property instead
-// for submitting this sitemap without hitting the cross-origin submission
-// box issue.)
+// noyontelecom.com/sitemap.xml (and the other public-facing paths) 301-
+// redirect here — see the frontend static site's `routes` in ../../render.yaml
+// for why that has to be a redirect rather than a same-origin proxy (a
+// same-origin proxy through the frontend's _redirects was tried first and
+// reverted — Render's static sites don't read that file at all).
 const API_URL = (process.env.API_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/$/, '');
 
 function escapeXml(s) {
