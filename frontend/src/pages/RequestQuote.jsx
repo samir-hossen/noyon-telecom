@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackRequestQuote } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
+import TurnstileWidget from '../components/TurnstileWidget.jsx';
 
 function emptyItem() {
   return { productId: null, name: '', sku: '', qty: 1 };
@@ -31,6 +32,7 @@ export default function RequestQuote() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState(null);
 
   // Arriving from a product page's "Request Quote" link (?productId=...) —
   // pre-fill the one item instead of making the person retype it.
@@ -94,7 +96,7 @@ export default function RequestQuote() {
 
     setBusy(true);
     try {
-      await api.post('/quotes', { ...contact, items: cleanItems, message });
+      await api.post('/quotes', { ...contact, items: cleanItems, message, turnstileToken });
       trackRequestQuote();
       setSubmitted(true);
     } catch (err) {
@@ -236,6 +238,8 @@ export default function RequestQuote() {
           <label htmlFor="rq-message">{t('rq.anythingElse')}</label>
           <textarea id="rq-message" rows={4} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={t('rq.messagePlaceholder')} />
         </div>
+
+        <TurnstileWidget onToken={setTurnstileToken} />
 
         <button className="btn btn-berry" disabled={busy}>
           {busy ? t('rq.sending') : t('rq.sendQuoteRequest')}

@@ -4,15 +4,16 @@ import prisma from '../prismaClient.js';
 import { optionalAuth, requireAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { sendMail } from '../utils/mailer.js';
+import { verifyTurnstile } from '../utils/turnstile.js';
 
 const router = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// RFQ submission is open to guests and (unlike /api/contact) has no
-// reCAPTCHA in front of it, so it's the more attractive target for a spam
-// bot flooding the sales inbox with fake requests-for-quote. Scoped to just
-// this route (not the whole router) so it never throttles a dealer
-// checking their own quote history via GET /mine.
+// RFQ submission is open to guests and, unlike /api/contact's reCAPTCHA,
+// previously had no bot-verification at all — now covered by Turnstile
+// (verifyTurnstile below, no-op until TURNSTILE_SECRET_KEY is actually set).
+// This limiter is scoped to just this route (not the whole router) so it
+// never throttles a dealer checking their own quote history via GET /mine.
 const quoteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 8,
@@ -41,9 +42,12 @@ function serializeQuote(q) {
 // Submit a new RFQ — works for guests and logged-in users/dealers alike.
 router.post('/', quoteLimiter, optionalAuth, requireCsrf, async (req, res, next) => {
   try {
-    const { name, email, phone, businessName, items, message } = req.body;
+    const { name, email, phone, businessName, items, message, turnstileToken } = req.body;
     if (!name?.trim() || !EMAIL_RE.test(email || '') || !phone?.trim()) {
       return res.status(400).json({ error: 'Name, a valid email, and phone number are required.' });
+    }
+    if (!(await verifyTurnstile(turnstileToken))) {
+      return res.status(400).json({ error: 'Verification failed. Please try again.' });
     }
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Add at least one item to your quote request.' });

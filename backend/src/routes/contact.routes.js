@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import prisma from '../prismaClient.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { sendMail } from '../utils/mailer.js';
@@ -6,7 +7,20 @@ import { verifyRecaptcha } from '../utils/recaptcha.js';
 
 const router = Router();
 
-router.post('/', requireCsrf, async (req, res, next) => {
+// Previously covered only by the site-wide 600/15min backstop in app.js —
+// far too loose to actually stop a script from flooding the support inbox
+// (and, with recaptchaToken unset/invalid, verifyRecaptcha rejecting it
+// costs nothing to attempt repeatedly). Matches quoteLimiter's reasoning in
+// quotes.routes.js — scoped to just this route, not the whole router.
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages from this connection. Please try again later or WhatsApp us directly.' },
+});
+
+router.post('/', contactLimiter, requireCsrf, async (req, res, next) => {
   try {
     const { name, email, phone, message, recaptchaToken } = req.body;
     if (!name || !email || !phone || !phone.trim() || !message || !message.trim()) {

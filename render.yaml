@@ -74,8 +74,10 @@ services:
         sync: false
       - key: STEADFAST_WEBHOOK_SECRET
         sync: false
-      # Optional — reCAPTCHA, SMS, Meta CAPI, Sentry
+      # Optional — reCAPTCHA, Turnstile, SMS, Meta CAPI, Sentry
       - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
         sync: false
       - key: SMS_API_KEY
         sync: false
@@ -144,6 +146,40 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    # Security response headers — like `routes` above, applied live via the
+    # API/dashboard (this service predates Blueprint auto-sync), documented
+    # here for reference. helmet() on the backend (see backend/src/app.js)
+    # only covers the API's own JSON responses, not these actual customer-
+    # facing HTML/JS/CSS responses, which is why these live here instead.
+    # The CSP's script/style/img/connect-src allowlist was built from every
+    # external domain the frontend actually loads (Google Fonts, reCAPTCHA,
+    # GA4/Google Ads, Meta Pixel, TikTok Pixel, Sentry, Cloudinary images,
+    # and this site's own API) — if a future integration adds a new
+    # external script/tracker/API, its domain needs adding here too, or the
+    # browser will silently block it.
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Strict-Transport-Security
+        value: 'max-age=31536000; includeSubDomains'
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'self'; script-src 'self' https://www.google.com https://www.gstatic.com
+          https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com
+          https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+          font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self'
+          https://noyon-telecom-api.onrender.com https://www.google-analytics.com
+          https://*.google-analytics.com https://googleads.g.doubleclick.net https://www.facebook.com
+          https://analytics.tiktok.com https://*.sentry.io https://*.ingest.sentry.io
+          https://*.ingest.us.sentry.io https://challenges.cloudflare.com; frame-src https://www.google.com
+          https://recaptcha.google.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self';
+          form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests
     envVars:
       # https://noyon-telecom-api.onrender.com/api
       - key: VITE_API_URL
@@ -154,6 +190,8 @@ services:
       - key: VITE_SITE_URL
         sync: false
       - key: VITE_RECAPTCHA_SITE_KEY
+        sync: false
+      - key: VITE_TURNSTILE_SITE_KEY
         sync: false
       - key: VITE_GA_ID
         sync: false
