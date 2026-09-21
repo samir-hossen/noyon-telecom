@@ -31,6 +31,8 @@ const AdminLogin = lazy(() => import('./pages/AdminLogin.jsx'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy.jsx'));
 const Terms = lazy(() => import('./pages/Terms.jsx'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy.jsx'));
+const WarrantyPolicy = lazy(() => import('./pages/WarrantyPolicy.jsx'));
+const DeliveryPolicy = lazy(() => import('./pages/DeliveryPolicy.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
 const AboutUs = lazy(() => import('./pages/AboutUs.jsx'));
 const RequestQuote = lazy(() => import('./pages/RequestQuote.jsx'));
@@ -124,6 +126,8 @@ export default function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/warranty-policy" element={<WarrantyPolicy />} />
+          <Route path="/delivery-policy" element={<DeliveryPolicy />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/request-quote" element={<RequestQuote />} />

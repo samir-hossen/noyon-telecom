@@ -51,6 +51,8 @@ services:
         sync: false
       - key: STORE_CONTACT_EMAIL
         sync: false
+      - key: SOCIAL_FACEBOOK_URL
+        sync: false
       # Cloudinary (product image storage — required so photos survive redeploys)
       - key: CLOUDINARY_CLOUD_NAME
         sync: false

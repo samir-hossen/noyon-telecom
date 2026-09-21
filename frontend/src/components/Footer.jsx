@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
@@ -19,19 +19,19 @@ function LockIcon() {
   );
 }
 
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-      <path d="M12 2.5l2.9 6.1 6.6.7-4.9 4.5 1.3 6.6L12 17l-5.9 3.4 1.3-6.6-4.9-4.5 6.6-.7L12 2.5Z" />
-    </svg>
-  );
-}
-
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const { t } = useLanguage();
+  // Was hardcoded directly in this file's JSX — now config-driven (see
+  // backend SOCIAL_FACEBOOK_URL) so the link can be changed or removed
+  // without a code deploy, and never shows a stale/broken URL if unset.
+  const [facebookUrl, setFacebookUrl] = useState('');
+
+  useEffect(() => {
+    api.get('/settings/public').then((d) => setFacebookUrl(d.facebookUrl || '')).catch(() => {});
+  }, []);
 
   async function onSubscribe(e) {
     e.preventDefault();
@@ -68,8 +68,8 @@ export default function Footer() {
           <div className="store-address-links">
             <Link to="/about">{t('footer.aboutUs')}</Link>
             <Link to="/privacy-policy">{t('footer.privacyPolicy')}</Link>
-            <Link to="/refund-policy">{t('footer.warrantyPolicy')}</Link>
-            <Link to="/terms">{t('footer.orderDeliveryPolicy')}</Link>
+            <Link to="/warranty-policy">{t('footer.warrantyPolicy')}</Link>
+            <Link to="/delivery-policy">{t('footer.orderDeliveryPolicy')}</Link>
             <Link to="/refund-policy">{t('footer.returnRefundPolicy')}</Link>
             <Link to="/contact">{t('footer.contactUs')}</Link>
           </div>
@@ -91,7 +91,7 @@ export default function Footer() {
               <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('footer')}>💬 {t('footer.whatsappUsToOrder')}</a>
             </p>
             <p>
-              <a href="https://www.facebook.com/NoyonTelecomBD" target="_blank" rel="noreferrer">📘 Facebook</a>
+              {facebookUrl && <a href={facebookUrl} target="_blank" rel="noreferrer">📘 Facebook</a>}
             </p>
           </div>
           <div>
@@ -108,7 +108,7 @@ export default function Footer() {
             <p><Link to="/blog">{t('footer.blog')}</Link></p>
             <p><Link to="/about">{t('footer.aboutUs')}</Link></p>
             <p><Link to="/request-quote">{t('footer.requestBulkQuote')}</Link></p>
-            <p><Link to="/refund-policy">{t('footer.warrantyReturns')}</Link></p>
+            <p><Link to="/warranty-policy">{t('footer.warrantyReturns')}</Link></p>
             <p><Link to="/contact">{t('footer.contactUsLower')}</Link></p>
             <p><Link to="/register">{t('nav.becomeDealer')}</Link></p>
           </div>
@@ -138,23 +138,6 @@ export default function Footer() {
               <span>{t('footer.sslEncrypted')}</span>
             </div>
           </div>
-          {/* [[ EDIT: Trustpilot link only works once you've claimed a
-              trustpilot.com/evaluate business profile — until then this
-              points nowhere useful, so either set it up or remove this
-              badge; a "Trustpilot" badge that 404s does more harm than
-              having no badge at all. ]] */}
-          <a
-            className="trust-badge trust-badge-link"
-            href="https://www.trustpilot.com/evaluate/noyontelecom.com"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <StarIcon />
-            <div>
-              <strong>{t('footer.reviewedOnTrustpilot')}</strong>
-              <span>{t('footer.seeCustomerReviews')}</span>
-            </div>
-          </a>
         </div>
 
         <CityscapeStrip />

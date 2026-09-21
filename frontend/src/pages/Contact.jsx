@@ -1,48 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api, getRecaptchaToken } from '../api';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackRequestQuote } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
+import { BUSINESS_HOURS } from '../content/businessHours.js';
 
-const LOCAL_BUSINESS_JSON_LD = {
-  id: 'local-business',
-  data: {
-    '@context': 'https://schema.org',
-    '@type': 'Store',
-    name: 'Noyon Telecom',
-    image: 'https://noyontelecom.com/apple-touch-icon.png',
-    url: 'https://noyontelecom.com',
-    telephone: '+880-1560-047377',
-    priceRange: '৳৳',
-    sameAs: ['https://www.facebook.com/NoyonTelecomBD'],
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: '4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan',
-      addressLocality: 'Dhaka',
-      postalCode: '1000',
-      addressCountry: 'BD',
+// `facebookUrl` is null until the settings fetch below resolves (or stays
+// null forever if it's not configured) — sameAs is only included once it's
+// a real value, since an empty string there would be invalid structured data.
+function buildLocalBusinessJsonLd(facebookUrl) {
+  return {
+    id: 'local-business',
+    data: {
+      '@context': 'https://schema.org',
+      '@type': 'Store',
+      name: 'Noyon Telecom',
+      image: 'https://noyontelecom.com/apple-touch-icon.png',
+      url: 'https://noyontelecom.com',
+      telephone: '+880-1560-047377',
+      priceRange: '৳৳',
+      ...(facebookUrl ? { sameAs: [facebookUrl] } : {}),
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: '4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan',
+        addressLocality: 'Dhaka',
+        postalCode: '1000',
+        addressCountry: 'BD',
+      },
+      // Sourced from content/businessHours.js — same single source of truth
+      // as the navbar hotline line and homepage trust strip, so this
+      // structured data can never drift from what's actually displayed.
+      // Never invent geo-coordinates Google can't verify against the
+      // storefront itself.
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: BUSINESS_HOURS.days,
+        opens: BUSINESS_HOURS.opens,
+        closes: BUSINESS_HOURS.closes,
+      },
     },
-    // Mirrors the real hours shown on this page (contact.hoursValue) —
-    // Sat-Thu 10am-7pm, closed Friday (the standard weekly holiday in
-    // Bangladesh) — never invent hours/geo-coordinates Google can't verify
-    // against the storefront itself.
-    openingHoursSpecification: {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
-      opens: '10:00',
-      closes: '19:00',
-    },
-  },
-};
+  };
+}
 
 export default function Contact() {
   const { t } = useLanguage();
-  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, null, LOCAL_BUSINESS_JSON_LD);
   const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Both fetched from backend config rather than hardcoded here — email
+  // used to show a personal Gmail address baked straight into frontend
+  // source, and the Facebook URL was duplicated in three separate files.
+  const [contactEmail, setContactEmail] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+
+  useEffect(() => {
+    api.get('/settings/public').then((d) => {
+      setContactEmail(d.contactEmail);
+      setFacebookUrl(d.facebookUrl || '');
+    }).catch(() => {});
+  }, []);
+
+  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, null, buildLocalBusinessJsonLd(facebookUrl));
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -73,7 +93,7 @@ export default function Contact() {
       <div className="contact-grid">
         <div className="contact-info">
           <h3>{t('contact.contactDetails')}</h3>
-          <p><strong>{t('contact.email')}</strong> mdsamirhossen180@gmail.com</p>
+          {contactEmail && <p><strong>{t('contact.email')}</strong> {contactEmail}</p>}
           <p><strong>{t('contact.phone')}</strong> +880 1560-047377</p>
           <p><strong>{t('contact.address')}</strong> ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০</p>
           <p><strong>{t('contact.hours')}</strong> {t('contact.hoursValue')}</p>

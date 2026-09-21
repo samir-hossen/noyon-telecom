@@ -16,6 +16,7 @@ import 'dotenv/config';
 import prisma from './prismaClient.js';
 import { DISPLAY_PRICE_LIST } from './data/displayPriceList.js';
 import { detectBrandFromText } from './utils/brand.js';
+import { computeReadyToSell } from './utils/productQuery.js';
 
 // Previously pointed at a hotlinked Unsplash photo as a "shared neutral
 // placeholder" — that's an external network dependency on every pageview
@@ -48,6 +49,7 @@ function buildProduct({ models, price }) {
     img: PLACEHOLDER_IMAGE,
     price,
     stock: 50,
+    readyToSell: computeReadyToSell(50, price),
     sku,
     brand,
     compatibleModels: models,
@@ -76,6 +78,10 @@ async function main() {
           desc: product.desc,
           compatibleModels: product.compatibleModels,
           brand: existing.brand ? undefined : product.brand,
+          // Existing stock is never touched here (an admin's real count),
+          // but a price change alone can flip sellability, so this still
+          // needs recomputing against the *existing* row's actual stock.
+          readyToSell: computeReadyToSell(existing.stock, product.price),
         },
       });
       updated += 1;

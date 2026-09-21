@@ -54,12 +54,27 @@ export function buildProductWhere({ category, brand, search, status } = {}) {
   return where;
 }
 
+// A product is actually sellable right now when it has real stock AND a
+// real price (0 is the existing "contact us for price" convention — see
+// serialize.js/ProductCard.jsx's priceUnavailable check — not a sellable
+// price). Kept in sync on every create/update/import/restore (see
+// admin.routes.js) rather than computed by the database, so `readyToSell`
+// is a plain, always-correct application value the default sort below can
+// just read.
+export function computeReadyToSell(stock, price) {
+  return Number(stock) > 0 && Number(price) > 0;
+}
+
 // Builds a Prisma `orderBy` clause from a `sort` query param.
 export function buildProductOrderBy(sort) {
   if (sort === 'price-asc') return { price: 'asc' };
   if (sort === 'price-desc') return { price: 'desc' };
   if (sort === 'rating') return { rating: 'desc' };
-  return { createdAt: 'desc' };
+  // Default ("Featured"): sellable products (in stock, real price) surface
+  // first; out-of-stock/unpriced ones sink to the end instead of being
+  // interleaved by raw creation date — newest-first within each of those
+  // two groups.
+  return [{ readyToSell: 'desc' }, { createdAt: 'desc' }];
 }
 
 // Clamps/normalizes page + limit query params into safe integers, so a

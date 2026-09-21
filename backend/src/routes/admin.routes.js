@@ -4,7 +4,7 @@ import prisma from '../prismaClient.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeOrder } from '../utils/serialize.js';
-import { buildProductWhere, buildProductOrderBy, parsePagination } from '../utils/productQuery.js';
+import { buildProductWhere, parsePagination, computeReadyToSell } from '../utils/productQuery.js';
 import { logAdminAction } from '../utils/audit.js';
 import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js';
 import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '../utils/totp.js';
@@ -101,6 +101,7 @@ router.post('/products', requireCsrf, async (req, res, next) => {
         price: parseFloat(p.price),
         compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
         stock: parseInt(p.stock, 10) || 0,
+        readyToSell: computeReadyToSell(parseInt(p.stock, 10) || 0, parseFloat(p.price)),
         sku: p.sku || null,
         // Auto-fills from a brand word already written in the name (e.g.
         // "Samsung Galaxy A12 Display" -> "Samsung") when the admin didn't
@@ -139,6 +140,11 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
     // hasn't run yet) — a product that already has one keeps it forever, even
     // across a name change, so an already-shared/indexed URL never breaks.
     const slug = existing && !existing.slug ? await assignUniqueSlug(prisma, p.name || existing.name, existing.id) : undefined;
+    // Recomputed from whichever of stock/price is actually changing (falling
+    // back to the existing row's current value for whichever one isn't) so
+    // a price-only or stock-only edit still leaves readyToSell correct.
+    const finalStock = p.stock !== undefined ? parseInt(p.stock, 10) : existing?.stock;
+    const finalPrice = p.price !== undefined ? parseFloat(p.price) : existing?.price;
     const updated = await prisma.product.update({
       where: { id: req.params.id },
       data: {
@@ -152,6 +158,7 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
         price: p.price !== undefined ? parseFloat(p.price) : undefined,
         compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
         stock: p.stock !== undefined ? parseInt(p.stock, 10) : undefined,
+        readyToSell: computeReadyToSell(finalStock, finalPrice),
         sku: p.sku !== undefined ? (p.sku || null) : undefined,
         // Same auto-fill-from-name fallback as create — only kicks in when
         // the admin submitted an empty brand, so it can't clobber a brand
@@ -237,7 +244,11 @@ router.get('/products', async (req, res, next) => {
       search: req.query.search,
       status: (req.query.status || 'all').toString(), // all | published | draft
     });
-    const orderBy = buildProductOrderBy(); // admin list has no sort control — always newest first
+    // Deliberately NOT buildProductOrderBy()'s default — that puts sellable
+    // (in-stock, priced) products first for the storefront, but an admin
+    // managing the catalog (e.g. checking what just got bulk-imported)
+    // specifically needs plain newest-first, unfiltered by sellability.
+    const orderBy = { createdAt: 'desc' };
     const { page, limit, skip, take } = parsePagination(req.query, { defaultLimit: 50 });
 
     const [rows, total] = await Promise.all([
@@ -316,7 +327,9 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
         compareAt: r.compareAt ? parseFloat(r.compareAt) : null,
         stock: parseInt(r.stock, 10) || 0,
         sku: r.sku ? String(r.sku).trim() : null,
-        brand: r.brand ? String(r.brand).trim() : null,
+        // Same auto-fill-from-name fallback as the single-product create/
+        // update routes — only used when the spreadsheet row left brand blank.
+        brand: r.brand ? String(r.brand).trim() : detectBrandFromText(r.name),
         compatibleModels: r.compatibleModels
           ? String(r.compatibleModels).split(',').map((m) => m.trim()).filter(Boolean)
           : [],
@@ -333,6 +346,7 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
         images: r.images ? String(r.images).split(',').map((s) => s.trim()).filter(Boolean) : [],
       };
       data.img = data.images[0] || '';
+      data.readyToSell = computeReadyToSell(data.stock, data.price);
 
       try {
         const existingId = data.sku ? existingBySku.get(data.sku) : null;
@@ -1017,6 +1031,11 @@ router.post('/backup/restore', requireCsrf, async (req, res, next) => {
           const { id, ...rest } = p;
           delete rest.createdAt;
           delete rest.updatedAt;
+          // Always recomputed rather than trusted from the backup file — a
+          // backup taken before this field existed won't have it at all
+          // (Prisma would otherwise default a restored *new* row to false
+          // regardless of its actual stock/price).
+          rest.readyToSell = computeReadyToSell(rest.stock, rest.price);
           return prisma.product.upsert({ where: { id }, create: { id, ...rest }, update: rest });
         })
       );

@@ -62,9 +62,6 @@ export default function AboutUs() {
           <li>🚚 &nbsp;{t('about.reasonDelivery')}</li>
           <li>💬 &nbsp;{t('about.reasonSupport')}</li>
           <li>🛡️ &nbsp;{t('about.reasonWarranty')}</li>
-          <li>
-            🏢 &nbsp;{t('about.reasonLicense')}
-          </li>
         </ul>
       </div>
 

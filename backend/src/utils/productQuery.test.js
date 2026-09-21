@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProductWhere, buildProductOrderBy, parsePagination, MAX_LIMIT } from './productQuery.js';
+import { buildProductWhere, buildProductOrderBy, parsePagination, MAX_LIMIT, computeReadyToSell } from './productQuery.js';
 
 test('buildProductWhere', async (t) => {
   await t.test('defaults to published-only when status is not provided (storefront case)', () => {
@@ -81,16 +81,31 @@ test('buildProductWhere', async (t) => {
 });
 
 test('buildProductOrderBy', async (t) => {
-  await t.test('defaults to newest first', () => {
-    assert.deepEqual(buildProductOrderBy(), { createdAt: 'desc' });
-    assert.deepEqual(buildProductOrderBy(''), { createdAt: 'desc' });
-    assert.deepEqual(buildProductOrderBy('not-a-real-sort'), { createdAt: 'desc' });
+  await t.test('defaults to sellable-first, then newest', () => {
+    const expected = [{ readyToSell: 'desc' }, { createdAt: 'desc' }];
+    assert.deepEqual(buildProductOrderBy(), expected);
+    assert.deepEqual(buildProductOrderBy(''), expected);
+    assert.deepEqual(buildProductOrderBy('not-a-real-sort'), expected);
   });
 
   await t.test('recognizes price-asc, price-desc, and rating', () => {
     assert.deepEqual(buildProductOrderBy('price-asc'), { price: 'asc' });
     assert.deepEqual(buildProductOrderBy('price-desc'), { price: 'desc' });
     assert.deepEqual(buildProductOrderBy('rating'), { rating: 'desc' });
+  });
+});
+
+test('computeReadyToSell', async (t) => {
+  await t.test('true only when both stock and price are positive', () => {
+    assert.equal(computeReadyToSell(5, 100), true);
+    assert.equal(computeReadyToSell(0, 100), false);
+    assert.equal(computeReadyToSell(5, 0), false);
+    assert.equal(computeReadyToSell(0, 0), false);
+  });
+
+  await t.test('coerces string inputs (e.g. straight from req.body/CSV parsing)', () => {
+    assert.equal(computeReadyToSell('5', '100'), true);
+    assert.equal(computeReadyToSell('0', '100'), false);
   });
 });
 

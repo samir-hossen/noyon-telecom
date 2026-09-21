@@ -59,7 +59,11 @@
       rel="stylesheet"
     />
 
-    <!-- Organization + WebSite structured data -->
+    <!-- Organization + WebSite structured data. sameAs below is hardcoded
+         (this file is static, built once — it can't read the backend's
+         SOCIAL_FACEBOOK_URL at request time the way Footer.jsx/Contact.jsx
+         do via GET /api/settings/public); update it by hand here if that
+         env var ever changes, or drop the sameAs line if the page is removed. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

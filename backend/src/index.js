@@ -69,3 +69,12 @@ import('./backfillProductBrands.js')
     if (fixed > 0) console.log(`Boot: assigned a brand to ${fixed} product(s) from their name.`);
   })
   .catch((err) => console.error('Boot: backfillProductBrands failed (non-fatal):', err.message));
+
+// Same reasoning again: recomputes `readyToSell` for any product whose
+// stored value doesn't match its current stock/price.
+import('./backfillReadyToSell.js')
+  .then(({ backfillReadyToSell }) => backfillReadyToSell())
+  .then((fixed) => {
+    if (fixed > 0) console.log(`Boot: recomputed readyToSell for ${fixed} product(s).`);
+  })
+  .catch((err) => console.error('Boot: backfillReadyToSell failed (non-fatal):', err.message));

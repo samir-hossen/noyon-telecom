@@ -31,10 +31,12 @@ const FEATURES = [
   },
   {
     key: 'support',
-    // Matches the actual stated hours (Navbar hotline, Footer, Contact page
-    // all say 9 AM–8 PM / Sat–Thu) — this badge previously claimed "24/7
-    // Support", which doesn't match reality and could reasonably annoy a
-    // customer who tries the hotline outside those hours expecting it.
+    // Sourced from content/businessHours.js (via this same translation key
+    // reused across Navbar's hotline line and the Contact page) so this
+    // never drifts from the actual stated hours again — this badge
+    // previously claimed "24/7 Support", which doesn't match reality and
+    // could reasonably annoy a customer who tries the hotline outside those
+    // hours expecting it.
     titleKey: 'home.trustSupportTitle',
     subKey: 'home.trustSupportSub',
     color: '#7c3aed',

@@ -97,6 +97,13 @@ model Product {
   price       Float
   compareAt   Float?
   stock       Int      @default(0)
+  // Denormalized `stock > 0 && price > 0` — kept in sync by the app (create/
+  // update/import/restore) rather than a Postgres generated column, so it
+  // stays plain application logic instead of a DB-level quirk write paths
+  // have to specially avoid. Lets the default shop sort put sellable
+  // products first without a raw-SQL CASE expression in every query — see
+  // utils/productQuery.js's buildProductOrderBy.
+  readyToSell Boolean  @default(false)
   rating      Float    @default(0)
   reviewCount Int      @default(0)
   createdAt   DateTime @default(now())
@@ -137,6 +144,7 @@ model Product {
   @@index([sku])
   @@index([stock])
   @@index([published])
+  @@index([readyToSell])
 }
 
 model Review {
