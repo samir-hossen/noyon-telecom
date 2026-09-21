@@ -79,6 +79,17 @@ router.post('/', quoteLimiter, optionalAuth, requireCsrf, async (req, res, next)
         .join('\n')}\n\nMessage: ${quote.message || '(none)'}`,
     }).catch(() => {});
 
+    // Confirms receipt to the person who requested it — previously only the
+    // admin was ever notified, so a customer had no record that their RFQ
+    // actually went through besides the on-screen success message.
+    sendMail({
+      to: quote.email,
+      subject: 'Your quote request has been received — Noyon Telecom',
+      text: `Hi ${quote.name},\n\nThanks for your quote request for ${cleanItems.length} item(s):\n${cleanItems
+        .map((i) => `- ${i.name} x${i.qty}${i.sku ? ` [${i.sku}]` : ''}`)
+        .join('\n')}\n\nWe'll review it and get back to you with pricing soon. If you have questions in the meantime, call or WhatsApp us at +880 1560-047377.\n\n— Noyon Telecom`,
+    }).catch(() => {});
+
     res.status(201).json({ quote: serializeQuote(quote) });
   } catch (err) {
     next(err);

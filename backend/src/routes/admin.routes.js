@@ -568,6 +568,19 @@ router.patch('/dealers/:id/status', requireCsrf, async (req, res, next) => {
       },
     });
     await logAdminAction(req.user, 'dealer.status', { dealerId: updated.id, status });
+
+    // Only on an actual status change — not e.g. an admin just editing the
+    // discount percent on an already-approved dealer, which would otherwise
+    // re-send the same "you're approved" email every time.
+    if (existing && existing.dealerStatus !== status && (status === 'approved' || status === 'rejected') && updated.email) {
+      const subject = status === 'approved' ? "You're approved as a Noyon Telecom dealer!" : 'Update on your Noyon Telecom dealer application';
+      const text =
+        status === 'approved'
+          ? `Hi ${updated.name},\n\nGood news — your dealer account has been approved! You now have access to dealer pricing${updated.dealerDiscountPercent ? ` with an extra ${updated.dealerDiscountPercent}% discount` : ''} on every order.\n\nLog in and start ordering: ${process.env.FRONTEND_URL || 'https://noyontelecom.com'}/login\n\n— Noyon Telecom`
+          : `Hi ${updated.name},\n\nThanks for your interest in becoming a Noyon Telecom dealer. We're unable to approve your application at this time. If you have questions, feel free to contact us.\n\n— Noyon Telecom`;
+      sendMail({ to: updated.email, subject, text }).catch((err) => console.error('Failed to send dealer status email:', updated.id, err.message));
+    }
+
     res.json({
       dealer: {
         id: updated.id,

@@ -213,6 +213,29 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
       console.error('Failed to send order WhatsApp alert:', order.id, err.message)
     );
 
+    // Customer order-confirmation email — the SMS above already confirms
+    // placement, but a customer who does check email had no record of their
+    // order beyond the on-screen confirmation page until now. `shipping.email`
+    // is the address actually entered at checkout regardless of guest vs
+    // logged-in (same one `guestEmail` is set from above), so it's used
+    // directly rather than requiring a separate `include: { user: true }`.
+    const itemLines = order.items.map((i) => `- ${i.name} x${i.qty} — ৳${Math.round(i.price * i.qty).toLocaleString('en-BD')}`).join('\n');
+    sendMail({
+      to: shipping.email,
+      subject: `Order confirmed — #${shortOrderId} — Noyon Telecom`,
+      text: `Hi ${shipping.name},\n\nThanks for your order! Here's a summary:\n\n${itemLines}\n\nTotal: ৳${Math.round(order.total).toLocaleString('en-BD')}\nPayment: ${payment.method === 'cod' ? 'Cash on Delivery' : 'Online payment'}\n\nWe'll text you at ${shipping.phone} once it ships. You can also check your order status anytime at ${process.env.FRONTEND_URL || 'https://noyontelecom.com'}/order-confirmation/${order.id}\n\n— Noyon Telecom`,
+    }).catch((err) => console.error('Failed to send order confirmation email:', order.id, err.message));
+
+    // Admin-facing email notification — the WhatsApp alert above is the
+    // primary real-time channel, but that depends on CallMeBot being
+    // configured (see utils/whatsapp.js) and can be missed; every order
+    // unconditionally gets an email too, not just the low-stock case below.
+    sendMail({
+      to: process.env.STORE_CONTACT_EMAIL || 'support@noyontelecom.com',
+      subject: `New order #${shortOrderId} — ৳${Math.round(order.total).toLocaleString('en-BD')}`,
+      text: `New order from ${shipping.name} (${shipping.phone}, ${shipping.email}):\n\n${itemLines}\n\nTotal: ৳${Math.round(order.total).toLocaleString('en-BD')}\nPayment: ${payment.method === 'cod' ? 'Cash on Delivery' : 'Online payment'}\nDelivery address: ${shipping.address}, ${shipping.city}`,
+    }).catch((err) => console.error('Failed to send admin order notification email:', order.id, err.message));
+
     // Cash-on-delivery orders are "purchased" the moment they're placed (no
     // separate payment-gateway confirmation step) — fire the server-side
     // Purchase event here. Online-payment orders fire this instead from
@@ -235,6 +258,45 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
     }
   } catch (err) {
     if (err instanceof HttpError) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
+// Strips everything but digits and keeps the last 10 — a BD mobile number
+// typed as "01712345678", "+8801712345678", or "8801712345678" all reduce
+// to the same "1712345678", so a customer doesn't need to match the exact
+// format they originally checked out with.
+function normalizePhoneDigits(phone) {
+  return String(phone || '').replace(/\D/g, '').slice(-10);
+}
+
+// Guest-friendly order tracking by order number + phone — no account or
+// email needed, matching the "enter your order number and phone" flow most
+// courier/e-commerce sites offer. `orderNumber` is the short 8-character id
+// shown in the confirmation SMS/email/page (see `shortOrderId` in the
+// checkout handler above), not the full cuid, so this matches on the id's
+// suffix rather than requiring the whole thing. Placed before GET /:id
+// (which treats any single path segment as an id) since this is a distinct
+// two-segment path, but kept up here for clarity regardless.
+router.get('/track/lookup', async (req, res, next) => {
+  try {
+    const orderNumber = String(req.query.orderNumber || '').trim().toLowerCase();
+    const phone = normalizePhoneDigits(req.query.phone);
+    if (!orderNumber || phone.length < 10) {
+      return res.status(400).json({ error: 'Enter both your order number and phone number.' });
+    }
+    // At most a handful of rows ever share an 8-character id suffix — cuids
+    // are effectively random, so this is not a meaningful full-table scan.
+    const candidates = await prisma.order.findMany({
+      where: { id: { endsWith: orderNumber } },
+      include: { items: true },
+    });
+    const order = candidates.find((o) => normalizePhoneDigits(o.shipping?.phone) === phone);
+    if (!order) {
+      return res.status(404).json({ error: 'No matching order found. Double-check your order number and phone number.' });
+    }
+    res.json({ order: serializeOrder(order) });
+  } catch (err) {
     next(err);
   }
 });

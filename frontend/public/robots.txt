@@ -14,5 +14,6 @@ Disallow: /verify-email
 Disallow: /wishlist
 Disallow: /order-confirmation
 Disallow: /invoice
+Disallow: /track-order
 
 Sitemap: https://noyontelecom.com/sitemap.xml

@@ -317,6 +317,10 @@ model ContactMessage {
   id        String   @id @default(cuid())
   name      String
   email     String
+  // Nullable at the schema level only because existing rows predate this
+  // column — the API requires it on every new submission (see
+  // contact.routes.js), so this is really "required going forward."
+  phone     String?
   message   String
   createdAt DateTime @default(now())
 }

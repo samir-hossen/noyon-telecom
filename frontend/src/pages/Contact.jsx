@@ -46,7 +46,7 @@ function buildLocalBusinessJsonLd(facebookUrl) {
 export default function Contact() {
   const { t } = useLanguage();
   const { showToast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // Both fetched from backend config rather than hardcoded here — email
@@ -73,7 +73,7 @@ export default function Contact() {
       await api.post('/contact', { ...form, recaptchaToken });
       trackRequestQuote();
       showToast(t('contact.messageSent'), 'success');
-      setForm({ name: '', email: '', message: '' });
+      setForm({ name: '', email: '', phone: '', message: '' });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -111,6 +111,10 @@ export default function Contact() {
           <div className="field">
             <label htmlFor="contact-email">{t('auth.email')}</label>
             <input id="contact-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="contact-phone">{t('checkout.phone')}</label>
+            <input id="contact-phone" type="tel" required placeholder="01XXXXXXXXX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div className="field">
             <label htmlFor="contact-message">{t('contact.message')}</label>

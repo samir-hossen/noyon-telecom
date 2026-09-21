@@ -9,7 +9,9 @@ import { useAuth } from '../context/AuthContext';
 
 const TRACK_STEPS = ['processing', 'shipped', 'delivered'];
 
-function OrderTracker({ status }) {
+// Exported so the guest-facing /track-order page (TrackOrder.jsx) can reuse
+// the exact same visual tracker instead of duplicating it.
+export function OrderTracker({ status }) {
   const { t } = useLanguage();
   if (status === 'cancelled') {
     return <div style={{ fontSize: '0.8rem', color: '#b3261e', marginBottom: 14 }}>{t('orders.cancelledNote')}</div>;

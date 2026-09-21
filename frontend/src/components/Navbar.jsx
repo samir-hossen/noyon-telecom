@@ -108,7 +108,7 @@ export default function Navbar() {
         <div className="container nav-topbar-inner">
           <span><a href="tel:+8801560047377" onClick={() => trackPhoneClick('navbar')}>📞 {t('nav.hotline')}: 01560-047377 ({t('nav.hoursLabel')})</a></span>
           <div className="nav-topbar-right">
-            <Link to="/orders">{t('nav.trackOrder')}</Link>
+            <Link to="/track-order">{t('nav.trackOrder')}</Link>
             <button className="lang-switch" onClick={toggleLang} aria-label={t('nav.switchLanguage')}>
               {lang === 'en' ? '🇺🇸 English' : '🇧🇩 বাংলা'}
               <span className="lang-switch-alt">{lang === 'en' ? '| বাংলা' : '| English'}</span>

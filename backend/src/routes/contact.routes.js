@@ -8,15 +8,15 @@ const router = Router();
 
 router.post('/', requireCsrf, async (req, res, next) => {
   try {
-    const { name, email, message, recaptchaToken } = req.body;
-    if (!name || !email || !message || !message.trim()) {
+    const { name, email, phone, message, recaptchaToken } = req.body;
+    if (!name || !email || !phone || !phone.trim() || !message || !message.trim()) {
       return res.status(400).json({ error: 'Please fill in all fields.' });
     }
     if (!(await verifyRecaptcha(recaptchaToken, 'contact'))) {
       return res.status(400).json({ error: 'Verification failed. Please try again.' });
     }
 
-    await prisma.contactMessage.create({ data: { name, email, message: message.trim() } });
+    await prisma.contactMessage.create({ data: { name, email, phone: phone.trim(), message: message.trim() } });
 
     // Fire-and-forget, like the equivalent RFQ notification in
     // quotes.routes.js — the message is already saved, so a down/misconfigured
@@ -25,7 +25,16 @@ router.post('/', requireCsrf, async (req, res, next) => {
     sendMail({
       to: process.env.STORE_CONTACT_EMAIL || 'support@noyontelecom.com',
       subject: `New contact message from ${name}`,
-      text: `From: ${name} <${email}>\n\n${message}`,
+      text: `From: ${name} <${email}>, ${phone}\n\n${message}`,
+    }).catch(() => {});
+
+    // Confirms receipt so the visitor isn't left wondering whether their
+    // message actually went through — previously only the admin was ever
+    // emailed about a contact submission.
+    sendMail({
+      to: email,
+      subject: "We've received your message — Noyon Telecom",
+      text: `Hi ${name},\n\nThanks for reaching out to Noyon Telecom. We've received your message and will get back to you soon:\n\n"${message}"\n\nIf this is urgent, call or WhatsApp us at +880 1560-047377.\n\n— Noyon Telecom`,
     }).catch(() => {});
 
     res.status(201).json({});

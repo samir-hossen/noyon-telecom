@@ -33,6 +33,7 @@ const Terms = lazy(() => import('./pages/Terms.jsx'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy.jsx'));
 const WarrantyPolicy = lazy(() => import('./pages/WarrantyPolicy.jsx'));
 const DeliveryPolicy = lazy(() => import('./pages/DeliveryPolicy.jsx'));
+const TrackOrder = lazy(() => import('./pages/TrackOrder.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
 const AboutUs = lazy(() => import('./pages/AboutUs.jsx'));
 const RequestQuote = lazy(() => import('./pages/RequestQuote.jsx'));
@@ -139,6 +140,7 @@ export default function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
           <Route path="/invoice/:id" element={<Invoice />} />
+          <Route path="/track-order" element={<TrackOrder />} />
           <Route
             path="/orders"
             element={
