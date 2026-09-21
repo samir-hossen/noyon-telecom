@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../api';
+import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -164,7 +164,7 @@ export default function HeroCarousel() {
           {banners.map((b, i) => {
             const img = (
               <img
-                src={b.imageUrl}
+                src={resolveImg(b.imageUrl, 1200)}
                 alt={b.altText || ''}
                 width="1200"
                 height="900"

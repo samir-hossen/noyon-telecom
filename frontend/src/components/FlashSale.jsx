@@ -95,7 +95,7 @@ export default function FlashSale({ products, onAdd }) {
                 <Link to={`/product/${p.id}`} className="deal-img">
                   <span className="deal-badge">-{pct}%</span>
                   <img
-                    src={resolveImg(p.img)}
+                    src={resolveImg(p.img, 300)}
                     alt={p.name}
                     loading="lazy"
                     decoding="async"

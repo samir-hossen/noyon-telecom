@@ -65,7 +65,7 @@ export default function ProductCard({ product, onAdd }) {
           >
             {saved ? '♥' : '♡'}
           </button>
-          <img src={resolveImg(product.img)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+          <img src={resolveImg(product.img, 400)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
         </div>
       </Link>
       <div className="card-body">

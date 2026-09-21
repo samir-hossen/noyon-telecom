@@ -14,6 +14,26 @@ import { FALLBACK_IMG } from './utils/fallbackImage';
 // image URLs, 404ing every locally-stored (non-Cloudinary) product photo.
 const BASE = (import.meta.env.VITE_API_URL || '/api').trim();
 
+// Cloudinary-hosted images (the production path — see backend/src/utils/
+// upload.js) can be auto-optimized for free with nothing more than a URL
+// rewrite: f_auto serves WebP/AVIF to browsers that support it (falling
+// back to JPEG/PNG otherwise) and q_auto picks the smallest quality level
+// that still looks right, both computed by Cloudinary on the fly, no
+// dashboard config or paid add-on needed. `width` additionally caps the
+// delivered image to roughly the size it's actually displayed at — a
+// product grid thumbnail has no reason to ship the same full-resolution
+// photo as the product detail page's hero image. This was DEPLOYMENT.md's
+// own "suggested next step" (image optimization / responsive images) —
+// smaller images directly help LCP (a real Google ranking factor) and
+// mobile data usage for customers on slower connections.
+// The `/upload/f_auto` check guards against ever double-applying this if
+// resolveImg is called more than once on an already-transformed URL.
+function applyCloudinaryTransform(url, width) {
+  if (!url.includes('res.cloudinary.com') || !url.includes('/upload/') || url.includes('/upload/f_auto')) return url;
+  const transform = width ? `f_auto,q_auto,w_${width}` : 'f_auto,q_auto';
+  return url.replace('/upload/', `/upload/${transform}/`);
+}
+
 // Uploaded product images are served from the backend (e.g. /uploads/xyz.png).
 // In local dev, Vite's proxy handles this automatically. In production, when
 // the frontend and backend live on different domains, this resolves the
@@ -25,9 +45,13 @@ const BASE = (import.meta.env.VITE_API_URL || '/api').trim();
 // spots that don't wire up an onError handler. Every visible product <img>
 // should still add onError -> FALLBACK_IMG too, since this only covers a
 // missing field, not a URL that 404s (deleted upload, broken Cloudinary link).
-export function resolveImg(src) {
+// `width` (optional): see applyCloudinaryTransform above — pass the
+// roughly-displayed width for anything rendered smaller than full size
+// (grid thumbnails, avatars) so Cloudinary doesn't ship more pixels than
+// will ever be shown.
+export function resolveImg(src, width) {
   if (!src) return FALLBACK_IMG;
-  if (!src.startsWith('/uploads')) return src;
+  if (!src.startsWith('/uploads')) return applyCloudinaryTransform(src, width);
   const apiOrigin = BASE.replace(/\/api\/?$/, '');
   return apiOrigin ? `${apiOrigin}${src}` : src;
 }

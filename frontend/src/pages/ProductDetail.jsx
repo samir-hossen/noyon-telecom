@@ -346,7 +346,7 @@ export default function ProductDetail() {
         <div>
           <div className="pd-img">
             <img
-              src={resolveImg(gallery[activeImg] || gallery[0])}
+              src={resolveImg(gallery[activeImg] || gallery[0], 800)}
               alt={product.name}
               loading="eager"
               decoding="async"
@@ -365,7 +365,7 @@ export default function ProductDetail() {
                   className={`pd-thumb ${i === activeImg ? 'active' : ''}`}
                 >
                   <img
-                    src={resolveImg(img)}
+                    src={resolveImg(img, 120)}
                     alt={`${product.name} thumbnail ${i + 1}`}
                     loading="lazy"
                     decoding="async"

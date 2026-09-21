@@ -19,4 +19,29 @@ describe('resolveImg', () => {
     // local-dev behavior rather than asserting a hardcoded backend origin.
     expect(resolveImg('/uploads/product-1.png')).toBe('/uploads/product-1.png');
   });
+
+  describe('Cloudinary auto-optimization', () => {
+    const cloudinaryUrl = 'https://res.cloudinary.com/demo/image/upload/v1234567890/noyontelecom-products/abc123.jpg';
+
+    it('injects f_auto,q_auto for a Cloudinary URL with no width given', () => {
+      expect(resolveImg(cloudinaryUrl)).toBe(
+        'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1234567890/noyontelecom-products/abc123.jpg'
+      );
+    });
+
+    it('also caps the width when one is given, for a grid thumbnail', () => {
+      expect(resolveImg(cloudinaryUrl, 400)).toBe(
+        'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_400/v1234567890/noyontelecom-products/abc123.jpg'
+      );
+    });
+
+    it('never double-applies the transform if called twice on an already-transformed URL', () => {
+      const once = resolveImg(cloudinaryUrl, 400);
+      expect(resolveImg(once, 400)).toBe(once);
+    });
+
+    it('leaves a non-Cloudinary URL untouched even with a width given', () => {
+      expect(resolveImg('https://cdn.example.com/photo.jpg', 400)).toBe('https://cdn.example.com/photo.jpg');
+    });
+  });
 });

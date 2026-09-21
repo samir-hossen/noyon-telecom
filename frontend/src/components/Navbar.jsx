@@ -151,7 +151,7 @@ export default function Navbar() {
                     className="nav-suggest-item"
                     onClick={() => setSuggestOpen(false)}
                   >
-                    <img src={resolveImg(p.img)} alt="" loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+                    <img src={resolveImg(p.img, 100)} alt="" loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
                     <div>
                       <span className="nav-suggest-name">{p.name}</span>
                       <span className="nav-suggest-meta">{p.sku ? `SKU: ${p.sku} · ` : ''}{formatPrice(p.price)}</span>
