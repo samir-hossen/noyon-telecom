@@ -69,3 +69,16 @@ export function trackRequestQuote(product) {
   fbqTrack('Lead', { content_name: product?.name });
   ttqTrack('SubmitForm', { content_name: product?.name });
 }
+
+// `source` identifies which link was clicked (e.g. "footer", "navbar",
+// "product_detail") so GA4/Meta reporting can tell which placement actually
+// drives contact clicks, without needing a separate event name per location.
+export function trackWhatsappClick(source) {
+  trackEvent('whatsapp_click', { content_name: source });
+  fbqTrack('Contact', { content_name: source });
+}
+
+export function trackPhoneClick(source) {
+  trackEvent('phone_click', { content_name: source });
+  fbqTrack('Contact', { content_name: source });
+}

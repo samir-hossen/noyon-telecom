@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { useToast } from '../context/ToastContext';
+import { trackWhatsappClick } from '../ecommerce.js';
 
 export default function DealerDashboard() {
   const { user, setUser } = useAuth();
@@ -201,6 +202,7 @@ export default function DealerDashboard() {
           href="https://wa.me/8801560047377?text=Hi%2C%20I%27d%20like%20a%20bulk%20quotation"
           target="_blank"
           rel="noreferrer"
+          onClick={() => trackWhatsappClick('dealer_dashboard')}
           className="btn btn-primary"
         >
           {t('product.requestQuote')}

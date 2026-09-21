@@ -5,9 +5,39 @@ import { usePageMeta } from '../hooks/usePageTitle';
 import { trackRequestQuote } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
 
+const LOCAL_BUSINESS_JSON_LD = {
+  id: 'local-business',
+  data: {
+    '@context': 'https://schema.org',
+    '@type': 'Store',
+    name: 'Noyon Telecom',
+    image: 'https://noyontelecom.com/apple-touch-icon.png',
+    url: 'https://noyontelecom.com',
+    telephone: '+880-1560-047377',
+    priceRange: '৳৳',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan',
+      addressLocality: 'Dhaka',
+      postalCode: '1000',
+      addressCountry: 'BD',
+    },
+    // Mirrors the real hours shown on this page (contact.hoursValue) —
+    // Sat-Thu 10am-7pm, closed Friday (the standard weekly holiday in
+    // Bangladesh) — never invent hours/geo-coordinates Google can't verify
+    // against the storefront itself.
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+      opens: '10:00',
+      closes: '19:00',
+    },
+  },
+};
+
 export default function Contact() {
   const { t } = useLanguage();
-  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'));
+  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, null, LOCAL_BUSINESS_JSON_LD);
   const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [busy, setBusy] = useState(false);

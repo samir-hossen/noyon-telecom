@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
+import { trackWhatsappClick } from '../ecommerce.js';
 
 // Text fields are translation keys (see i18n/translations.js hero.slideN.*),
 // not literal strings — img/alt/to stay as-is since they're asset paths and
@@ -233,7 +234,11 @@ export default function HeroCarousel() {
                       silently overrode the :hover rule — the button's border
                       could never change on hover, and the two border-colour
                       values written for it in index.css were dead code. */}
-                  <Link to={s.cta2.to} className="btn btn-outline">
+                  <Link
+                    to={s.cta2.to}
+                    className="btn btn-outline"
+                    onClick={s.cta2.to.startsWith('https://wa.me') ? () => trackWhatsappClick('hero_carousel') : undefined}
+                  >
                     {t(s.cta2.labelKey)}
                   </Link>
                 </div>

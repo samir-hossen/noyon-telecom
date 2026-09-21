@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { trackWhatsappClick } from '../ecommerce.js';
 
 const CHANNELS = [
   {
@@ -54,6 +55,7 @@ export default function SupportWidget() {
               rel="noopener noreferrer"
               className="support-channel"
               style={{ '--channel-color': c.color }}
+              onClick={c.key === 'whatsapp' ? () => trackWhatsappClick('support_widget') : undefined}
             >
               <span className="support-channel-icon">{c.icon}</span>
               {c.label}

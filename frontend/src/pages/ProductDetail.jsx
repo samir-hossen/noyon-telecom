@@ -10,7 +10,7 @@ import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import ProductCard from '../components/ProductCard.jsx';
-import { trackViewItem, trackRequestQuote } from '../ecommerce.js';
+import { trackViewItem, trackRequestQuote, trackWhatsappClick } from '../ecommerce.js';
 import { getPostForCategory } from '../content/blogPosts';
 import { productUrl } from '../utils/slug';
 
@@ -505,7 +505,10 @@ export default function ProductDetail() {
               href={`https://wa.me/8801560047377?text=${encodeURIComponent(`${t('pd.whatsappMessage', null, { name: product.name })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
               target="_blank"
               rel="noreferrer"
-              onClick={() => trackRequestQuote(product)}
+              onClick={() => {
+                trackRequestQuote(product);
+                trackWhatsappClick('product_detail');
+              }}
             >
               💬 {t('product.whatsappOrder')}
             </a>

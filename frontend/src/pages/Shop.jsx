@@ -8,6 +8,7 @@ import ProductCard from '../components/ProductCard.jsx';
 import { trackSearch } from '../ecommerce.js';
 import { buildPageWindow } from '../utils/pagination.js';
 import { useLanguage } from '../context/LanguageContext';
+import { productUrl } from '../utils/slug';
 
 const PAGE_SIZE = 12;
 
@@ -70,6 +71,51 @@ export default function Shop() {
   const catKey = category !== 'All' ? category.toLowerCase().replace(/-/g, ' ') : null;
   const currentSEO = catKey ? CATEGORY_SEO[catKey] : null;
 
+  // A search-results view (/shop?search=...) canonicalizes back to the
+  // plain /shop or /shop?category=X page above, but that alone still lets
+  // Google index the ?search= URL itself as a separate near-duplicate page;
+  // noindex is the explicit signal the brief asks for on top of that.
+  const isSearchView = Boolean(search);
+
+  // Only added once this page's product grid has actually loaded — an empty
+  // ItemList/CollectionPage would be invalid structured data. Re-fires
+  // whenever `products` changes since usePageMeta diffs jsonLd by
+  // JSON.stringify.
+  const collectionJsonLd = products.length
+    ? {
+        id: 'collection',
+        data: {
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: currentSEO ? currentSEO.h1 : activeFilterName || 'Shop',
+          url: `${window.location.origin}${canonicalPath}`,
+          mainEntity: {
+            '@type': 'ItemList',
+            itemListElement: products.slice(0, 20).map((p, i) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              url: `${window.location.origin}${productUrl(p)}`,
+            })),
+          },
+        },
+      }
+    : null;
+
+  const breadcrumbJsonLd = activeFilterName
+    ? {
+        id: 'breadcrumb',
+        data: {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin },
+            { '@type': 'ListItem', position: 2, name: 'Shop', item: `${window.location.origin}/shop` },
+            { '@type': 'ListItem', position: 3, name: activeFilterName, item: `${window.location.origin}${canonicalPath}` },
+          ],
+        },
+      }
+    : null;
+
   // ডাইনামিক পেজ মেটা ও এসইও হ্যান্ডলার
   usePageMeta(
     search
@@ -88,20 +134,8 @@ export default function Shop() {
       : t('shop.pageMetaDefault'),
     undefined,
     canonicalPath,
-    activeFilterName
-      ? {
-          id: 'breadcrumb',
-          data: {
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin },
-              { '@type': 'ListItem', position: 2, name: 'Shop', item: `${window.location.origin}/shop` },
-              { '@type': 'ListItem', position: 3, name: activeFilterName, item: `${window.location.origin}${canonicalPath}` },
-            ],
-          },
-        }
-      : undefined
+    [breadcrumbJsonLd, collectionJsonLd].filter(Boolean),
+    isSearchView
   );
 
   // Keep the box in sync if the URL changes from elsewhere

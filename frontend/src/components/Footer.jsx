@@ -4,6 +4,7 @@ import { api } from '../api';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import CityscapeStrip from './CityscapeStrip.jsx';
+import { trackWhatsappClick, trackPhoneClick } from '../ecommerce.js';
 
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
@@ -60,7 +61,7 @@ export default function Footer() {
             ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০
           </p>
           <p className="store-address-phone">
-            <a href="tel:+8801560047377">☎ {t('footer.call')} 01560-047377</a>
+            <a href="tel:+8801560047377" onClick={() => trackPhoneClick('footer_address')}>☎ {t('footer.call')} 01560-047377</a>
           </p>
 
           <div className="store-address-links">
@@ -83,10 +84,10 @@ export default function Footer() {
             </div>
             <p style={{ maxWidth: 260 }}>{t('footer.tagline')}</p>
             <p style={{ marginTop: 12 }}>
-              <a href="tel:+8801560047377">📞 {t('footer.hotline')} 01560-047377</a>
+              <a href="tel:+8801560047377" onClick={() => trackPhoneClick('footer_hotline')}>📞 {t('footer.hotline')} 01560-047377</a>
             </p>
             <p>
-              <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer">💬 {t('footer.whatsappUsToOrder')}</a>
+              <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('footer')}>💬 {t('footer.whatsappUsToOrder')}</a>
             </p>
           </div>
           <div>

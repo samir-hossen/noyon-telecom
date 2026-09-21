@@ -8,6 +8,7 @@ import { api, resolveImg } from '../api';
 import { productUrl } from '../utils/slug';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
+import { trackPhoneClick } from '../ecommerce.js';
 
 // Mega menu grouping of the full parts taxonomy — keeps the flat category
 // list from products.routes.js organized into scannable columns.
@@ -104,7 +105,7 @@ export default function Navbar() {
     <header className={`nav ${scrolled ? 'nav-scrolled' : ''}`}>
       <div className="nav-topbar">
         <div className="container nav-topbar-inner">
-          <span><a href="tel:+8801560047377">📞 {t('nav.hotline')}: 01560-047377 (9 AM–8 PM)</a></span>
+          <span><a href="tel:+8801560047377" onClick={() => trackPhoneClick('navbar')}>📞 {t('nav.hotline')}: 01560-047377 (9 AM–8 PM)</a></span>
           <div className="nav-topbar-right">
             <Link to="/orders">{t('nav.trackOrder')}</Link>
             <button className="lang-switch" onClick={toggleLang} aria-label={t('nav.switchLanguage')}>

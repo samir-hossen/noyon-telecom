@@ -1,1 +1,16 @@
+# Real 301 redirects (not a proxy — a prior attempt at a same-origin proxy
+# rewrite for these paths silently fell through to the SPA catch-all instead,
+# since Render's static-site _redirects can serve/rewrite only files that
+# exist in this same static site, never fetch-and-inline an external URL).
+# A 301 needs no fetching — it's just a redirect response — so it works fine
+# here and gets sitemap.xml/robots-declared paths resolving under the
+# storefront's own domain instead of only the backend's onrender.com one:
+# visiting noyontelecom.com/sitemap.xml shows the real XML (browser follows
+# the redirect), and Search Console follows a submitted sitemap's redirect
+# the same way.
+/sitemap.xml            https://noyon-telecom-api.onrender.com/api/sitemap-index.xml     301
+/sitemap-pages.xml      https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml      301
+/sitemap-products.xml   https://noyon-telecom-api.onrender.com/api/sitemap-products.xml   301
+/google-merchant.xml    https://noyon-telecom-api.onrender.com/api/google-merchant.xml    301
+
 /*    /index.html   200

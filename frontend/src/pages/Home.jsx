@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { productUrl } from '../utils/slug';
 import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import HeroCarousel from '../components/HeroCarousel.jsx';
 import ProductCard from '../components/ProductCard.jsx';
@@ -25,23 +26,46 @@ export default function Home() {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
+  // Only added once the featured rail has actually loaded (sections starts
+  // empty on first render) — an ItemList with zero items would be invalid
+  // structured data, and usePageMeta re-runs its effect whenever this array
+  // changes (it diffs jsonLd by JSON.stringify), so this correctly appears
+  // once /products/home-sections resolves.
+  const itemListJsonLd = sections.featured?.length
+    ? {
+        id: 'itemlist',
+        data: {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          itemListElement: sections.featured.slice(0, 10).map((p, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            url: `${window.location.origin}${productUrl(p)}`,
+          })),
+        },
+      }
+    : null;
+
   usePageMeta(
     undefined,
     'Wholesale mobile phone spare parts in Bangladesh — displays, batteries, back glass, charging ports and more, for dealers, shops and service centers.',
     undefined,
     undefined,
-    {
-      id: 'faq',
-      data: {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: FAQS.map((f) => ({
-          '@type': 'Question',
-          name: t(f.qKey),
-          acceptedAnswer: { '@type': 'Answer', text: t(f.aKey) },
-        })),
+    [
+      {
+        id: 'faq',
+        data: {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: FAQS.map((f) => ({
+            '@type': 'Question',
+            name: t(f.qKey),
+            acceptedAnswer: { '@type': 'Answer', text: t(f.aKey) },
+          })),
+        },
       },
-    }
+      itemListJsonLd,
+    ].filter(Boolean)
   );
 
   useEffect(() => {
