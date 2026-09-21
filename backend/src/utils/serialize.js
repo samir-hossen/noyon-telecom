@@ -3,6 +3,7 @@
 export function serializeProduct(p) {
   return {
     id: p.id,
+    slug: p.slug ?? null,
     name: p.name,
     desc: p.desc,
     categories: Array.isArray(p.categories) ? p.categories : [p.category],

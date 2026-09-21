@@ -144,7 +144,7 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
     // so a newly-added product's URL doesn't wait out the TTL to appear.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('sitemap:products-xml', 300, async () => {
-      const products = await prisma.product.findMany({ where: { published: true }, select: { id: true, name: true, updatedAt: true, createdAt: true } });
+      const products = await prisma.product.findMany({ where: { published: true }, select: { id: true, slug: true, name: true, updatedAt: true, createdAt: true } });
       const urls = products
         .map(
           (p) => `  <url>

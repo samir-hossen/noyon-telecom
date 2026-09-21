@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { slugify, productPath } from './slug.js';
+import { slugify, productPath, uniqueSlugFromSet } from './slug.js';
 
 describe('slugify', () => {
   test('lowercases and hyphenates a normal product name', () => {
@@ -23,7 +23,22 @@ describe('slugify', () => {
 });
 
 describe('productPath', () => {
-  test('builds /product/:id/:slug from the id and name', () => {
-    assert.equal(productPath({ id: 'abc123', name: 'Y03T OLED Display' }), '/product/abc123/y03t-oled-display');
+  test('prefers the stored slug for a clean, id-free URL', () => {
+    assert.equal(productPath({ id: 'abc123', name: 'Y03T OLED Display', slug: 'y03t-oled-display' }), '/product/y03t-oled-display');
+  });
+
+  test('falls back to the raw id when slug is missing (still resolves via the backend OR lookup)', () => {
+    assert.equal(productPath({ id: 'abc123', name: 'Y03T OLED Display' }), '/product/abc123');
+  });
+});
+
+describe('uniqueSlugFromSet', () => {
+  test('returns the plain slug when it is not already taken', () => {
+    assert.equal(uniqueSlugFromSet('Battery', new Set()), 'battery');
+  });
+
+  test('appends -2, -3, ... on collision until it finds a free slug', () => {
+    const taken = new Set(['battery', 'battery-2']);
+    assert.equal(uniqueSlugFromSet('Battery', taken), 'battery-3');
   });
 });

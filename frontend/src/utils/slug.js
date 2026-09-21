@@ -1,10 +1,6 @@
-// Turns a product name into a URL-friendly slug, appended after the real
-// id in product links (e.g. /product/cmsribsad.../y03t-display-oled) purely
-// for readability and keyword relevance in the URL — Google and shoppers
-// both read a slug like this far better than an opaque cuid. The id alone
-// is still what's actually used to look the product up (see ProductDetail's
-// useParams), so a stale slug from a since-renamed product, or an old link
-// shared with no slug at all, both keep working exactly the same.
+// Turns a product name into a URL-friendly slug — used as a client-side
+// fallback only (see productUrl below); the real, stored slug a product
+// object carries from the API is always preferred.
 export function slugify(text) {
   return (
     String(text || '')
@@ -15,6 +11,12 @@ export function slugify(text) {
   );
 }
 
+// Clean, id-free URL (e.g. /product/y03t-oled-display) once a product has
+// its real `slug` from the backend — the best-looking, most keyword-relevant
+// form for SEO. Falls back to the raw id for a product object that hasn't
+// loaded `slug` yet (e.g. a cart line item serialized before this field
+// existed), which still resolves fine since the backend's GET /products/:id
+// route accepts either an id or a slug in that position.
 export function productUrl(product) {
-  return `/product/${product.id}/${slugify(product.name)}`;
+  return `/product/${product.slug || product.id}`;
 }

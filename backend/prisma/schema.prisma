@@ -80,6 +80,14 @@ model User {
 
 model Product {
   id          String   @id @default(cuid())
+  // Human-readable URL slug (e.g. "y03t-oled-display"), assigned once at
+  // creation and never changed on a later rename — a stable slug is what
+  // keeps an already-indexed/shared product URL from silently breaking.
+  // Nullable + unique so existing rows can be backfilled gradually (see
+  // backfillProductSlugs.js, run at boot the same way fixBrokenPlaceholderImages
+  // is); Postgres treats every NULL as distinct under a unique index, so
+  // multiple not-yet-backfilled rows can coexist without a constraint error.
+  slug        String?  @unique
   name        String
   desc        String
   categories  Json

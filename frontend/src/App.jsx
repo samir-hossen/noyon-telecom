@@ -95,10 +95,15 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
-          {/* :slug is optional and purely cosmetic (SEO/readability) — the
-              actual lookup is always by :id, so an old bookmarked/shared
-              link with no slug at all still works unchanged. */}
-          <Route path="/product/:id/:slug?" element={<ProductDetail />} />
+          {/* The clean, canonical URL is now just /product/<slug> (no id in
+              it at all) — but :id still accepts a raw product id too (old
+              bare-id links, or a product whose slug backfill hasn't run
+              yet), since the backend resolves either one. :legacySlug is an
+              unused leftover segment from the previous /product/:id/:slug
+              URL shape, kept optional purely so a link already shared or
+              indexed under that shape still matches this route instead of
+              404ing. */}
+          <Route path="/product/:id/:legacySlug?" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/login" element={<Login />} />

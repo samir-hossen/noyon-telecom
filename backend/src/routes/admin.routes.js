@@ -15,6 +15,7 @@ import { getDeliveryFee, setDeliveryFee, getOnlinePaymentEnabled, setOnlinePayme
 import { isSslcommerzConfigured } from '../utils/sslcommerz.js';
 import { isSteadfastConfigured, createConsignment } from '../utils/steadfast.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
+import { assignUniqueSlug } from '../utils/slug.js';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -83,8 +84,13 @@ router.post('/products', requireCsrf, async (req, res, next) => {
     if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || !priceProvided || (!p.category && !p.categories?.length)) {
       return res.status(400).json({ error: 'Missing required product fields' });
     }
+    // Assigned once, up front, and never regenerated on a later rename (see
+    // the update handler below) — a stable slug is what keeps an
+    // already-indexed/shared product URL from silently breaking.
+    const slug = await assignUniqueSlug(prisma, p.name);
     const created = await prisma.product.create({
       data: {
+        slug,
         name: p.name,
         desc: p.desc,
         categories: p.categories?.length ? p.categories : [p.category],
@@ -124,9 +130,14 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
   try {
     const p = req.body;
     const existing = await prisma.product.findUnique({ where: { id: req.params.id } });
+    // Only fills in a missing slug (a pre-backfill row, or one whose backfill
+    // hasn't run yet) — a product that already has one keeps it forever, even
+    // across a name change, so an already-shared/indexed URL never breaks.
+    const slug = existing && !existing.slug ? await assignUniqueSlug(prisma, p.name || existing.name, existing.id) : undefined;
     const updated = await prisma.product.update({
       where: { id: req.params.id },
       data: {
+        slug,
         name: p.name,
         desc: p.desc,
         categories: p.categories?.length ? p.categories : [p.category],

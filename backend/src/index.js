@@ -48,3 +48,15 @@ import('./ensureOwnerAdmin.js')
     if (created) console.log('Boot: created owner admin account.');
   })
   .catch((err) => console.error('Boot: ensureOwnerAdmin failed (non-fatal):', err.message));
+
+// Same reasoning again: backfills the new `slug` column for any product
+// that doesn't have one yet (pre-existing rows, bulk imports, restores) so
+// every product gets a clean /product/<slug> URL without needing Shell
+// access to run it as a one-off job. Idempotent — a no-op once every
+// product already has a slug.
+import('./backfillProductSlugs.js')
+  .then(({ backfillProductSlugs }) => backfillProductSlugs())
+  .then((fixed) => {
+    if (fixed > 0) console.log(`Boot: assigned a URL slug to ${fixed} product(s).`);
+  })
+  .catch((err) => console.error('Boot: backfillProductSlugs failed (non-fatal):', err.message));

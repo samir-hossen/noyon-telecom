@@ -18,7 +18,11 @@ describe('slugify', () => {
 });
 
 describe('productUrl', () => {
-  it('builds /product/:id/:slug from the id and name', () => {
-    expect(productUrl({ id: 'abc123', name: 'Y03T OLED Display' })).toBe('/product/abc123/y03t-oled-display');
+  it('prefers the stored slug for a clean, id-free URL', () => {
+    expect(productUrl({ id: 'abc123', name: 'Y03T OLED Display', slug: 'y03t-oled-display' })).toBe('/product/y03t-oled-display');
+  });
+
+  it('falls back to the raw id when slug is missing (still resolves via the backend OR lookup)', () => {
+    expect(productUrl({ id: 'abc123', name: 'Y03T OLED Display' })).toBe('/product/abc123');
   });
 });

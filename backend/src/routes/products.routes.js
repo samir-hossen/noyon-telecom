@@ -159,7 +159,11 @@ router.get('/', optionalAuth, async (req, res, next) => {
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     setProductCacheControl(req, res);
-    const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+    // Accepts either the real id (old bare-id links, and any product still
+    // awaiting its slug backfill) or the human-readable slug (the clean
+    // /product/<slug> URL everything now links to) — findFirst+OR rather
+    // than two separate queries, since one or the other will usually miss.
+    const product = await prisma.product.findFirst({ where: { OR: [{ id: req.params.id }, { slug: req.params.id }] } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     // A draft (not-yet-priced) product is invisible to everyone except an
     // admin previewing it — same 404 as a nonexistent product, so a direct
