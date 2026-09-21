@@ -36,6 +36,101 @@ const CATEGORY_SEO = {
     h1: 'Mobile Back Glass & Housing Wholesale BD',
     desc: 'Imported smartphone back glass, camera glass, and body housing replacement parts at wholesale rates.',
   },
+  oled: {
+    title: 'OLED Display Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'OLED Display Wholesale in Bangladesh',
+    desc: 'Wholesale OLED smartphone displays, pre-tested before dispatch, for repair shops and dealers across Bangladesh.',
+  },
+  lcd: {
+    title: 'LCD Display Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'LCD Display Wholesale in Bangladesh',
+    desc: 'Wholesale LCD smartphone displays at competitive rates, imported and tested for repair shops in Dhaka and nationwide.',
+  },
+  touch: {
+    title: 'Mobile Touch Screen Digitizer Wholesale BD | Noyon Telecom',
+    h1: 'Mobile Touch Screen Wholesale in Bangladesh',
+    desc: 'Wholesale touch screen digitizers for smartphones, compatible with major brands, at dealer pricing in Bangladesh.',
+  },
+  housing: {
+    title: 'Mobile Housing & Body Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Housing Wholesale in Bangladesh',
+    desc: 'Wholesale smartphone housing and body replacement parts for repair shops and dealers in Bangladesh.',
+  },
+  frame: {
+    title: 'Mobile Middle Frame Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Frame Wholesale in Bangladesh',
+    desc: 'Wholesale middle frame and chassis replacement parts for smartphones, at dealer rates in Bangladesh.',
+  },
+  camera: {
+    title: 'Mobile Camera Module Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Camera Module Wholesale in Bangladesh',
+    desc: 'Wholesale front and rear camera module replacements for smartphones, for repair shops and technicians in Bangladesh.',
+  },
+  speaker: {
+    title: 'Mobile Speaker & Ringer Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Speaker Wholesale in Bangladesh',
+    desc: 'Wholesale loudspeaker and ringer replacement parts for smartphones, at competitive dealer rates in Bangladesh.',
+  },
+  microphone: {
+    title: 'Mobile Microphone Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Microphone Wholesale in Bangladesh',
+    desc: 'Wholesale microphone replacement parts for smartphones, for repair shops and service centers in Bangladesh.',
+  },
+  flex: {
+    title: 'Mobile Flex Cable Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Flex Cable Wholesale in Bangladesh',
+    desc: 'Wholesale flex cables and ribbon connectors for smartphones, at dealer pricing for repair shops in Bangladesh.',
+  },
+  'logic board': {
+    title: 'Mobile Logic Board Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Logic Board Wholesale in Bangladesh',
+    desc: 'Wholesale logic board and small board replacement parts for smartphones, for technicians and repair shops in Bangladesh.',
+  },
+  motherboard: {
+    title: 'Mobile Motherboard Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Motherboard Wholesale in Bangladesh',
+    desc: 'Wholesale motherboard and mainboard replacement parts for smartphones, for repair shops and dealers in Bangladesh.',
+  },
+  ic: {
+    title: 'Mobile IC Chip Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile IC Wholesale in Bangladesh',
+    desc: 'Wholesale power IC, charging IC, and other smartphone repair chips, for technicians and repair shops in Bangladesh.',
+  },
+  cpu: {
+    title: 'Mobile CPU Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile CPU Wholesale in Bangladesh',
+    desc: 'Wholesale CPU/processor replacement chips for smartphone repair, for technicians and service centers in Bangladesh.',
+  },
+  buttons: {
+    title: 'Mobile Buttons & Switches Wholesale BD | Noyon Telecom',
+    h1: 'Mobile Buttons Wholesale in Bangladesh',
+    desc: 'Wholesale power, volume, and home button replacement parts for smartphones, at dealer rates in Bangladesh.',
+  },
+  'sim tray': {
+    title: 'Mobile SIM Tray Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile SIM Tray Wholesale in Bangladesh',
+    desc: 'Wholesale SIM card tray replacement parts for smartphones, for repair shops and dealers in Bangladesh.',
+  },
+  fingerprint: {
+    title: 'Mobile Fingerprint Sensor Wholesale BD | Noyon Telecom',
+    h1: 'Mobile Fingerprint Sensor Wholesale in Bangladesh',
+    desc: 'Wholesale fingerprint sensor replacement parts for smartphones, for repair shops and technicians in Bangladesh.',
+  },
+  'face id': {
+    title: 'Mobile Face ID Module Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Face ID Module Wholesale in Bangladesh',
+    desc: 'Wholesale Face ID / dot projector module replacement parts for smartphones, for repair shops in Bangladesh.',
+  },
+  'repair tools': {
+    title: 'Mobile Repair Tools Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Repair Tools Wholesale in Bangladesh',
+    desc: 'Wholesale mobile phone repair tools and equipment for technicians and repair shops in Bangladesh.',
+  },
+  accessories: {
+    title: 'Mobile Accessories Wholesale in Bangladesh | Noyon Telecom',
+    h1: 'Mobile Accessories Wholesale in Bangladesh',
+    desc: 'Wholesale mobile phone accessories for dealers and shops across Bangladesh, at competitive rates.',
+  },
 };
 
 export default function Shop() {
