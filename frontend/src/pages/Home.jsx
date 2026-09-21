@@ -46,9 +46,14 @@ export default function Home() {
       }
     : null;
 
+  // The homepage has one URL regardless of which language the in-page
+  // toggle is set to (no separate /bn/ path), so whichever title/description
+  // is baked in here is the only one Google ever indexes — combining Bangla
+  // and English keywords in both, instead of picking one language, means
+  // neither a Bangla nor an English search for these terms misses this page.
   usePageMeta(
-    undefined,
-    'Wholesale mobile phone spare parts in Bangladesh — displays, batteries, back glass, charging ports and more, for dealers, shops and service centers.',
+    'মোবাইল পার্টস পাইকারি দাম | Wholesale Mobile Spare Parts',
+    'বাংলাদেশে মোবাইল স্পেয়ার পার্টস পাইকারি বিক্রেতা — ডিসপ্লে, ব্যাটারি, চার্জিং পোর্ট, ব্যাক গ্লাস। Wholesale mobile phone spare parts in Bangladesh for dealers, shops and service centers — displays, batteries, back glass, charging ports and more.',
     undefined,
     undefined,
     [
