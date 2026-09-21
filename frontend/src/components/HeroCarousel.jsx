@@ -4,6 +4,7 @@ import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
 import { trackWhatsappClick } from '../ecommerce.js';
+import { categoryUrl } from '../utils/taxonomy';
 
 // Text fields are translation keys (see i18n/translations.js hero.slideN.*),
 // not literal strings — img/alt/to stay as-is since they're asset paths and
@@ -24,7 +25,7 @@ const SLIDES = [
     alt: 'Mobile phone display and spare parts on a workbench',
     stripeKey: 'hero.slide1.stripe',
     cta1: { labelKey: 'hero.slide1.cta1', to: '/shop' },
-    cta2: { labelKey: 'hero.slide1.cta2', to: '/shop?category=Display' },
+    cta2: { labelKey: 'hero.slide1.cta2', to: categoryUrl('Display') },
   },
   {
     eyebrowKey: 'hero.slide2.eyebrow',

@@ -20,16 +20,17 @@ test('buildPagesSitemapXml', async (t) => {
     assert.match(xml, /<loc>https:\/\/example\.com\/about<\/loc>/);
   });
 
-  await t.test('adds one URL per active category and brand, DB-driven rather than hardcoded', () => {
+  await t.test('adds one clean-path URL per active category and brand, DB-driven rather than hardcoded', () => {
     const xml = buildPagesSitemapXml({
       siteUrl: 'https://example.com',
       categories: ['Battery', 'Back Glass'],
       brands: ['Apple'],
     });
-    assert.match(xml, /<loc>https:\/\/example\.com\/shop\?category=Battery<\/loc>/);
-    // Spaces in a category name must be percent-encoded in the URL.
-    assert.match(xml, /<loc>https:\/\/example\.com\/shop\?category=Back%20Glass<\/loc>/);
-    assert.match(xml, /<loc>https:\/\/example\.com\/shop\?brand=Apple<\/loc>/);
+    assert.match(xml, /<loc>https:\/\/example\.com\/category\/battery<\/loc>/);
+    // A multi-word category name becomes a single hyphenated slug, not a
+    // percent-encoded query-string value.
+    assert.match(xml, /<loc>https:\/\/example\.com\/category\/back-glass<\/loc>/);
+    assert.match(xml, /<loc>https:\/\/example\.com\/brand\/apple<\/loc>/);
   });
 
   await t.test('produces well-formed, parseable XML', () => {

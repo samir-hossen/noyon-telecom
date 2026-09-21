@@ -15,6 +15,7 @@
 import 'dotenv/config';
 import prisma from './prismaClient.js';
 import { DISPLAY_PRICE_LIST } from './data/displayPriceList.js';
+import { detectBrandFromText } from './utils/brand.js';
 
 // Previously pointed at a hotlinked Unsplash photo as a "shared neutral
 // placeholder" — that's an external network dependency on every pageview
@@ -33,6 +34,11 @@ function slugifyModel(model) {
 function buildProduct({ models, price }) {
   const label = models.join(' / ');
   const sku = `NT-DIS-${models.map(slugifyModel).join('-')}`;
+  // Only sets a brand when one of the model codes already spells it out
+  // (e.g. a future row like "Redmi Note 9") — most of the current list is
+  // bare model codes ("Y20", "A16") that could belong to more than one
+  // brand, so this correctly leaves those unset rather than guessing wrong.
+  const brand = detectBrandFromText(label);
   return {
     name: `${label} Display`,
     desc: `Replacement display assembly compatible with ${label}. Pre-tested before dispatch. Confirm exact model match before ordering in bulk.`,
@@ -43,6 +49,7 @@ function buildProduct({ models, price }) {
     price,
     stock: 50,
     sku,
+    brand,
     compatibleModels: models,
     moq: 1,
     warranty: '7 Days Testing Warranty',
@@ -58,12 +65,18 @@ async function main() {
     const existing = await prisma.product.findUnique({ where: { sku: product.sku } });
 
     if (existing) {
-      // Only touch price/desc/compatibleModels on re-import — never
-      // overwrite stock, images, or anything an admin may have already
-      // edited by hand in the dashboard since the last import.
+      // Only touch price/desc/compatibleModels (+ brand, but only if it's
+      // still unset) on re-import — never overwrite stock, images, or
+      // anything an admin may have already edited by hand since the last
+      // import.
       await prisma.product.update({
         where: { sku: product.sku },
-        data: { price: product.price, desc: product.desc, compatibleModels: product.compatibleModels },
+        data: {
+          price: product.price,
+          desc: product.desc,
+          compatibleModels: product.compatibleModels,
+          brand: existing.brand ? undefined : product.brand,
+        },
       });
       updated += 1;
     } else {

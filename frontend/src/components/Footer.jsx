@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import CityscapeStrip from './CityscapeStrip.jsx';
 import { trackWhatsappClick, trackPhoneClick } from '../ecommerce.js';
+import { categoryUrl } from '../utils/taxonomy';
 
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
@@ -89,13 +90,16 @@ export default function Footer() {
             <p>
               <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('footer')}>💬 {t('footer.whatsappUsToOrder')}</a>
             </p>
+            <p>
+              <a href="https://www.facebook.com/NoyonTelecomBD" target="_blank" rel="noreferrer">📘 Facebook</a>
+            </p>
           </div>
           <div>
             <h4>{t('footer.shopByCategory')}</h4>
-            <p><Link to="/shop?category=Display">{t('nav.display')}</Link></p>
-            <p><Link to="/shop?category=Battery">{t('nav.battery')}</Link></p>
-            <p><Link to="/shop?category=Charging Port">{t('nav.chargingPort')}</Link></p>
-            <p><Link to="/shop?category=Back Glass">{t('nav.backGlass')}</Link></p>
+            <p><Link to={categoryUrl('Display')}>{t('nav.display')}</Link></p>
+            <p><Link to={categoryUrl('Battery')}>{t('nav.battery')}</Link></p>
+            <p><Link to={categoryUrl('Charging Port')}>{t('nav.chargingPort')}</Link></p>
+            <p><Link to={categoryUrl('Back Glass')}>{t('nav.backGlass')}</Link></p>
             <p><Link to="/shop">{t('footer.allPartsArrow')}</Link></p>
           </div>
           <div>

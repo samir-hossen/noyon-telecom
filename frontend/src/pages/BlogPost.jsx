@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { getPostBySlug, getAllPosts } from '../content/blogPosts';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { categoryUrl } from '../utils/taxonomy';
 
 function ContentBlock({ block, i }) {
   if (block.type === 'h2') return <h2 key={i} style={{ marginTop: 28, marginBottom: 10, fontSize: '1.2rem' }}>{block.text}</h2>;
@@ -88,7 +89,7 @@ export default function BlogPost() {
             <strong style={{ fontSize: '0.9rem' }}>সংশ্লিষ্ট ক্যাটাগরি:</strong>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
               {post.relatedCategories.map((cat) => (
-                <Link key={cat} to={`/shop?category=${encodeURIComponent(cat)}`} className="btn btn-outline btn-sm">
+                <Link key={cat} to={categoryUrl(cat)} className="btn btn-outline btn-sm">
                   {cat}
                 </Link>
               ))}

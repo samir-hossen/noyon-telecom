@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { categoryUrl } from '../utils/taxonomy';
 
 function Icon({ children }) {
   return (
@@ -9,10 +10,11 @@ function Icon({ children }) {
   );
 }
 
-// `name` is also the actual /shop?category= filter value the backend
-// expects, so it stays the fixed English catalog term — `labelKey` is what
-// gets translated for display, via the same nav.* keys already used in
-// the navbar's category dropdown for these exact categories.
+// `name` is also the actual /category/<slug> filter value the backend
+// expects (via categoryUrl(), see utils/taxonomy.js), so it stays the fixed
+// English catalog term — `labelKey` is what gets translated for display, via
+// the same nav.* keys already used in the navbar's category dropdown for
+// these exact categories.
 const CATEGORIES = [
   {
     name: 'Display', labelKey: 'nav.display', bg: '#fde8ea', color: '#c4001f',
@@ -53,7 +55,7 @@ export default function CategoryGrid() {
   return (
     <div className="category-grid">
       {shown.map((c) => (
-        <Link key={c.name} to={`/shop?category=${encodeURIComponent(c.name)}`} className="category-tile">
+        <Link key={c.name} to={categoryUrl(c.name)} className="category-tile">
           <span className="category-tile-icon" style={{ background: c.bg, color: c.color }}>{c.icon}</span>
           <span className="category-tile-name">{t(c.labelKey)}</span>
         </Link>

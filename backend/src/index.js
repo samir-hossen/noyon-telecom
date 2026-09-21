@@ -60,3 +60,12 @@ import('./backfillProductSlugs.js')
     if (fixed > 0) console.log(`Boot: assigned a URL slug to ${fixed} product(s).`);
   })
   .catch((err) => console.error('Boot: backfillProductSlugs failed (non-fatal):', err.message));
+
+// Same reasoning again: fills in `brand` for any existing product whose name
+// already spells out a known brand but whose `brand` column is still unset.
+import('./backfillProductBrands.js')
+  .then(({ backfillProductBrands }) => backfillProductBrands())
+  .then((fixed) => {
+    if (fixed > 0) console.log(`Boot: assigned a brand to ${fixed} product(s) from their name.`);
+  })
+  .catch((err) => console.error('Boot: backfillProductBrands failed (non-fatal):', err.message));

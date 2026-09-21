@@ -95,6 +95,16 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
+          {/* Clean path-based category/brand URLs — Shop.jsx resolves
+              :categorySlug/:brandSlug back to the real filter name (see
+              utils/taxonomy.js) and renders the exact same product grid as
+              the legacy /shop?category=/?brand= query-string form, which
+              still works too (old links, anything not yet updated) but now
+              self-canonicalizes to this clean form instead of being the
+              canonical URL itself. */}
+          <Route path="/category/:categorySlug" element={<Shop />} />
+          <Route path="/brand/:brandSlug" element={<Shop />} />
+          <Route path="/brand/:brandSlug/:categorySlug" element={<Shop />} />
           {/* The clean, canonical URL is now just /product/<slug> (no id in
               it at all) — but :id still accepts a raw product id too (old
               bare-id links, or a product whose slug backfill hasn't run

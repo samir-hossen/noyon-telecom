@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -9,6 +9,8 @@ import { trackSearch } from '../ecommerce.js';
 import { buildPageWindow } from '../utils/pagination.js';
 import { useLanguage } from '../context/LanguageContext';
 import { productUrl } from '../utils/slug';
+import { categoryFromSlug, brandFromSlug, categoryUrl, brandUrl, brandCategoryUrl } from '../utils/taxonomy';
+import NotFound from './NotFound.jsx';
 
 const PAGE_SIZE = 12;
 
@@ -38,6 +40,7 @@ const CATEGORY_SEO = {
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
+  const routeParams = useParams(); // :categorySlug / :brandSlug on the clean-URL routes, empty on plain /shop
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -49,21 +52,41 @@ export default function Shop() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const category = params.get('category') || 'All';
-  const brand = params.get('brand') || 'All';
+  // The clean /category/:slug and /brand/:slug routes are the canonical
+  // form (see App.jsx) — resolved back to the real, correctly-cased name via
+  // utils/taxonomy.js. /shop?category=/?brand= (the old query-string form)
+  // still works as a fallback so nothing that already links to it breaks,
+  // it's just no longer what canonicalPath points at.
+  const categoryFromRoute = routeParams.categorySlug ? categoryFromSlug(routeParams.categorySlug) : null;
+  const brandFromRoute = routeParams.brandSlug ? brandFromSlug(routeParams.brandSlug) : null;
+  // An unresolvable slug (e.g. someone hand-typed /category/not-a-real-one)
+  // is a real 404, not an empty shop grid — checked here but not returned
+  // until after every hook below has run (an early return here would skip
+  // hooks on this render and violate the Rules of Hooks the moment someone
+  // navigates from an invalid slug to a valid one without unmounting Shop).
+  const invalidSlug = Boolean((routeParams.categorySlug && !categoryFromRoute) || (routeParams.brandSlug && !brandFromRoute));
+
+  const category = categoryFromRoute || params.get('category') || 'All';
+  const brand = brandFromRoute || params.get('brand') || 'All';
   const search = params.get('search') || '';
   const sort = params.get('sort') || '';
   const page = Math.max(1, parseInt(params.get('page'), 10) || 1);
   const [searchInput, setSearchInput] = useState(search);
 
-  // Canonicalize away sort/page/search noise
-  const canonicalPath = (() => {
-    const clean = new URLSearchParams();
-    if (category !== 'All') clean.set('category', category);
-    if (brand !== 'All') clean.set('brand', brand);
-    const qs = clean.toString();
-    return `/shop${qs ? `?${qs}` : ''}`;
-  })();
+  // The base path a filter/sort/page link should be built on top of — the
+  // clean /category/<slug> or /brand/<slug> URL once a filter is active,
+  // otherwise plain /shop.
+  function basePath() {
+    if (category !== 'All' && brand !== 'All') return brandCategoryUrl(brand, category);
+    if (category !== 'All') return categoryUrl(category);
+    if (brand !== 'All') return brandUrl(brand);
+    return '/shop';
+  }
+
+  // Canonicalizes to the clean path form — a request that arrived via the
+  // legacy /shop?category=/?brand= query string still self-canonicalizes to
+  // the same clean URL as the new routes, so Google consolidates both onto it.
+  const canonicalPath = basePath();
 
   const activeFilterName = category !== 'All' ? category : brand !== 'All' ? brand : null;
 
@@ -135,7 +158,7 @@ export default function Shop() {
     undefined,
     canonicalPath,
     [breadcrumbJsonLd, collectionJsonLd].filter(Boolean),
-    isSearchView
+    isSearchView || invalidSlug
   );
 
   // Keep the box in sync if the URL changes from elsewhere
@@ -210,25 +233,34 @@ export default function Shop() {
     setParams(next);
   }
 
+  // Category/brand pills always link to the clean path form (never the old
+  // query-string one) — combining a brand and a category pill navigates to
+  // the nested /brand/<brand>/<category> URL; clearing one filter while the
+  // other stays active drops back to that other filter's own clean URL.
   function buildFilterUrl(key, value) {
-    const next = new URLSearchParams(params);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    next.delete('page');
-    const qs = next.toString();
-    return `/shop${qs ? `?${qs}` : ''}`;
+    if (key === 'category') {
+      if (!value) return brand !== 'All' ? brandUrl(brand) : '/shop';
+      return brand !== 'All' ? brandCategoryUrl(brand, value) : categoryUrl(value);
+    }
+    if (key === 'brand') {
+      if (!value) return category !== 'All' ? categoryUrl(category) : '/shop';
+      return value !== 'All' && category !== 'All' ? brandCategoryUrl(value, category) : brandUrl(value);
+    }
+    return basePath();
   }
 
   function buildPageUrl(p) {
     const next = new URLSearchParams(params);
     next.set('page', p);
     const qs = next.toString();
-    return `/shop${qs ? `?${qs}` : ''}`;
+    return `${basePath()}${qs ? `?${qs}` : ''}`;
   }
 
   function pageWindow() {
     return buildPageWindow(page, totalPages);
   }
+
+  if (invalidSlug) return <NotFound />;
 
   return (
     <div className="container">

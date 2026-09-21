@@ -15,6 +15,7 @@ const LOCAL_BUSINESS_JSON_LD = {
     url: 'https://noyontelecom.com',
     telephone: '+880-1560-047377',
     priceRange: '৳৳',
+    sameAs: ['https://www.facebook.com/NoyonTelecomBD'],
     address: {
       '@type': 'PostalAddress',
       streetAddress: '4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan',

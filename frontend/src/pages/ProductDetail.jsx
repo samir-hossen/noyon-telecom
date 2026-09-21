@@ -13,6 +13,7 @@ import ProductCard from '../components/ProductCard.jsx';
 import { trackViewItem, trackRequestQuote, trackWhatsappClick } from '../ecommerce.js';
 import { getPostForCategory } from '../content/blogPosts';
 import { productUrl } from '../utils/slug';
+import { categoryUrl } from '../utils/taxonomy';
 
 const RECENTLY_VIEWED_KEY = 'nt-recently-viewed';
 const RECENTLY_VIEWED_MAX = 8;
@@ -182,7 +183,7 @@ export default function ProductDetail() {
               itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin },
                 { '@type': 'ListItem', position: 2, name: 'Shop', item: `${window.location.origin}/shop` },
-                { '@type': 'ListItem', position: 3, name: product.category, item: `${window.location.origin}/shop?category=${encodeURIComponent(product.category)}` },
+                { '@type': 'ListItem', position: 3, name: product.category, item: `${window.location.origin}${categoryUrl(product.category)}` },
                 { '@type': 'ListItem', position: 4, name: product.name, item: `${window.location.origin}${productUrl(product)}` },
               ],
             },
@@ -340,7 +341,7 @@ export default function ProductDetail() {
       <nav className="breadcrumb-trail" aria-label="Breadcrumb">
         <Link to="/">{t('pd.breadcrumbHome')}</Link> <span>/</span>{' '}
         <Link to="/shop">{t('pd.breadcrumbShop')}</Link> <span>/</span>{' '}
-        <Link to={`/shop?category=${encodeURIComponent(product.category)}`}>{product.category}</Link> <span>/</span>{' '}
+        <Link to={categoryUrl(product.category)}>{product.category}</Link> <span>/</span>{' '}
         <span aria-current="page">{product.name}</span>
       </nav>
       <div className="pd-grid">
@@ -380,7 +381,7 @@ export default function ProductDetail() {
         <div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {categories.map((c) => (
-              <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`} className="pd-cat" style={{ textDecoration: 'none' }}>
+              <Link key={c} to={categoryUrl(c)} className="pd-cat" style={{ textDecoration: 'none' }}>
                 {c}
               </Link>
             ))}
@@ -637,7 +638,7 @@ export default function ProductDetail() {
             <h2 className="section-title">
               {t('pd.mayAlsoLikeTop')} <em>{t('pd.mayAlsoLikeEm')}</em>
             </h2>
-            <Link to={`/shop?category=${encodeURIComponent(product.category)}`} className="section-link">
+            <Link to={categoryUrl(product.category)} className="section-link">
               {t('pd.viewAllInCategory', null, { category: product.category })}
             </Link>
           </div>

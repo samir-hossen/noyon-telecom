@@ -16,6 +16,7 @@ import { isSslcommerzConfigured } from '../utils/sslcommerz.js';
 import { isSteadfastConfigured, createConsignment } from '../utils/steadfast.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
 import { assignUniqueSlug } from '../utils/slug.js';
+import { detectBrandFromText } from '../utils/brand.js';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -101,7 +102,11 @@ router.post('/products', requireCsrf, async (req, res, next) => {
         compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
         stock: parseInt(p.stock, 10) || 0,
         sku: p.sku || null,
-        brand: p.brand || null,
+        // Auto-fills from a brand word already written in the name (e.g.
+        // "Samsung Galaxy A12 Display" -> "Samsung") when the admin didn't
+        // pick one explicitly — never guesses a brand for a bare model code
+        // like "Y20" that could belong to several brands (see utils/brand.js).
+        brand: p.brand || detectBrandFromText(p.name) || null,
         compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : [],
         moq: parseInt(p.moq, 10) || 1,
         dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice) : null,
@@ -148,7 +153,10 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
         compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
         stock: p.stock !== undefined ? parseInt(p.stock, 10) : undefined,
         sku: p.sku !== undefined ? (p.sku || null) : undefined,
-        brand: p.brand !== undefined ? (p.brand || null) : undefined,
+        // Same auto-fill-from-name fallback as create — only kicks in when
+        // the admin submitted an empty brand, so it can't clobber a brand
+        // they deliberately picked.
+        brand: p.brand !== undefined ? (p.brand || detectBrandFromText(p.name || existing?.name) || null) : undefined,
         compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : undefined,
         moq: p.moq !== undefined ? parseInt(p.moq, 10) || 1 : undefined,
         dealerPrice: p.dealerPrice !== undefined ? (p.dealerPrice ? parseFloat(p.dealerPrice) : null) : undefined,

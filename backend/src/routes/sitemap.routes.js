@@ -3,7 +3,7 @@ import prisma from '../prismaClient.js';
 import { getOrSet } from '../utils/cache.js';
 import { getActiveCategories, getActiveBrands } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS } from './products.routes.js';
-import { productPath } from '../utils/slug.js';
+import { productPath, slugify } from '../utils/slug.js';
 
 const router = Router();
 // Set SITE_URL in the backend .env to your real storefront domain in production.
@@ -82,8 +82,13 @@ export function buildPagesSitemapXml({ siteUrl, categories, brands }) {
   const entries = [
     { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
     { loc: `${siteUrl}/shop`, priority: '0.9', changefreq: 'daily' },
-    ...categories.map((c) => ({ loc: `${siteUrl}/shop?category=${encodeURIComponent(c)}`, priority: '0.7' })),
-    ...brands.map((b) => ({ loc: `${siteUrl}/shop?brand=${encodeURIComponent(b)}`, priority: '0.6' })),
+    // Clean paths, matching the frontend's canonical /category/<slug> and
+    // /brand/<slug> routes (see frontend/src/utils/taxonomy.js) — these
+    // replaced the old /shop?category=/?brand= query-string URLs, which
+    // self-canonicalize to this same clean form now instead of being what
+    // gets submitted to Google.
+    ...categories.map((c) => ({ loc: `${siteUrl}/category/${slugify(c)}`, priority: '0.7' })),
+    ...brands.map((b) => ({ loc: `${siteUrl}/brand/${slugify(b)}`, priority: '0.6' })),
     { loc: `${siteUrl}/about`, priority: '0.6' },
     { loc: `${siteUrl}/blog`, priority: '0.7', changefreq: 'weekly' },
     ...BLOG_SLUGS.map((slug) => ({ loc: `${siteUrl}/blog/${slug}`, priority: '0.6' })),

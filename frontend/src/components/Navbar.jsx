@@ -6,6 +6,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api, resolveImg } from '../api';
 import { productUrl } from '../utils/slug';
+import { categoryUrl, brandUrl } from '../utils/taxonomy';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { trackPhoneClick } from '../ecommerce.js';
@@ -244,7 +245,7 @@ export default function Navbar() {
                 <div className="mega-menu-col" key={group.titleKey} role="group" aria-label={t(group.titleKey)}>
                   <h4>{t(group.titleKey)}</h4>
                   {group.categories.map((c) => (
-                    <Link key={c} to={`/shop?category=${encodeURIComponent(c)}`} onClick={() => setMegaOpen(false)} role="menuitem">
+                    <Link key={c} to={categoryUrl(c)} onClick={() => setMegaOpen(false)} role="menuitem">
                       {c}
                     </Link>
                   ))}
@@ -254,7 +255,7 @@ export default function Navbar() {
                 <h4>{t('nav.brands')}</h4>
                 <div className="mega-menu-brand-grid">
                   {BRANDS.map((b) => (
-                    <Link key={b} to={`/shop?brand=${encodeURIComponent(b)}`} onClick={() => setMegaOpen(false)} role="menuitem">
+                    <Link key={b} to={brandUrl(b)} onClick={() => setMegaOpen(false)} role="menuitem">
                       {b}
                     </Link>
                   ))}
@@ -264,11 +265,11 @@ export default function Navbar() {
           </div>
           <Link to="/">{t('nav.home')}</Link>
           <Link to="/shop">{t('nav.allParts')}</Link>
-          <Link to="/shop?category=Display">{t('nav.display')}</Link>
-          <Link to="/shop?category=Battery">{t('nav.battery')}</Link>
-          <Link to="/shop?category=Charging Port">{t('nav.chargingPort')}</Link>
-          <Link to="/shop?category=Back Glass">{t('nav.backGlass')}</Link>
-          <Link to="/shop?category=Camera">{t('nav.camera')}</Link>
+          <Link to={categoryUrl('Display')}>{t('nav.display')}</Link>
+          <Link to={categoryUrl('Battery')}>{t('nav.battery')}</Link>
+          <Link to={categoryUrl('Charging Port')}>{t('nav.chargingPort')}</Link>
+          <Link to={categoryUrl('Back Glass')}>{t('nav.backGlass')}</Link>
+          <Link to={categoryUrl('Camera')}>{t('nav.camera')}</Link>
           <Link to="/register" className="nav-catbar-dealer">{t('nav.becomeDealer')}</Link>
         </div>
       </nav>
@@ -286,11 +287,11 @@ export default function Navbar() {
           <nav className="mobile-menu-links">
             <Link to="/" onClick={closeMenu}>{t('nav.home')}</Link>
             <Link to="/shop" onClick={closeMenu}>{t('nav.allParts')}</Link>
-            <Link to="/shop?category=Display" onClick={closeMenu}>{t('nav.display')}</Link>
-            <Link to="/shop?category=Battery" onClick={closeMenu}>{t('nav.battery')}</Link>
-            <Link to="/shop?category=Charging Port" onClick={closeMenu}>{t('nav.chargingPort')}</Link>
-            <Link to="/shop?category=Back Glass" onClick={closeMenu}>{t('nav.backGlass')}</Link>
-            <Link to="/shop?category=Camera" onClick={closeMenu}>{t('nav.camera')}</Link>
+            <Link to={categoryUrl('Display')} onClick={closeMenu}>{t('nav.display')}</Link>
+            <Link to={categoryUrl('Battery')} onClick={closeMenu}>{t('nav.battery')}</Link>
+            <Link to={categoryUrl('Charging Port')} onClick={closeMenu}>{t('nav.chargingPort')}</Link>
+            <Link to={categoryUrl('Back Glass')} onClick={closeMenu}>{t('nav.backGlass')}</Link>
+            <Link to={categoryUrl('Camera')} onClick={closeMenu}>{t('nav.camera')}</Link>
             <Link to="/wishlist" onClick={closeMenu}>♡ {t('nav.wishlist')}</Link>
             <Link to="/register" onClick={closeMenu}>{t('nav.becomeDealer')}</Link>
           </nav>

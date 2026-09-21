@@ -42,12 +42,12 @@ describe('Navbar mega menu — crawlability', () => {
     // A category that only ever appeared inside the mega menu (not in the
     // always-visible catbar/mobile menu, which already covered a handful).
     const oledLink = await screen.findByRole('menuitem', { name: 'OLED', hidden: true });
-    expect(oledLink).toHaveAttribute('href', '/shop?category=OLED');
+    expect(oledLink).toHaveAttribute('href', '/category/oled');
 
     // A brand — the mega menu is the only always-should-be-crawlable place
     // that lists brands other than the homepage's BrandStrip.
     const appleLink = screen.getByRole('menuitem', { name: 'Apple', hidden: true });
-    expect(appleLink).toHaveAttribute('href', '/shop?brand=Apple');
+    expect(appleLink).toHaveAttribute('href', '/brand/apple');
   });
 
   it('mega menu is visually hidden until opened (CSS-only, not unmounted)', () => {
