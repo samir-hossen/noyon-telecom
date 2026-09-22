@@ -1713,6 +1713,15 @@ export default function Admin() {
                           }}
                         />
                       </div>
+                      <div className="field" style={{ marginBottom: 6 }}>
+                        <input
+                          placeholder="Alt text (describe the image, e.g. Wholesale mobile display parts on shelf) — for accessibility and SEO"
+                          defaultValue={b.altText || ''}
+                          onBlur={(e) => {
+                            if (e.target.value !== (b.altText || '')) updateBanner(b.id, { altText: e.target.value });
+                          }}
+                        />
+                      </div>
                       <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.82rem' }}>
                         <input type="checkbox" checked={b.active} onChange={(e) => updateBanner(b.id, { active: e.target.checked })} />
                         Active

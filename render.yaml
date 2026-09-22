@@ -168,6 +168,9 @@ services:
         name: Strict-Transport-Security
         value: 'max-age=31536000; includeSubDomains'
       - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
         name: Content-Security-Policy
         value: >-
           default-src 'self'; script-src 'self' https://www.google.com https://www.gstatic.com

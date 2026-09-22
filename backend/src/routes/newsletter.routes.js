@@ -38,4 +38,31 @@ router.post('/', newsletterLimiter, requireCsrf, async (req, res, next) => {
   }
 });
 
+// One-click unsubscribe — GET (not POST) because this is meant to be a
+// plain link a mail client can open directly, the same way every real
+// newsletter's unsubscribe link works; no CSRF token applies to a top-level
+// navigation like this, and the action is naturally idempotent (deleting
+// an already-removed subscriber is a harmless no-op) — no admin account or
+// broadcast-sending capability exists yet to abuse (see the comment above
+// the POST route), so this is only ever a self-serve opt-out. Returns a
+// minimal HTML page directly rather than redirecting to a frontend route,
+// since this is a rarely-visited utility link with nothing else to show.
+router.get('/unsubscribe', async (req, res, next) => {
+  try {
+    const email = String(req.query.email || '').toLowerCase().trim();
+    if (EMAIL_RE.test(email)) {
+      await prisma.newsletterSubscriber.deleteMany({ where: { email } });
+    }
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!doctype html><html><head><meta charset="utf-8"><title>Unsubscribed — Noyon Telecom</title></head>
+<body style="font-family:sans-serif;max-width:480px;margin:80px auto;text-align:center;color:#3a2e2a;">
+<h2>You've been unsubscribed</h2>
+<p>${email ? email + ' will' : 'You will'} no longer receive newsletter emails from Noyon Telecom.</p>
+<p><a href="${process.env.FRONTEND_URL || 'https://noyontelecom.com'}">Return to noyontelecom.com</a></p>
+</body></html>`);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

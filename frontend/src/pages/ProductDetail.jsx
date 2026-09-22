@@ -521,7 +521,7 @@ export default function ProductDetail() {
           <div className="pd-action-row">
             <a
               className="btn btn-outline pd-whatsapp-btn"
-              href={`https://wa.me/8801560047377?text=${encodeURIComponent(`${t('pd.whatsappMessage', null, { name: product.name })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
+              href={`https://wa.me/8801560047377?text=${encodeURIComponent(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
               target="_blank"
               rel="noreferrer"
               onClick={() => {

@@ -1550,6 +1550,20 @@ button { font-family: inherit; cursor: pointer; }
   transition: all 0.2s ease;
 }
 .hero-dot.active { background: var(--paper); width: 22px; border-radius: 4px; }
+/* Overrides the plain 8px dot sizing above — this one shows a real ▶/⏸
+   glyph, not a plain-colored circle, so it needs to actually be legible. */
+.hero-pause-toggle {
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  background: rgba(251, 241, 236, 0.25);
+  color: var(--paper);
+  font-size: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
 @media (max-width: 900px) {
   .hero-arrow { width: 32px; height: 32px; font-size: 1.1rem; }
   .hero-dots { bottom: 12px; }
@@ -2258,6 +2272,31 @@ button { font-family: inherit; cursor: pointer; }
 @keyframes announcement-scroll {
   from { transform: translateX(0) translateZ(0); }
   to { transform: translateX(-50%) translateZ(0); }
+}
+/* A continuously scrolling marquee reads as distracting/hard-to-read on a
+   small screen where it's already competing for attention with everything
+   else above the fold — static, wrapped text is easier to actually read on
+   mobile. The desktop scroll behavior is unaffected. */
+@media (max-width: 640px) {
+  .announcement-track {
+    display: block;
+    width: auto;
+    animation: none;
+  }
+  .announcement-text {
+    display: block;
+    white-space: normal;
+    text-align: center;
+    padding: 8px 14px;
+  }
+  /* Only meaningful for the scrolling-loop effect — would otherwise show
+     the same text twice, stacked, now that the track isn't scrolling. */
+  .announcement-text[aria-hidden='true'] {
+    display: none;
+  }
+  .announcement-text::after {
+    display: none;
+  }
 }
 
 /* ---------- Footer cityscape strip (decorative, original artwork) ---------- */

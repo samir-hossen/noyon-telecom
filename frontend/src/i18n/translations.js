@@ -253,6 +253,8 @@ const translations = {
     'hero.badge.delivery': 'Fast Delivery',
     'hero.badge.warranty': 'Warranty Assured',
 
+    'hero.pauseSlideshow': 'Pause slideshow',
+    'hero.playSlideshow': 'Play slideshow',
     'hero.slide1.eyebrow': 'Wholesale only — dealers & repair shops',
     'hero.slide1.titleTop': 'Genuine parts,',
     'hero.slide1.titleEm': 'trusted',
@@ -628,7 +630,7 @@ const translations = {
     'pd.photoSizeError': 'Each photo must be under {{mb}}MB.',
     'pd.reviewThanks': 'Thanks for your review!',
     'pd.metaFallback': 'Shop {{category}} at Noyon Telecom.',
-    'pd.whatsappMessage': "Hi, I'm interested in ordering: {{name}}",
+    'pd.whatsappMessage': "Hi, I'm interested in ordering: {{name}} — {{link}}",
 
     'terms.pageTitle': 'Terms of Service',
     'terms.pageMeta': 'Read the terms and conditions for shopping at Noyon Telecom.',
@@ -1149,6 +1151,8 @@ const translations = {
     'hero.badge.delivery': 'দ্রুত ডেলিভারি',
     'hero.badge.warranty': 'ওয়ারেন্টি নিশ্চিত',
 
+    'hero.pauseSlideshow': 'স্লাইডশো থামান',
+    'hero.playSlideshow': 'স্লাইডশো চালু করুন',
     'hero.slide1.eyebrow': 'শুধুমাত্র পাইকারি — ডিলার ও রিপেয়ার শপের জন্য',
     'hero.slide1.titleTop': 'জেনুইন পার্টস,',
     'hero.slide1.titleEm': 'বিশ্বস্ত',
@@ -1524,7 +1528,7 @@ const translations = {
     'pd.photoSizeError': 'প্রতিটি ছবি {{mb}}MB এর কম হতে হবে।',
     'pd.reviewThanks': 'আপনার রিভিউয়ের জন্য ধন্যবাদ!',
     'pd.metaFallback': 'Noyon Telecom-এ {{category}} কিনুন।',
-    'pd.whatsappMessage': 'হাই, আমি অর্ডার করতে আগ্রহী: {{name}}',
+    'pd.whatsappMessage': 'হাই, আমি অর্ডার করতে আগ্রহী: {{name}} — {{link}}',
 
     'notFound.title': 'পেজ পাওয়া যায়নি',
     'notFound.message': 'এই পেজটি খুঁজে পাওয়া যায়নি।',
