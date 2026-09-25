@@ -210,6 +210,17 @@ button { font-family: inherit; cursor: pointer; }
   gap: 4px;
 }
 .lang-switch:hover { background: rgba(255, 255, 255, 0.22); }
+.nav-topbar a, .lang-switch { white-space: nowrap; }
+.lang-switch { flex-shrink: 0; }
+/* On phones the full "(Sat–Thu, 10am–7pm)" made the hotline wrap to two
+   lines and squeezed the language pill until its flag and label stacked.
+   Hours are still shown in the homepage feature strip. */
+@media (max-width: 640px) {
+  .nav-topbar-hours { display: none; }
+  .nav-topbar-inner { gap: 10px; }
+  .nav-topbar-right { gap: 12px; }
+  .lang-switch { padding: 4px 10px; }
+}
 .lang-switch-alt { opacity: 0.65; font-weight: 500; }
 .lang-switch-mobile {
   width: 100%;
@@ -1510,63 +1521,64 @@ button { font-family: inherit; cursor: pointer; }
 .hero-carousel { position: relative; overflow: hidden; }
 .hero-track { display: flex; transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1); }
 .hero-track .hero-grid { flex: 0 0 100%; min-width: 100%; }
-.hero-arrow {
+/* Arrows + dots live together in one frosted pill at the bottom-right,
+   clear of the slide copy on every screen size. */
+.hero-controls {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 18px;
+  bottom: 18px;
   z-index: 5;
-  width: 38px;
-  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(8, 9, 12, 0.55);
+  border: 1px solid rgba(251, 241, 236, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.hero-arrow {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: none;
-  background: rgba(251, 241, 236, 0.18);
+  padding: 0;
+  background: rgba(251, 241, 236, 0.12);
   color: var(--paper);
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: background 0.15s ease;
 }
-.hero-arrow:hover { background: rgba(251, 241, 236, 0.32); }
-.hero-arrow-left { left: 16px; }
-.hero-arrow-right { right: 16px; }
+.hero-arrow:hover { background: rgba(251, 241, 236, 0.3); }
 .hero-dots {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
 }
 .hero-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   border: none;
   background: rgba(251, 241, 236, 0.4);
   padding: 0;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
-.hero-dot.active { background: var(--paper); width: 22px; border-radius: 4px; }
-/* Overrides the plain 8px dot sizing above — this one shows a real ▶/⏸
-   glyph, not a plain-colored circle, so it needs to actually be legible. */
-.hero-pause-toggle {
-  width: 20px;
-  height: 20px;
-  margin-left: 8px;
-  background: rgba(251, 241, 236, 0.25);
-  color: var(--paper);
-  font-size: 0.6rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
+.hero-dot.active { background: var(--berry); width: 20px; border-radius: 4px; }
 @media (max-width: 900px) {
-  .hero-arrow { width: 32px; height: 32px; font-size: 1.1rem; }
-  .hero-dots { bottom: 12px; }
+  .hero-controls { right: 12px; bottom: 12px; padding: 3px; gap: 4px; }
+  .hero-arrow { width: 26px; height: 26px; font-size: 1rem; }
+  .hero-dot { width: 6px; height: 6px; }
+  .hero-dot.active { width: 16px; }
+  /* Room under the CTA buttons so the control pill never covers them. */
+  .hero-copy { padding-bottom: 50px !important; }
 }
 /* ---------- Today's offers / deals strip ---------- */
 .deals-row {
@@ -2273,30 +2285,10 @@ button { font-family: inherit; cursor: pointer; }
   from { transform: translateX(0) translateZ(0); }
   to { transform: translateX(-50%) translateZ(0); }
 }
-/* A continuously scrolling marquee reads as distracting/hard-to-read on a
-   small screen where it's already competing for attention with everything
-   else above the fold — static, wrapped text is easier to actually read on
-   mobile. The desktop scroll behavior is unaffected. */
+/* Mobile keeps the same continuous scroll as desktop, just a touch
+   quicker since the bar is much narrower. */
 @media (max-width: 640px) {
-  .announcement-track {
-    display: block;
-    width: auto;
-    animation: none;
-  }
-  .announcement-text {
-    display: block;
-    white-space: normal;
-    text-align: center;
-    padding: 8px 14px;
-  }
-  /* Only meaningful for the scrolling-loop effect — would otherwise show
-     the same text twice, stacked, now that the track isn't scrolling. */
-  .announcement-text[aria-hidden='true'] {
-    display: none;
-  }
-  .announcement-text::after {
-    display: none;
-  }
+  .announcement-track { animation-duration: 22s; }
 }
 
 /* ---------- Footer cityscape strip (decorative, original artwork) ---------- */

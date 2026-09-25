@@ -132,7 +132,7 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
       ldBlocks.forEach((block) => setJsonLd(block.id, null));
       if (noindex) setOrRemoveMeta('robots', null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex]);
 }
 

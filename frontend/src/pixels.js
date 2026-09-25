@@ -11,7 +11,7 @@ export function initMetaPixel() {
   if (!pixelId || metaLoaded || typeof window === 'undefined') return;
   metaLoaded = true;
 
-  /* eslint-disable */
+   
   !(function (f, b, e, v, n, t, s) {
     if (f.fbq) return;
     n = f.fbq = function () {
@@ -28,7 +28,7 @@ export function initMetaPixel() {
     s = b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t, s);
   })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-  /* eslint-enable */
+   
 
   window.fbq('init', pixelId);
   window.fbq('track', 'PageView');
@@ -39,7 +39,7 @@ export function initTikTokPixel() {
   if (!pixelId || tiktokLoaded || typeof window === 'undefined') return;
   tiktokLoaded = true;
 
-  /* eslint-disable */
+   
   !(function (w, d, t) {
     w.TiktokAnalyticsObject = t;
     var ttq = (w[t] = w[t] || []);
@@ -74,7 +74,7 @@ export function initTikTokPixel() {
     ttq.load(pixelId);
     ttq.page();
   })(window, document, 'ttq');
-  /* eslint-enable */
+   
 }
 
 // eventId (optional) lets Meta de-duplicate this browser-side event against

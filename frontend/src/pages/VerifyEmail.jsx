@@ -23,7 +23,7 @@ export default function VerifyEmail() {
         setStatus('error');
       });
     // Only ever run once per token — verifyEmail intentionally isn't a dependency.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [token]);
 
   return (

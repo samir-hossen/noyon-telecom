@@ -207,7 +207,7 @@ export default function Admin() {
     loadAdmins();
     loadSettings();
     loadBanners();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   async function onSaveDeliveryFee(e) {

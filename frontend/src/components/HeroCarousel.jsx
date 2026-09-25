@@ -79,23 +79,10 @@ function inactiveProps(isInactive) {
 // renders instantly with zero third-party dependency. The onError handler
 // below is a last-resort safety net in case an asset path is ever wrong.
 
-// Checked once at mount, not with a live-updating listener — nobody
-// realistically toggles their OS-level reduced-motion setting mid-session,
-// and a static read keeps this simple.
-function prefersReducedMotion() {
-  return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 export default function HeroCarousel() {
   const { t } = useLanguage();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  // Explicit user toggle (the pause/play button below) — separate from
-  // `paused`, which is the transient hover/touch pause. Defaults to
-  // already-paused for prefers-reduced-motion, so a user who's asked their
-  // OS to minimize motion never sees the forced auto-advance at all,
-  // without needing to hunt for the button first.
-  const [userPaused, setUserPaused] = useState(prefersReducedMotion);
   const touchStartX = useRef(null);
 
   // Admin-uploaded banners (see Admin > Banners) override the hardcoded
@@ -120,12 +107,12 @@ export default function HeroCarousel() {
   }, [slideCount, index]);
 
   useEffect(() => {
-    if (paused || userPaused || slideCount <= 1) return;
+    if (paused || slideCount <= 1) return;
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % slideCount);
     }, AUTO_MS);
     return () => clearInterval(timer);
-  }, [paused, userPaused, slideCount]);
+  }, [paused, slideCount]);
 
   function goTo(i) {
     setIndex((i + slideCount) % slideCount);
@@ -276,28 +263,26 @@ export default function HeroCarousel() {
         </div>
       )}
 
-      <button className="hero-arrow hero-arrow-left" aria-label="Previous slide" onClick={() => goTo(index - 1)}>‹</button>
-      <button className="hero-arrow hero-arrow-right" aria-label="Next slide" onClick={() => goTo(index + 1)}>›</button>
-
-      <div className="hero-dots">
-        {Array.from({ length: slideCount }).map((_, i) => (
-          <button
-            key={i}
-            className={`hero-dot ${i === index ? 'active' : ''}`}
-            aria-label={`Go to slide ${i + 1}`}
-            onClick={() => goTo(i)}
-          />
-        ))}
-        {slideCount > 1 && (
-          <button
-            className="hero-dot hero-pause-toggle"
-            aria-label={userPaused ? t('hero.playSlideshow') : t('hero.pauseSlideshow')}
-            onClick={() => setUserPaused((p) => !p)}
-          >
-            {userPaused ? '▶' : '⏸'}
-          </button>
-        )}
-      </div>
+      {/* Arrows + dots grouped into one pill in the bottom corner, so they
+          never sit on top of the slide's title/CTA text (the old
+          vertically-centred arrows overlapped the copy on both desktop and
+          mobile). Pausing is handled by hover/touch on the hero itself. */}
+      {slideCount > 1 && (
+        <div className="hero-controls">
+          <button className="hero-arrow" aria-label="Previous slide" onClick={() => goTo(index - 1)}>‹</button>
+          <div className="hero-dots">
+            {Array.from({ length: slideCount }).map((_, i) => (
+              <button
+                key={i}
+                className={`hero-dot ${i === index ? 'active' : ''}`}
+                aria-label={`Go to slide ${i + 1}`}
+                onClick={() => goTo(i)}
+              />
+            ))}
+          </div>
+          <button className="hero-arrow" aria-label="Next slide" onClick={() => goTo(index + 1)}>›</button>
+        </div>
+      )}
     </section>
   );
 }

@@ -291,7 +291,7 @@ export default function Shop() {
       if (searchInput !== search) setFilter('search', searchInput);
     }, 350);
     return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [searchInput]);
 
   useEffect(() => {
