@@ -3,6 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 
+function noAdminMessage(user) {
+  return user?.adminAccessExpired
+    ? 'Your temporary admin access has expired. Ask the store owner for more time.'
+    : 'This account does not have admin access.';
+}
+
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +34,7 @@ export default function AdminLogin() {
       }
       if (result.user.role !== 'admin') {
         await logout();
-        setError('This account does not have admin access.');
+        setError(noAdminMessage(result.user));
         return;
       }
       navigate('/admin');
@@ -54,7 +60,7 @@ export default function AdminLogin() {
         // refresh to get back to the email/password form.
         setPendingId(null);
         setCode('');
-        setError('This account does not have admin access.');
+        setError(noAdminMessage(user));
         return;
       }
       navigate('/admin');

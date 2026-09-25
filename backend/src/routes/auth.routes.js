@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../prismaClient.js';
 import { signAuthToken, setAuthCookie, clearAuthCookie } from '../utils/jwt.js';
 import { requireAuth, publicUser } from '../middleware/auth.js';
+import { withEffectiveRole } from '../utils/adminAccess.js';
 import { requireCsrf, issueCsrfToken } from '../middleware/csrf.js';
 import { generateRawToken, hashToken } from '../utils/tokens.js';
 import { sendMail } from '../utils/mailer.js';
@@ -102,7 +103,7 @@ router.post('/login', requireCsrf, async (req, res, next) => {
 
     const token = signAuthToken(user);
     setAuthCookie(res, token);
-    res.json({ user: publicUser(user) });
+    res.json({ user: publicUser(withEffectiveRole(user)) });
   } catch (err) {
     next(err);
   }
@@ -127,7 +128,7 @@ router.post('/2fa/verify', requireCsrf, async (req, res, next) => {
 
     const token = signAuthToken(user);
     setAuthCookie(res, token);
-    res.json({ user: publicUser(user) });
+    res.json({ user: publicUser(withEffectiveRole(user)) });
   } catch (err) {
     next(err);
   }

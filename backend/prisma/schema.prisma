@@ -42,6 +42,10 @@ model User {
   passwordHash  String
   role          Role     @default(customer)
   emailVerified Boolean  @default(false)
+  // Set only for temporary admins (Admin > Security > Add admin with a time
+  // limit). Once it passes the account is treated as a customer — see
+  // utils/adminAccess.js. Null = permanent admin (or not an admin at all).
+  adminExpiresAt DateTime?
 
   // Wholesale/dealer account fields — only populated when role = dealer.
   businessName          String?

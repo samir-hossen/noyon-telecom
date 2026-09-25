@@ -21,6 +21,27 @@ const emptyForm = {
 };
 const emptyCoupon = { code: '', type: 'percent', value: '', minSubtotal: '', usageLimit: '', usageLimitPerCustomer: '', expiresAt: '' };
 const ORDER_STATUSES = ['processing', 'paid', 'shipped', 'delivered', 'cancelled'];
+// Access-time choices for Admin > Security > Add admin (minutes; '' = permanent).
+const ADMIN_DURATIONS = [
+  { value: '10', label: '10 minutes' },
+  { value: '20', label: '20 minutes' },
+  { value: '30', label: '30 minutes' },
+  { value: '60', label: '1 hour' },
+  { value: '120', label: '2 hours' },
+  { value: '1440', label: '1 day' },
+  { value: '', label: 'Permanent (no time limit)' },
+];
+
+const emptyAdminForm = { name: '', email: '', password: '', durationMinutes: '20' };
+
+function formatTimeLeft(ms) {
+  if (ms <= 0) return 'Expired';
+  const min = Math.ceil(ms / 60000);
+  if (min < 60) return `${min} min left`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h ${min % 60} min left`;
+  return `${Math.floor(h / 24)} day(s) left`;
+}
 
 export default function Admin() {
   const [tab, setTab] = useState('products');
@@ -46,7 +67,27 @@ export default function Admin() {
   const [twoFAError, setTwoFAError] = useState('');
 
   const [admins, setAdmins] = useState([]);
-  const [newAdminForm, setNewAdminForm] = useState({ name: '', email: '', password: '' });
+  const [newAdminForm, setNewAdminForm] = useState(emptyAdminForm);
+  // The signed-in admin, for "is this me?" and "am I temporary?" checks.
+  const [me, setMe] = useState(null);
+  // Ticks every 20s so time-left badges and the temporary-access banner
+  // count down without a reload.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 20000);
+    return () => clearInterval(id);
+  }, []);
+  const myExpiry = me?.adminExpiresAt ? new Date(me.adminExpiresAt).getTime() : null;
+  const iAmPermanent = me ? !myExpiry : false;
+  // A temporary admin's time ran out while the panel was open: every API
+  // call now fails with 403, so reload — the fresh /auth/me no longer says
+  // admin and the protected route sends them away.
+  useEffect(() => {
+    if (myExpiry && myExpiry <= now) {
+      window.alert('Your temporary admin access has ended.');
+      window.location.assign('/');
+    }
+  }, [myExpiry, now]);
   const [newAdminError, setNewAdminError] = useState('');
 
   const [auditLogs, setAuditLogs] = useState([]);
@@ -151,7 +192,10 @@ export default function Admin() {
     api.get('/admin/coupons').then((d) => setCoupons(d.coupons)).catch((err) => showToast(err.message, 'error'));
   }
   function loadMe() {
-    api.get('/auth/me').then((d) => setTwoFA({ enabled: !!d.user.twoFAEnabled })).catch((err) => showToast(err.message, 'error'));
+    api.get('/auth/me').then((d) => {
+      setTwoFA({ enabled: !!d.user.twoFAEnabled });
+      setMe(d.user);
+    }).catch((err) => showToast(err.message, 'error'));
   }
   function loadAdmins() {
     api.get('/admin/admins').then((d) => setAdmins(d.admins)).catch((err) => showToast(err.message, 'error'));
@@ -729,13 +773,37 @@ export default function Admin() {
     e.preventDefault();
     setNewAdminError('');
     try {
-      await api.post('/admin/admins', newAdminForm);
-      setNewAdminForm({ name: '', email: '', password: '' });
+      await api.post('/admin/admins', { ...newAdminForm, durationMinutes: newAdminForm.durationMinutes || null });
+      setNewAdminForm(emptyAdminForm);
       loadAdmins();
       loadAuditLogs();
       showToast('Admin account created', 'success');
     } catch (err) {
       setNewAdminError(err.message);
+    }
+  }
+
+  // minutes: number = that much time from now; null = make permanent.
+  async function changeAdminAccess(a, minutes) {
+    try {
+      await api.patch(`/admin/admins/${a.id}`, { durationMinutes: minutes });
+      loadAdmins();
+      loadAuditLogs();
+      showToast(minutes ? `${a.name} now has ${minutes} min of admin access` : `${a.name} is now a permanent admin`, 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function removeAdmin(a) {
+    if (!window.confirm(`Remove admin access for ${a.name} (${a.email})? They'll lose access immediately.`)) return;
+    try {
+      await api.del(`/admin/admins/${a.id}`);
+      loadAdmins();
+      loadAuditLogs();
+      showToast(`${a.name} is no longer an admin`, 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
     }
   }
 
@@ -782,6 +850,13 @@ export default function Admin() {
           Admin <em>panel</em>
         </h1>
       </div>
+
+      {myExpiry && (
+        <div className="admin-temp-banner" role="status">
+          ⏱ You have temporary admin access — <strong>{formatTimeLeft(myExpiry - now)}</strong>.
+          It ends automatically; ask the store owner if you need more time.
+        </div>
+      )}
 
       <div className="tabs">
         <button className={`tab ${tab === 'analytics' ? 'active' : ''}`} onClick={() => setTab('analytics')}>Analytics</button>
@@ -1882,39 +1957,86 @@ export default function Admin() {
               Anyone with an admin account has full access to orders, products, and store settings — only add people you trust.
             </p>
             {admins.length > 0 && (
-              <ul style={{ listStyle: 'none', padding: 0, marginBottom: 16 }}>
-                {admins.map((a) => (
-                  <li key={a.id} style={{ padding: '6px 0', borderBottom: '1px solid var(--line)', fontSize: '0.9rem' }}>
-                    <strong>{a.name}</strong> — {a.email}
-                  </li>
-                ))}
+              <ul className="admin-accounts">
+                {admins.map((a) => {
+                  const expiry = a.adminExpiresAt ? new Date(a.adminExpiresAt).getTime() : null;
+                  const expired = expiry !== null && expiry <= now;
+                  const isMe = me?.id === a.id;
+                  return (
+                    <li key={a.id} className={expired ? 'expired' : ''}>
+                      <div className="admin-account-info">
+                        <strong>{a.name}{isMe && ' (you)'}</strong>
+                        <span>{a.email}</span>
+                      </div>
+                      <span className={`admin-access-badge ${expiry === null ? 'permanent' : expired ? 'expired' : 'temporary'}`}>
+                        {expiry === null ? 'Permanent' : expired ? 'Expired' : `⏱ ${formatTimeLeft(expiry - now)}`}
+                      </span>
+                      {iAmPermanent && !isMe && (
+                        <div className="admin-account-actions">
+                          {expiry !== null && (
+                            <>
+                              <button type="button" className="btn btn-outline btn-sm" onClick={() => changeAdminAccess(a, 10)}>
+                                +10 min
+                              </button>
+                              <button type="button" className="btn btn-outline btn-sm" onClick={() => changeAdminAccess(a, 20)}>
+                                +20 min
+                              </button>
+                            </>
+                          )}
+                          <button type="button" className="btn btn-outline btn-sm admin-danger" onClick={() => removeAdmin(a)}>
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
 
-            <h4 style={{ marginBottom: 10 }}>Add a new admin</h4>
-            {newAdminError && <div className="form-error">{newAdminError}</div>}
-            <form onSubmit={onCreateAdmin}>
-              <div className="field">
-                <label>Name</label>
-                <input required value={newAdminForm.name} onChange={(e) => setNewAdminForm((f) => ({ ...f, name: e.target.value }))} />
-              </div>
-              <div className="field">
-                <label>Email</label>
-                <input required type="email" value={newAdminForm.email} onChange={(e) => setNewAdminForm((f) => ({ ...f, email: e.target.value }))} />
-              </div>
-              <div className="field">
-                <label>Password</label>
-                <input
-                  required
-                  type="password"
-                  minLength={8}
-                  value={newAdminForm.password}
-                  onChange={(e) => setNewAdminForm((f) => ({ ...f, password: e.target.value }))}
-                  placeholder="8+ characters, with a letter and number"
-                />
-              </div>
-              <button className="btn btn-berry">Create admin account</button>
-            </form>
+            {iAmPermanent ? (
+              <>
+                <h4 style={{ marginBottom: 10 }}>Add a new admin</h4>
+                {newAdminError && <div className="form-error">{newAdminError}</div>}
+                <form onSubmit={onCreateAdmin}>
+                  <div className="field">
+                    <label>Name</label>
+                    <input required value={newAdminForm.name} onChange={(e) => setNewAdminForm((f) => ({ ...f, name: e.target.value }))} />
+                  </div>
+                  <div className="field">
+                    <label>Email</label>
+                    <input required type="email" value={newAdminForm.email} onChange={(e) => setNewAdminForm((f) => ({ ...f, email: e.target.value }))} />
+                  </div>
+                  <div className="field">
+                    <label>Password</label>
+                    <input
+                      required
+                      type="password"
+                      minLength={8}
+                      value={newAdminForm.password}
+                      onChange={(e) => setNewAdminForm((f) => ({ ...f, password: e.target.value }))}
+                      placeholder="8+ characters, with a letter and number"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Access time</label>
+                    <select value={newAdminForm.durationMinutes} onChange={(e) => setNewAdminForm((f) => ({ ...f, durationMinutes: e.target.value }))}>
+                      {ADMIN_DURATIONS.map((d) => (
+                        <option key={d.value || 'permanent'} value={d.value}>{d.label}</option>
+                      ))}
+                    </select>
+                    <span className="admin-field-hint">
+                      {newAdminForm.durationMinutes
+                        ? 'Access switches off by itself when the time is up. Temporary admins can\'t add or remove admins.'
+                        : 'A permanent admin keeps full access until you remove them.'}
+                    </span>
+                  </div>
+                  <button className="btn btn-berry">Create admin account</button>
+                </form>
+              </>
+            ) : (
+              me && <p className="admin-field-hint">Only a permanent admin can add or remove admin accounts.</p>
+            )}
           </div>
         </div>
       )}

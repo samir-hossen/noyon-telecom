@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../prismaClient.js';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { requireAuth, requireAdmin, requirePermanentAdmin } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeOrder } from '../utils/serialize.js';
 import { buildProductWhere, parsePagination, computeReadyToSell } from '../utils/productQuery.js';
@@ -17,6 +17,7 @@ import { isSteadfastConfigured, createConsignment } from '../utils/steadfast.js'
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
 import { assignUniqueSlug } from '../utils/slug.js';
 import { detectBrandFromText } from '../utils/brand.js';
+import { expiryFromMinutes, MAX_TEMP_ADMIN_MINUTES } from '../utils/adminAccess.js';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -38,7 +39,7 @@ router.get('/admins', async (req, res, next) => {
   try {
     const admins = await prisma.user.findMany({
       where: { role: 'admin' },
-      select: { id: true, name: true, email: true, createdAt: true },
+      select: { id: true, name: true, email: true, createdAt: true, adminExpiresAt: true },
       orderBy: { createdAt: 'asc' },
     });
     res.json({ admins });
@@ -47,21 +48,72 @@ router.get('/admins', async (req, res, next) => {
   }
 });
 
-router.post('/admins', requireCsrf, async (req, res, next) => {
+const BAD_DURATION = `Access time must be between 1 minute and ${MAX_TEMP_ADMIN_MINUTES / (24 * 60)} days.`;
+
+router.post('/admins', requireCsrf, requirePermanentAdmin, async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, durationMinutes } = req.body;
     if (!name || !ADMIN_EMAIL_RE.test(email || '') || !isStrongAdminPassword(password)) {
       return res.status(400).json({ error: 'Please fill in all fields correctly. Password needs 8+ characters with a letter and number.' });
     }
+    // Blank = permanent admin; a number of minutes = temporary admin.
+    const adminExpiresAt = expiryFromMinutes(durationMinutes);
+    if (adminExpiresAt === undefined) return res.status(400).json({ error: BAD_DURATION });
     const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
     if (existing) return res.status(409).json({ error: 'An account with that email already exists.' });
 
     const passwordHash = await bcrypt.hash(password, 12);
     const admin = await prisma.user.create({
-      data: { name, email: email.toLowerCase(), passwordHash, role: 'admin', emailVerified: true },
+      data: { name, email: email.toLowerCase(), passwordHash, role: 'admin', emailVerified: true, adminExpiresAt },
     });
-    await logAdminAction(req.user, 'admin.create', { newAdminEmail: admin.email });
-    res.status(201).json({ id: admin.id, name: admin.name, email: admin.email, createdAt: admin.createdAt });
+    await logAdminAction(req.user, 'admin.create', {
+      newAdminEmail: admin.email,
+      access: adminExpiresAt ? `temporary until ${adminExpiresAt.toISOString()}` : 'permanent',
+    });
+    res.status(201).json({ id: admin.id, name: admin.name, email: admin.email, createdAt: admin.createdAt, adminExpiresAt: admin.adminExpiresAt });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Give a temporary admin more time (counted from now — also how an expired
+// one gets access back), or make them permanent with a blank duration.
+router.patch('/admins/:id', requireCsrf, requirePermanentAdmin, async (req, res, next) => {
+  try {
+    if (req.params.id === req.user.id) return res.status(400).json({ error: "You can't change your own admin access." });
+    const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!target || target.role !== 'admin') return res.status(404).json({ error: 'Admin account not found.' });
+    const adminExpiresAt = expiryFromMinutes(req.body.durationMinutes);
+    if (adminExpiresAt === undefined) return res.status(400).json({ error: BAD_DURATION });
+
+    const admin = await prisma.user.update({
+      where: { id: target.id },
+      data: { adminExpiresAt },
+      select: { id: true, name: true, email: true, createdAt: true, adminExpiresAt: true },
+    });
+    await logAdminAction(req.user, 'admin.access_change', {
+      adminEmail: admin.email,
+      access: adminExpiresAt ? `temporary until ${adminExpiresAt.toISOString()}` : 'permanent',
+    });
+    res.json({ admin });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Remove admin rights. The account itself is kept (as a customer) rather
+// than deleted, so its audit-log history stays attached. Takes effect on
+// that person's very next request — roles are read from the database on
+// every request, not from the login cookie.
+router.delete('/admins/:id', requireCsrf, requirePermanentAdmin, async (req, res, next) => {
+  try {
+    if (req.params.id === req.user.id) return res.status(400).json({ error: "You can't remove your own admin access." });
+    const target = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!target || target.role !== 'admin') return res.status(404).json({ error: 'Admin account not found.' });
+
+    await prisma.user.update({ where: { id: target.id }, data: { role: 'customer', adminExpiresAt: null } });
+    await logAdminAction(req.user, 'admin.remove', { adminEmail: target.email });
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
