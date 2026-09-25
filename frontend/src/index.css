@@ -1368,6 +1368,101 @@ button { font-family: inherit; cursor: pointer; }
 .admin-table th, .admin-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 0.86rem; }
 .admin-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b5f59; }
 .admin-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+/* Tablet widths: real table, side-scrolling. Phones get the card layout below. */
+@media (min-width: 641px) and (max-width: 900px) {
+  .admin-table-wrap { overflow-x: auto; }
+  .admin-table { min-width: 560px; }
+}
+.btn-sm { padding: 8px 14px; font-size: 0.8rem; min-height: 36px; }
+.remove-link { background: none; border: 0; padding: 0; }
+.admin-danger { color: #b3261e; border-color: #b3261e; }
+@media (hover: hover) { .admin-danger:hover { background: #b3261e; border-color: #b3261e; color: #fff; } }
+
+/* Product add/edit form: keep its top clear of the sticky navbar when it's
+   scrolled into view, and mark which row is being edited. */
+.admin-product-form { scroll-margin-top: 150px; }
+.admin-form-title { font-family: var(--font-display); font-size: 1.15rem; margin: 0 0 18px; overflow-wrap: anywhere; }
+.admin-table tr[data-product-row] { scroll-margin-top: 150px; scroll-margin-bottom: 90px; }
+.admin-table tr.admin-row-editing td { background: var(--berry-tint); }
+@media (max-width: 900px) { .admin-product-form { scroll-margin-top: 120px; } }
+
+/* Search / status filter bar above the Products and Orders lists. */
+.admin-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; }
+.admin-filters .admin-search {
+  flex: 0 1 320px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper-dim);
+  font: inherit;
+  font-size: 0.88rem;
+}
+.admin-filters .admin-search:focus { outline: none; border-color: var(--berry); background: #fff; }
+.admin-filters .select { width: auto; min-height: 40px; }
+.admin-filters > span { font-size: 0.82rem; color: var(--muted); }
+
+/* Previous / Page x of y / Next */
+.admin-pager { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
+.admin-pager > span { font-size: 0.82rem; color: var(--muted); text-align: center; }
+
+/* Category picker in the product form — tappable chips instead of bare
+   checkboxes, which inherited the full-size .field input styling and
+   rendered as big empty squares. */
+.admin-cat-picker { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; margin-bottom: 6px; }
+.admin-cat-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.admin-cat-picker label.checked { background: var(--berry-tint); border-color: var(--berry); color: var(--berry-text); font-weight: 600; }
+.field input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  box-shadow: none;
+  accent-color: var(--berry);
+}
+.admin-check-field { display: flex; align-items: center; gap: 8px; padding-top: 22px; }
+.admin-check-field label { margin: 0; }
+
+/* Homepage banner rows */
+.admin-banner-row {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #fff;
+}
+.admin-banner-row.inactive { opacity: 0.55; }
+.admin-banner-thumb { width: 110px; height: 70px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.admin-banner-fields { flex: 1; min-width: 0; }
+.admin-banner-fields .field input { min-height: 40px; padding: 8px 12px; font-size: 0.85rem; }
+.admin-banner-actions { display: flex; flex-direction: column; gap: 6px; }
+.admin-banner-actions .btn { width: 100%; }
+@media (max-width: 640px) {
+  .admin-banner-row { flex-wrap: wrap; align-items: flex-start; }
+  .admin-banner-thumb { width: 100%; height: auto; aspect-ratio: 16 / 7; }
+  .admin-banner-fields { flex-basis: 100%; }
+  .admin-banner-actions { flex-direction: row; width: 100%; }
+  .admin-banner-actions .btn { width: auto; flex: 1; }
+}
 
 /* Phone-width admin tables: stop side-scrolling and stack each row into a
    labelled card instead. Purely a CSS transform — the markup underneath is
@@ -1395,6 +1490,26 @@ button { font-family: inherit; cursor: pointer; }
     gap: 12px;
     text-align: right;
   }
+  /* Label in the left column; everything the cell contains stacks in the
+     right column (a cell like Business holds name + address + link). */
+  .admin-table td[data-label] {
+    display: grid;
+    grid-template-columns: minmax(72px, auto) 1fr;
+    column-gap: 12px;
+    justify-items: end;
+    overflow-wrap: anywhere;
+  }
+  .admin-table td[data-label]::before { grid-column: 1; grid-row: 1; justify-self: start; }
+  .admin-table td[data-label] > * { grid-column: 2; min-width: 0; }
+  /* Product cell doubles as the card's header: photo + name, no label. */
+  .admin-table td[data-label='Product'] { justify-content: flex-start; text-align: left; font-weight: 600; }
+  .admin-table td[data-label='Product']::before { content: none; }
+  .admin-table td[data-label='Product'] img { border-radius: 6px; flex-shrink: 0; }
+  .admin-table td[data-label='Product'] span { flex-shrink: 0; font-weight: 600; }
+  .admin-table td[data-label='Actions'] { display: flex; align-items: center; gap: 14px; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 10px; }
+  .admin-table td[data-label='Actions'] { justify-content: flex-end; flex-wrap: wrap; }
+  .admin-table td[data-label='Actions']::before { content: none; }
+  .admin-table td[data-label='Actions'] .remove-link { margin-top: 0; padding: 6px 2px; }
   .admin-table td::before {
     content: attr(data-label);
     font-size: 0.68rem;
@@ -1410,7 +1525,12 @@ button { font-family: inherit; cursor: pointer; }
   .admin-table td:not([data-label])::before { content: none; }
 
   .field-row { grid-template-columns: 1fr; }
+  .admin-check-field { padding-top: 0; }
+  .admin-filters .admin-search { flex: 1 1 100%; }
+  .admin-filters .select { flex: 1; }
+  .admin-pager .btn { flex: 1; }
   .order-card { padding: 16px; }
+  .order-card-head .select { width: auto; }
   .analytics-panel { padding: 16px; }
   .bar-chart { height: 100px; }
   .status-bar-row .status-name { width: 78px; font-size: 0.78rem; }
@@ -1424,10 +1544,31 @@ button { font-family: inherit; cursor: pointer; }
    including tablet widths, not just phones. */
 .tabs { display: flex; gap: 6px; margin-bottom: 30px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
-.tab { padding: 12px 20px; font-weight: 600; font-size: 0.88rem; border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0; }
+.tab {
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: capitalize;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--berry-text); }
 .tab.active { border-color: var(--berry); color: var(--berry-text); }
-@media (max-width: 480px) {
-  .tab { padding: 10px 14px; font-size: 0.8rem; }
+@media (max-width: 640px) {
+  .tabs { flex-wrap: wrap; gap: 8px; border-bottom: 0; margin-bottom: 22px; overflow: visible; }
+  .tab {
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+  }
+  .tab.active { background: var(--berry); border-color: var(--berry); color: #fff; }
 }
 
 /* ---------- Toasts ---------- */
@@ -1704,9 +1845,7 @@ button { font-family: inherit; cursor: pointer; }
 
   .checkout-section, .form-panel { padding: 22px; }
 
-  .admin-table-wrap { overflow-x: auto; }
-  .admin-table { min-width: 560px; }
-  .admin-toolbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .admin-toolbar { flex-wrap: wrap; gap: 12px; }
 
   .footer { padding: 44px 0 24px; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
@@ -1767,7 +1906,18 @@ button { font-family: inherit; cursor: pointer; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 520px) {
-  .stat-grid { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-card .stat-label { font-size: 0.64rem; }
+  .stat-card .stat-value { font-size: 1.25rem; }
+  .stat-card .stat-sub { font-size: 0.68rem; }
+  .bar-chart { gap: 3px; }
+  .bar-chart .bar-col { min-width: 0; }
+  .bar-chart .bar-col:nth-child(even) .bar-label { visibility: hidden; }
+  .bar-chart .bar-label { font-size: 0.56rem; }
+  .top-product-row { flex-wrap: wrap; row-gap: 2px; }
+  .top-product-row .rank + .tp-name { flex-basis: calc(100% - 34px); }
+  .top-product-row .rank + .tp-name + .tp-qty { margin-left: 34px; margin-right: auto; }
 }
 
 /* ---------- Part Finder ---------- */

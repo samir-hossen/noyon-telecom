@@ -455,6 +455,29 @@ export default function Admin() {
     }
   }
 
+  // The product form renders above the product list, so opening it from an
+  // Edit button further down the page left it off-screen — it looked like
+  // nothing happened. Bring the form into view and focus its first field,
+  // and when an edit is saved or cancelled, return to that product's row.
+  const productFormRef = useRef(null);
+  const productNameRef = useRef(null);
+  function showProductForm() {
+    setTimeout(() => {
+      productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      productNameRef.current?.focus({ preventScroll: true });
+    }, 0);
+  }
+  function closeProductForm() {
+    const id = editingId;
+    setShowForm(false);
+    setEditingId(null);
+    if (id) {
+      setTimeout(() => {
+        document.querySelector(`[data-product-row="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 0);
+    }
+  }
+
   function startEdit(p) {
     setEditingId(p.id);
     setForm({
@@ -474,17 +497,14 @@ export default function Admin() {
       published: p.published !== false,
     });
     setShowForm(true);
+    showProductForm();
   }
-
-  const productNameRef = useRef(null);
 
   function startNew() {
     setEditingId(null);
     setForm(emptyForm);
     setShowForm(true);
-    // The form was already open (e.g. editing) or just mounted — either
-    // way, focus needs to happen after the input exists/re-renders.
-    setTimeout(() => productNameRef.current?.focus(), 0);
+    showProductForm();
   }
 
   // Enter key moves to the next field instead of submitting — the form has
@@ -575,7 +595,7 @@ export default function Admin() {
       if (editingId) {
         await api.put(`/admin/products/${editingId}`, payload);
         loadProducts(); // stay on the current page/search
-        setShowForm(false);
+        closeProductForm();
       } else {
         await api.post('/admin/products', payload);
         setProductSearchInput('');
@@ -600,7 +620,7 @@ export default function Admin() {
           warranty: f.warranty,
           published: f.published,
         }));
-        setTimeout(() => productNameRef.current?.focus(), 0);
+        showProductForm();
       }
       loadAuditLogs();
       showToast(editingId ? 'Product updated' : 'Product created — ready for the next one', 'success');
@@ -870,12 +890,12 @@ export default function Admin() {
             <button className="btn btn-primary" onClick={startNew}>+ Add product</button>
           </div>
 
-          <form onSubmit={onProductSearchSubmit} className="field-row" style={{ marginBottom: 16, alignItems: 'center' }}>
+          <form onSubmit={onProductSearchSubmit} className="admin-filters">
             <input
               value={productSearchInput}
               onChange={(e) => setProductSearchInput(e.target.value)}
               placeholder="Search by name, SKU, or brand…"
-              style={{ maxWidth: 320 }}
+              className="admin-search"
               aria-label="Search products"
             />
             <button type="submit" className="btn btn-outline btn-sm">Search</button>
@@ -897,7 +917,6 @@ export default function Admin() {
               value={productStatusFilter}
               onChange={(e) => onProductStatusChange(e.target.value)}
               aria-label="Filter by publish status"
-              style={{ maxWidth: 160 }}
             >
               <option value="all">All products</option>
               <option value="published">Published only</option>
@@ -906,7 +925,8 @@ export default function Admin() {
           </form>
 
           {showForm && (
-            <form onSubmit={onSubmit} onKeyDown={focusNextFieldOnEnter} className="form-panel wide" style={{ marginBottom: 30 }}>
+            <form ref={productFormRef} onSubmit={onSubmit} onKeyDown={focusNextFieldOnEnter} className="form-panel wide admin-product-form" style={{ marginBottom: 30 }}>
+              <h3 className="admin-form-title">{editingId ? `Edit: ${form.name || 'product'}` : 'Add a new product'}</h3>
               {error && <div className="form-error">{error}</div>}
               <div className="field-row">
                 <div className="field">
@@ -915,9 +935,9 @@ export default function Admin() {
                 </div>
                 <div className="field">
                   <label>Categories</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', paddingTop: 8 }}>
+                  <div className="admin-cat-picker">
                     {ALL_CATEGORIES.map((c) => (
-                      <label key={c} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.85rem', fontWeight: 400, cursor: 'pointer' }}>
+                      <label key={c} className={form.categories.includes(c) ? 'checked' : ''}>
                         <input type="checkbox" checked={form.categories.includes(c)} onChange={() => toggleCategory(c)} />
                         {c}
                       </label>
@@ -989,7 +1009,7 @@ export default function Admin() {
                   <label>Warranty</label>
                   <input value={form.warranty} onChange={(e) => setForm({ ...form, warranty: e.target.value })} placeholder="e.g. 30 Days, 7 Days Testing Warranty" />
                 </div>
-                <div className="field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '22px' }}>
+                <div className="field admin-check-field">
                   <input
                     type="checkbox"
                     id="published-toggle"
@@ -1067,7 +1087,7 @@ export default function Admin() {
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <button className="btn btn-berry">{editingId ? 'Save changes' : 'Create product'}</button>
-                <button type="button" className="btn btn-outline" onClick={() => setShowForm(false)}>Cancel</button>
+                <button type="button" className="btn btn-outline" onClick={closeProductForm}>Cancel</button>
               </div>
             </form>
           )}
@@ -1089,7 +1109,7 @@ export default function Admin() {
                 </thead>
                 <tbody>
                   {products.map((p) => (
-                    <tr key={p.id}>
+                    <tr key={p.id} data-product-row={p.id} className={editingId === p.id ? 'admin-row-editing' : ''}>
                       <td data-label="Product" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <img src={resolveImg(p.img)} alt={p.name} loading="lazy" decoding="async" style={{ width: 36, height: 36, objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
                         {p.name}
@@ -1125,7 +1145,7 @@ export default function Admin() {
             </div>
           )}
           {productTotalPages > 1 && (
-            <div className="field-row" style={{ justifyContent: 'center', marginTop: 20, alignItems: 'center', gap: 12 }}>
+            <div className="admin-pager">
               <button
                 type="button"
                 className="btn btn-outline btn-sm"
@@ -1134,7 +1154,7 @@ export default function Admin() {
               >
                 Previous
               </button>
-              <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
+              <span>
                 Page {productPage} of {productTotalPages}
               </span>
               <button
@@ -1152,7 +1172,7 @@ export default function Admin() {
 
       {tab === 'orders' && (
         <div style={{ paddingBottom: 80 }}>
-          <div className="field-row" style={{ marginBottom: 16, alignItems: 'center' }}>
+          <div className="admin-filters">
             <select
               className="select"
               value={orderStatusFilter}
@@ -1161,7 +1181,6 @@ export default function Admin() {
                 setOrderStatusFilter(status);
                 loadOrders(1, status);
               }}
-              style={{ maxWidth: 200 }}
             >
               <option value="">All statuses</option>
               {ORDER_STATUSES.map((s) => (
@@ -1289,7 +1308,7 @@ export default function Admin() {
             ))
           )}
           {orderTotalPages > 1 && (
-            <div className="field-row" style={{ justifyContent: 'center', marginTop: 20, alignItems: 'center', gap: 12 }}>
+            <div className="admin-pager">
               <button
                 type="button"
                 className="btn btn-outline btn-sm"
@@ -1298,7 +1317,7 @@ export default function Admin() {
               >
                 Previous
               </button>
-              <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
+              <span>
                 Page {orderPage} of {orderTotalPages}
               </span>
               <button
@@ -1508,7 +1527,7 @@ export default function Admin() {
             </table>
           </div>
           {dealerTotalPages > 1 && (
-            <div className="field-row" style={{ justifyContent: 'center', marginTop: 20, alignItems: 'center', gap: 12 }}>
+            <div className="admin-pager">
               <button
                 type="button"
                 className="btn btn-outline btn-sm"
@@ -1517,7 +1536,7 @@ export default function Admin() {
               >
                 Previous
               </button>
-              <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
+              <span>
                 Page {dealerPage} of {dealerTotalPages} ({dealerTotal} total)
               </span>
               <button
@@ -1689,21 +1708,14 @@ export default function Admin() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {banners.map((b, i) => (
-                  <div
-                    key={b.id}
-                    style={{
-                      display: 'flex', gap: 14, alignItems: 'center', padding: 12,
-                      border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                      opacity: b.active ? 1 : 0.55,
-                    }}
-                  >
+                  <div key={b.id} className={`admin-banner-row ${b.active ? '' : 'inactive'}`}>
                     <img
                       src={resolveImg(b.imageUrl)}
                       alt=""
-                      style={{ width: 96, height: 64, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                      className="admin-banner-thumb"
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
                     />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="admin-banner-fields">
                       <div className="field" style={{ marginBottom: 6 }}>
                         <input
                           placeholder="Link (optional) — e.g. /shop?category=Display"
@@ -1727,13 +1739,13 @@ export default function Admin() {
                         Active
                       </label>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <button type="button" className="btn btn-outline" disabled={i === 0} onClick={() => moveBanner(i, -1)} style={{ padding: '4px 10px' }}>↑</button>
-                      <button type="button" className="btn btn-outline" disabled={i === banners.length - 1} onClick={() => moveBanner(i, 1)} style={{ padding: '4px 10px' }}>↓</button>
+                    <div className="admin-banner-actions">
+                      <button type="button" className="btn btn-outline btn-sm" disabled={i === 0} onClick={() => moveBanner(i, -1)} aria-label="Move up">↑</button>
+                      <button type="button" className="btn btn-outline btn-sm" disabled={i === banners.length - 1} onClick={() => moveBanner(i, 1)} aria-label="Move down">↓</button>
+                      <button type="button" className="btn btn-outline btn-sm admin-danger" onClick={() => deleteBanner(b.id)}>
+                        Delete
+                      </button>
                     </div>
-                    <button type="button" className="btn btn-outline" onClick={() => deleteBanner(b.id)} style={{ color: '#b3261e', borderColor: '#b3261e' }}>
-                      Delete
-                    </button>
                   </div>
                 ))}
               </div>

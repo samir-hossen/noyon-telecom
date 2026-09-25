@@ -4,6 +4,7 @@ import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import SupportWidget from './components/SupportWidget.jsx';
 import MobileBottomNav from './components/MobileBottomNav.jsx';
+import ScrollToTop from './components/ScrollToTop.jsx';
 import { RequireAuth, RequireAdmin } from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -90,6 +91,7 @@ function VerifyEmailBanner() {
 export default function App() {
   return (
     <>
+      <ScrollToTop />
       <a href="#main-content" className="skip-link">Skip to content</a>
       <Navbar />
       <VerifyEmailBanner />
