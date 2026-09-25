@@ -254,10 +254,12 @@ export default function Checkout() {
             <span>{t('cart.shipping')}</span>
             <span>{formatPrice(shipping)}</span>
           </div>
-          <div className="summary-row">
-            <span>{t('checkout.tax')}</span>
-            <span>{formatPrice(tax)}</span>
-          </div>
+          {tax > 0 && (
+            <div className="summary-row">
+              <span>{t('checkout.tax')}</span>
+              <span>{formatPrice(tax)}</span>
+            </div>
+          )}
           <div className="summary-row total">
             <span>{t('cart.total')}</span>
             <span>{formatPrice(total)}</span>

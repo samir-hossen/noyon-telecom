@@ -77,6 +77,12 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
         // the product page and in their cart, computed the same way (server
         // side, from req.user) so it can't be spoofed from the client.
         const unitPrice = priceForViewer(product, req.user, line.qty);
+        // Guest carts live in the browser and never pass through the
+        // /cart/add check, so the order itself must refuse unpriced items
+        // (otherwise they're sold at ৳0).
+        if (!(product.price > 0) || !(unitPrice > 0)) {
+          throw new HttpError(400, `"${product.name}" doesn't have a price yet — please remove it from your cart and ask us on WhatsApp for a quote.`);
+        }
         subtotal += unitPrice * line.qty;
         orderItemsData.push({ productId: product.id, name: product.name, img: product.img, price: unitPrice, qty: line.qty });
       }

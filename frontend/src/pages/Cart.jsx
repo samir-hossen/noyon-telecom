@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, resolveImg } from '../api';
 import { productUrl } from '../utils/slug';
@@ -55,6 +55,18 @@ export default function Cart() {
 
   usePageMeta(t('cart.pageTitle'), t('cart.pageMeta'));
 
+  // Phone-width checkout bar, shown while the summary's own Checkout button
+  // is off-screen (it sits below every cart row on a phone).
+  const checkoutRef = useRef(null);
+  const [showBar, setShowBar] = useState(false);
+  useEffect(() => {
+    const el = checkoutRef.current;
+    if (!el || typeof window.IntersectionObserver === 'undefined') return undefined;
+    const io = new window.IntersectionObserver(([entry]) => setShowBar(!entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [items.length]);
+
   useEffect(() => {
     api
       .get('/settings/public')
@@ -82,6 +94,10 @@ export default function Cart() {
   const shipping = deliveryFee;
   const tax = 0; // Tax disabled — no tax is added anywhere.
   const total = +(subtotal + shipping + tax).toFixed(2);
+  // "Price on request" items (price 0) can't be ordered — the server
+  // refuses them — so say so here instead of failing at checkout.
+  const unpriced = items.filter((i) => !(i.product.price > 0));
+  const canCheckout = unpriced.length === 0;
 
   return (
     <div className="container">
@@ -104,6 +120,7 @@ export default function Cart() {
                   <div className="cart-row-name">{item.product.name}</div>
                 </Link>
                 <div className="cart-row-cat">{item.product.category}</div>
+                {!(item.product.price > 0) && <div className="cart-row-warning">{t('cart.noPriceItem')}</div>}
                 <button className="remove-link" onClick={() => removeItem(item.productId)}>{t('cart.remove')}</button>
               </div>
               <div className="qty-control">
@@ -126,21 +143,34 @@ export default function Cart() {
             <span>{t('cart.shipping')}</span>
             <span>{formatPrice(shipping)}</span>
           </div>
-          <div className="summary-row">
-            <span>{t('cart.estimatedTax')}</span>
-            <span>{formatPrice(tax)}</span>
-          </div>
+          {tax > 0 && (
+            <div className="summary-row">
+              <span>{t('cart.estimatedTax')}</span>
+              <span>{formatPrice(tax)}</span>
+            </div>
+          )}
           <div className="summary-row total">
             <span>{t('cart.total')}</span>
             <span>{formatPrice(total)}</span>
           </div>
-          <button className="btn btn-berry btn-block" onClick={() => navigate('/checkout')} style={{ marginTop: 10 }}>
+          {!canCheckout && <div className="form-error" style={{ marginTop: 12, marginBottom: 0 }}>{t('cart.noPriceBlock')}</div>}
+          <button ref={checkoutRef} className="btn btn-berry btn-block" onClick={() => navigate('/checkout')} disabled={!canCheckout} style={{ marginTop: 10 }}>
             {t('cart.checkout')}
           </button>
           <Link to="/request-quote" className="btn btn-outline btn-block" style={{ marginTop: 10 }}>
             {t('cart.requestBulkQuote')}
           </Link>
         </div>
+      </div>
+
+      <div className={`sticky-buy-bar ${showBar ? 'visible' : ''}`} aria-hidden={!showBar}>
+        <div className="sticky-buy-bar-price">
+          <span>{t('cart.total')}</span>
+          <strong>{formatPrice(total)}</strong>
+        </div>
+        <button type="button" className="btn btn-berry" onClick={() => navigate('/checkout')} disabled={!canCheckout} tabIndex={showBar ? 0 : -1}>
+          {t('cart.checkout')}
+        </button>
       </div>
     </div>
   );

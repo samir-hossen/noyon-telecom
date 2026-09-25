@@ -40,6 +40,9 @@ router.post('/add', requireCsrf, async (req, res, next) => {
 
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
+    // About half the catalog is "price on request" (price 0). Those used to
+    // go into the cart — and through checkout — at ৳0.
+    if (!(product.price > 0)) return res.status(400).json({ error: "This product doesn't have a price yet — please ask us on WhatsApp for a quote." });
 
     // Serializable so two near-simultaneous adds of the same product
     // (double-click, two open tabs) can't both read the same pre-add qty

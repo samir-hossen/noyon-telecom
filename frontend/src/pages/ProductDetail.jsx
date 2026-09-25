@@ -75,6 +75,21 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [qtyText, setQtyText] = useState('1'); // lets someone type a quantity directly, e.g. 10 or 20
   const [added, setAdded] = useState(false);
+  // Phone-width "buy bar" pinned above the bottom nav while the real Add to
+  // Cart button is off-screen — on a phone that button sits well below the
+  // photo, specs and description, so it was never visible on arrival.
+  const mainAddRef = useRef(null);
+  const [showBuyBar, setShowBuyBar] = useState(false);
+  useEffect(() => {
+    const el = mainAddRef.current;
+    if (!el || typeof window.IntersectionObserver === 'undefined') {
+      setShowBuyBar(false);
+      return undefined;
+    }
+    const io = new window.IntersectionObserver(([entry]) => setShowBuyBar(!entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [product]);
   const [activeImg, setActiveImg] = useState(0);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const { addToCart } = useCart();
@@ -256,6 +271,7 @@ export default function ProductDetail() {
   }
 
   const onSale = product.compareAt && product.compareAt > product.price;
+  const priceUnavailable = !product.price || product.price <= 0;
 
   async function handleAdd() {
     try {
@@ -421,8 +437,12 @@ export default function ProductDetail() {
           )}
 
           <div className="pd-price">
-            <span className="now">{formatPrice(product.price)}</span>
-            {(onSale || (product.retailPrice && product.retailPrice > product.price)) && (
+            {priceUnavailable ? (
+              <span className="now pd-price-request">{t('card.priceOnRequest')}</span>
+            ) : (
+              <span className="now">{formatPrice(product.price)}</span>
+            )}
+            {!priceUnavailable && (onSale || (product.retailPrice && product.retailPrice > product.price)) && (
               <span className="was">{formatPrice(product.retailPrice || product.compareAt)}</span>
             )}
             {user?.role === 'dealer' && user?.dealerStatus === 'approved' && (
@@ -481,6 +501,8 @@ export default function ProductDetail() {
             ) : null;
           })()}
 
+          {!priceUnavailable && (
+          <>
           <div className="pd-qty">
             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('pd.quantityLabel', null, { moq: product.moq || 1 })}</span>
             <div className="qty-control">
@@ -509,7 +531,7 @@ export default function ProductDetail() {
 
           <p className="pd-stock">{product.stock > 0 ? t('pd.inStockNote', null, { stock: product.stock }) : t('product.outOfStock')}</p>
 
-          <button className="btn btn-berry btn-block" disabled={product.stock === 0} onClick={handleAdd}>
+          <button ref={mainAddRef} className="btn btn-berry btn-block" disabled={product.stock === 0} onClick={handleAdd}>
             {added ? t('pd.addedToCart') : t('product.addToCart')}
           </button>
           {added && (
@@ -517,10 +539,13 @@ export default function ProductDetail() {
               <Link to="/cart" style={{ fontWeight: 600, color: 'var(--berry)' }}>{t('pd.viewCart')}</Link>
             </p>
           )}
+          </>
+          )}
+          {priceUnavailable && <p className="pd-stock">{t('pd.priceOnRequestNote')}</p>}
 
           <div className="pd-action-row">
             <a
-              className="btn btn-outline pd-whatsapp-btn"
+              className={`btn pd-whatsapp-btn ${priceUnavailable ? 'pd-whatsapp-primary' : 'btn-outline'}`}
               href={`https://wa.me/8801560047377?text=${encodeURIComponent(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
               target="_blank"
               rel="noreferrer"
@@ -679,6 +704,19 @@ export default function ProductDetail() {
             ))}
           </div>
         </section>
+      )}
+      {!priceUnavailable && product.stock > 0 && (
+        <div className={`sticky-buy-bar ${showBuyBar ? 'visible' : ''}`} aria-hidden={!showBuyBar}>
+          <div className="sticky-buy-bar-price">
+            <span>{product.name}</span>
+            <strong>{formatPrice(product.price)}</strong>
+          </div>
+          {added ? (
+            <Link to="/cart" className="btn btn-berry" tabIndex={showBuyBar ? 0 : -1}>{t('pd.viewCart')}</Link>
+          ) : (
+            <button type="button" className="btn btn-berry" onClick={handleAdd} tabIndex={showBuyBar ? 0 : -1}>{t('product.addToCart')}</button>
+          )}
+        </div>
       )}
     </div>
   );

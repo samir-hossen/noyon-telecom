@@ -59,7 +59,12 @@ body {
 }
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; }
+/* Strip the browser's grey bevelled button chrome site-wide. Every styled
+   button (.btn, .tab, .faq-question, toggles...) sets its own border and
+   background via a class, which outranks this element rule; before this,
+   any button whose class forgot to reset them rendered as a raw grey
+   system button (admin tabs, FAQ rows, register's account-type toggle). */
+button { font-family: inherit; cursor: pointer; border: 0; background-color: transparent; color: inherit; }
 :focus-visible { outline: 2px solid var(--berry); outline-offset: 2px; border-radius: 4px; }
 
 /* All text sizing site-wide is in rem (spacing/layout is px, unaffected),
@@ -924,6 +929,19 @@ button { font-family: inherit; cursor: pointer; }
   transition: all 0.2s var(--ease);
 }
 @media (hover: hover) { .card-cta:hover { background: var(--berry); border-color: var(--berry); transform: translateY(-1px); } }
+.card-cta-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #fff;
+  color: #128c4b;
+  border-color: #25d366;
+  text-align: center;
+}
+@media (hover: hover) { .card-cta-whatsapp:hover { background: #25d366; border-color: #25d366; color: #fff; } }
+/* Long labels (e.g. Bangla) must never run under the wishlist heart. */
+.card-tag { max-width: calc(100% - 70px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- Footer ---------- */
 .footer { background: var(--ink); color: var(--paper); padding: 0 0 30px; margin-top: 80px; }
@@ -2751,3 +2769,92 @@ button { font-family: inherit; cursor: pointer; }
   .faq-item:has(.faq-question:active) { border-bottom-color: rgba(230, 0, 35, 0.45); }
   .faq-question:active { color: var(--berry-text); }
 }
+
+/* ---------- Mobile polish ---------- */
+/* FAQ questions are <button>s and still carried the browser's grey
+   bevelled button chrome. */
+.faq-question { background: none; border: 0; color: inherit; font-family: inherit; cursor: pointer; }
+/* Grid columns default to min-width:auto, so the newsletter form's input +
+   button forced its column wider than a phone screen and the footer's
+   right edge (text and the Join button) was cut off. */
+.footer-grid > * { min-width: 0; }
+.footer a[href^='tel:'] { white-space: nowrap; }
+
+@media (max-width: 640px) {
+  /* Footer: brand block and newsletter get the full width; the two link
+     lists sit side by side between them. */
+  .footer-grid { gap: 24px 20px; }
+  .footer-grid > :first-child,
+  .footer-grid > :last-child { grid-column: 1 / -1; }
+  .footer-grid > :first-child p { max-width: none !important; }
+  .footer p, .footer a { line-height: 1.8; }
+  .footer-main-container { padding-top: 36px; }
+
+  /* Section headings: keep "View all →" level with the heading. */
+  .section-head { align-items: center; }
+  .section-link { white-space: nowrap; font-size: 0.84rem; }
+
+  /* Reviews carousel: snapped cards stopped flush against the screen edge;
+     the snap position has to honour the same side inset as the padding. */
+  .testimonial-grid { scroll-padding-left: 18px; scrollbar-width: none; }
+  .testimonial-grid::-webkit-scrollbar { display: none; }
+
+  /* Shop / category pages: the title block, two pill rows and toolbar used
+     to fill the entire first screen before a single product showed. */
+  .page-header { padding: 20px 0 8px; }
+  .page-header .eyebrow { margin-bottom: 6px; font-size: 0.66rem; }
+  .page-title { font-size: 1.55rem; line-height: 1.2; }
+  .cat-strip {
+    gap: 8px;
+    padding: 8px 18px;
+    margin: 0 -18px;
+    border-bottom: 0;
+    scrollbar-width: none;
+  }
+  .cat-strip::-webkit-scrollbar { display: none; }
+  .cat-pill { padding: 7px 14px; font-size: 0.8rem; }
+  .cat-pill.active { box-shadow: none; }
+  .shop-toolbar { gap: 8px; }
+  .shop-toolbar-controls { width: 100%; flex-wrap: nowrap; gap: 8px; }
+  .shop-search-input { flex: 1; min-width: 0; min-height: 42px; padding: 0 12px; }
+  .shop-toolbar-controls .select { flex: 0 0 auto; max-width: 44%; min-height: 42px; padding: 8px 10px; font-size: 0.82rem; }
+  .sticky-search-bar { padding: 10px 0; }
+}
+
+/* ---------- Product page price on request + mobile sticky buy bar (product page and cart) ---------- */
+.pd-price .pd-price-request { font-size: 1.35rem; color: var(--muted); }
+.pd-whatsapp-primary { background: #25d366; border: 1px solid #25d366; color: #fff; flex-basis: 100% !important; }
+@media (hover: hover) { .pd-whatsapp-primary:hover { background: #1ebe5a; border-color: #1ebe5a; color: #fff; } }
+.sticky-buy-bar { display: none; }
+@media (max-width: 900px) {
+  .sticky-buy-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    z-index: 130;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 18px rgba(20, 20, 26, 0.06);
+    transform: translateY(120%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s var(--ease), opacity 0.2s var(--ease);
+  }
+  .sticky-buy-bar.visible { transform: none; opacity: 1; pointer-events: auto; }
+  .sticky-buy-bar-price { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+  .sticky-buy-bar-price span { font-size: 0.74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sticky-buy-bar-price strong { font-family: var(--font-price); font-size: 1.1rem; color: var(--berry-text); }
+  .sticky-buy-bar .btn { flex-shrink: 0; min-height: 44px; padding: 10px 20px; }
+  /* Keep the chat button and the end of the page clear of the bar. */
+  body:has(.sticky-buy-bar.visible) .support-widget { bottom: 160px; }
+  body:has(.sticky-buy-bar) { padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+}
+
+.cart-row-warning { font-size: 0.74rem; color: var(--berry-text); font-weight: 600; margin-top: 4px; }

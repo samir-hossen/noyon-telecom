@@ -333,6 +333,8 @@ const translations = {
     'cart.shipping': 'Shipping',
     'cart.estimatedTax': 'Estimated tax',
     'cart.total': 'Total',
+    'cart.noPriceItem': "Price on request — can't be ordered online yet",
+    'cart.noPriceBlock': 'Remove the items marked "price on request" to check out — ask us on WhatsApp for their price.',
     'cart.checkout': 'Checkout',
     'cart.requestBulkQuote': 'Request a bulk quote instead',
 
@@ -580,6 +582,9 @@ const translations = {
     'card.addToWishlist': 'Add to wishlist',
     'card.priceOnRequest': 'Price on request',
     'card.unavailable': 'Unavailable',
+    'card.askPrice': 'Ask price',
+    'card.askStock': 'Ask stock',
+    'card.whatsappAskMessage': 'Hi, please let me know the price and availability of: {{name}} — {{link}}',
 
     'wishlist.pageTitle': 'Your Wishlist',
     'wishlist.pageMeta': 'View and manage the products you have saved to your Noyon Telecom wishlist.',
@@ -607,6 +612,7 @@ const translations = {
     'pd.inStockNote': '{{stock}} in stock — ships in 2–4 days',
     'pd.addedToCart': 'Added to cart ✓',
     'pd.viewCart': 'View cart →',
+    'pd.priceOnRequestNote': 'Prices for this part change with stock — message us on WhatsApp and we\'ll reply with today\'s price.',
     'pd.wholesaleAvailable': 'Wholesale & dealer pricing available',
     'pd.warrantyVaries': 'Warranty terms vary by category',
     'pd.bulkOrderNote': 'Bulk order? Contact us on WhatsApp for a custom quote',
@@ -1231,6 +1237,8 @@ const translations = {
     'cart.shipping': 'শিপিং',
     'cart.estimatedTax': 'আনুমানিক ট্যাক্স',
     'cart.total': 'সর্বমোট',
+    'cart.noPriceItem': 'দাম জানতে যোগাযোগ করুন — এখনো অনলাইনে অর্ডার করা যাবে না',
+    'cart.noPriceBlock': 'চেকআউট করতে "দাম জানতে যোগাযোগ করুন" চিহ্নিত পণ্যগুলো সরিয়ে দিন — দামের জন্য হোয়াটসঅ্যাপে জিজ্ঞেস করুন।',
     'cart.checkout': 'চেকআউট',
     'cart.requestBulkQuote': 'বাল্ক কোটেশনের জন্য অনুরোধ করুন',
 
@@ -1478,6 +1486,9 @@ const translations = {
     'card.addToWishlist': 'উইশলিস্টে যোগ করুন',
     'card.priceOnRequest': 'অনুরোধে মূল্য জানানো হবে',
     'card.unavailable': 'অনুপলব্ধ',
+    'card.askPrice': 'দাম জানুন',
+    'card.askStock': 'স্টক জানুন',
+    'card.whatsappAskMessage': 'হাই, এই পণ্যের দাম ও স্টক জানাবেন: {{name}} — {{link}}',
 
     'wishlist.pageTitle': 'আপনার উইশলিস্ট',
     'wishlist.pageMeta': 'আপনার Noyon Telecom উইশলিস্টে সংরক্ষিত পণ্যগুলো দেখুন ও পরিচালনা করুন।',
@@ -1505,6 +1516,7 @@ const translations = {
     'pd.inStockNote': '{{stock}}টি স্টকে আছে — ২-৪ দিনে ডেলিভারি হবে',
     'pd.addedToCart': 'কার্টে যোগ হয়েছে ✓',
     'pd.viewCart': 'কার্ট দেখুন →',
+    'pd.priceOnRequestNote': 'এই পার্টসের দাম স্টক অনুযায়ী বদলায় — হোয়াটসঅ্যাপে মেসেজ দিন, আজকের দাম জানিয়ে দেব।',
     'pd.wholesaleAvailable': 'পাইকারি ও ডিলার মূল্য উপলব্ধ',
     'pd.warrantyVaries': 'ক্যাটাগরি অনুযায়ী ওয়ারেন্টির শর্ত ভিন্ন হয়',
     'pd.bulkOrderNote': 'বাল্ক অর্ডার করতে চান? কাস্টম কোটেশনের জন্য হোয়াটসঅ্যাপে যোগাযোগ করুন',
