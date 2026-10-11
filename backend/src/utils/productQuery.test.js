@@ -33,7 +33,7 @@ test('buildProductWhere', async (t) => {
     assert.equal(buildProductWhere({ brand: 'Apple', status: 'all' }).brand, 'Apple');
   });
 
-  await t.test('single-word search builds an OR across name/desc/sku/brand, case-insensitive', () => {
+  await t.test('single-word search builds an OR across name/sku/brand, case-insensitive', () => {
     const where = buildProductWhere({ search: '  oled  ', status: 'all' });
     assert.equal(where.AND.length, 1);
     for (const clause of where.AND[0].OR) {
@@ -51,7 +51,7 @@ test('buildProductWhere', async (t) => {
       ['iphone', '13', 'screen']
     );
     for (const wordClause of where.AND) {
-      assert.equal(wordClause.OR.length, 4);
+      assert.equal(wordClause.OR.length, 3); // name, sku, brand (descriptions are template text — not searched)
     }
   });
 
@@ -70,7 +70,6 @@ test('buildProductWhere', async (t) => {
         {
           OR: [
             { name: { contains: 'oled', mode: 'insensitive' } },
-            { desc: { contains: 'oled', mode: 'insensitive' } },
             { sku: { contains: 'oled', mode: 'insensitive' } },
             { brand: { contains: 'oled', mode: 'insensitive' } },
           ],
@@ -81,8 +80,8 @@ test('buildProductWhere', async (t) => {
 });
 
 test('buildProductOrderBy', async (t) => {
-  await t.test('defaults to sellable-first, then newest', () => {
-    const expected = [{ readyToSell: 'desc' }, { createdAt: 'desc' }];
+  await t.test('defaults to sellable-first, then shown prices, then newest', () => {
+    const expected = [{ readyToSell: 'desc' }, { priceStatus: 'desc' }, { createdAt: 'desc' }];
     assert.deepEqual(buildProductOrderBy(), expected);
     assert.deepEqual(buildProductOrderBy(''), expected);
     assert.deepEqual(buildProductOrderBy('not-a-real-sort'), expected);

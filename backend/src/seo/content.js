@@ -99,6 +99,11 @@ export function pluralCategory(category) {
   return PLURAL[key(category)] || key(category);
 }
 
+// Lower-case part names inside a sentence, keeping acronyms ("SIM tray").
+function inSentence(part) {
+  return String(part).toLowerCase().replace(/\bsim\b/g, 'SIM');
+}
+
 function listText(items) {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
@@ -215,14 +220,14 @@ export function brandCategoryIntro(brand, category, count = 0, sampleModels = []
 export function modelHead(model, parts = []) {
   return {
     title: pageTitle(`${model} Parts Wholesale Price in Bangladesh`),
-    description: `All ${model} spare parts at wholesale${parts.length ? ` — ${listText(parts.slice(0, 5).map((p) => p.toLowerCase()))}` : ''}. For repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty. Ask price on WhatsApp.`,
+    description: `All ${model} spare parts at wholesale${parts.length ? ` — ${listText(parts.slice(0, 5).map(inSentence))}` : ''}. For repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty. Ask price on WhatsApp.`,
     h1: `${model} Parts — Wholesale Price in Bangladesh`,
   };
 }
 
 export function modelIntro(model, parts = []) {
   return [
-    `Here is every ${model} spare part we supply at wholesale${parts.length ? `: ${listText(parts.map((p) => p.toLowerCase()))}` : ''}.`,
+    `Here is every ${model} spare part we supply at wholesale${parts.length ? `: ${listText(parts.map(inSentence))}` : ''}.`,
     'Noyon Telecom serves repair shops, service centers and dealers across Bangladesh, and orders start from one piece.',
     'Each part is pre-tested before dispatch and covered by a 7-day testing warranty.',
     `Before ordering, confirm the exact model on the phone (Settings → About phone) — versions of the ${model} with a different model code can need different parts.`,

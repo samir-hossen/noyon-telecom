@@ -483,7 +483,7 @@ export default function ProductDetail() {
               <span className="pd-dealer-badge">{t('product.dealerPrice')}</span>
             )}
           </div>
-          {user?.role !== 'dealer' && (
+          {user?.role !== 'dealer' && !priceUnavailable && (
             <p className="pd-dealer-hint">
               <Link to="/register">{t('nav.becomeDealer')}</Link> {t('pd.dealerHintPost')}
             </p>
@@ -539,7 +539,14 @@ export default function ProductDetail() {
             ) : null;
           })()}
 
-          {!priceUnavailable && (
+          {!priceUnavailable && product.stock === 0 && (
+            <p className="pd-stock">
+              <a href={stockRequestLink(product)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('product_detail_stock')}>
+                {t('card.askStock')}
+              </a>
+            </p>
+          )}
+          {!priceUnavailable && product.stock > 0 && (
           <>
           <div className="pd-qty">
             <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('pd.quantityLabel', null, { moq: product.moq || 1 })}</span>

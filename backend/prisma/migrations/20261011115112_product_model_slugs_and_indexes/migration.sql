@@ -10,7 +10,7 @@ ALTER TABLE "Product" ADD COLUMN     "modelSlugs" TEXT[] DEFAULT ARRAY[]::TEXT[]
 CREATE INDEX "Product_modelSlugs_idx" ON "Product" USING GIN ("modelSlugs");
 
 -- CreateIndex
-CREATE INDEX "Product_readyToSell_createdAt_idx" ON "Product"("readyToSell", "createdAt");
+CREATE INDEX "Product_readyToSell_priceStatus_createdAt_idx" ON "Product"("readyToSell", "priceStatus", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "Product_createdAt_idx" ON "Product"("createdAt");

@@ -42,10 +42,11 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
       90,
       () =>
         Promise.all([
-          // Sellable (in stock + published price) first; never ordered by a
-          // hidden draft price.
-          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take: 4 }),
-          prisma.product.findMany({ where: storefrontWhere(), orderBy: { createdAt: 'desc' }, take }),
+          // Home rails show products with a real photo (most of the A–Z
+          // catalog has none yet); sellable (in stock + published price)
+          // first, never ordered by a hidden draft price.
+          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 }, img: { not: '' } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take: 4 }),
+          prisma.product.findMany({ where: storefrontWhere({ img: { not: '' } }), orderBy: { createdAt: 'desc' }, take }),
           prisma.product.findMany({ where: storefrontWhere({ reviewCount: { gt: 0 } }), orderBy: { rating: 'desc' }, take: 4 }),
           // compareAt > price can't be expressed as a plain Prisma `where` filter
           // (it compares two columns on the same row), so this one query stays

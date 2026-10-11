@@ -205,9 +205,40 @@ function num(x) {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function buildDrafts(products, refBySlug) {
+// Owner's decision (11 Oct 2026, see CLAUDE.md): every product goes live;
+// a price is shown only where it's reliable, otherwise "দাম জানতে WhatsApp
+// করুন". Returns { publishPrice, publishReason }.
+function optionPrices(draftAllOptions) {
+  // "Vivo Y21 [(single option)] 1399 -> 1199 | …" -> Set of market prices
+  return new Set(String(draftAllOptions || '').split(' | ').map((o) => (o.match(/\]\s+(\d+)\s+->/) || [])[1]).filter(Boolean));
+}
+
+function decideExistingPrice(p, d, fix, r, oldRef) {
+  if (!fix || !['auto-fix', 'unchanged'].includes(fix.status)) {
+    return { publishPrice: null, publishReason: fix?.status === 'unpublish' ? 'test product — unpublished' : 'name/brand needs your answer first' };
+  }
+  const current = num(p.price);
+  if (current) {
+    const low = r.match_status === 'MATCH' ? num(r.etel_lowest_retail_bdt) : null;
+    const ratio = low ? current / low : null;
+    const oldPct = num(oldRef?.your_price_as_pct_of_etel_lowest);
+    const share = ratio ?? (oldPct ? oldPct / 100 : null);
+    if (share !== null && (share < 0.4 || share > 1)) {
+      return { publishPrice: null, publishReason: `your price ৳${current} is ${Math.round(share * 100)}% of the market price — check it is the same panel/model` };
+    }
+    return { publishPrice: current, publishReason: share !== null ? `your current price (${Math.round(share * 100)}% of market)` : 'your current price (no market price to compare)' };
+  }
+  if (d.draftPrice && r.match_status === 'MATCH' && !d.flag) {
+    if (optionPrices(r.draft_all_options).size === 1) return { publishPrice: d.draftPrice, publishReason: 'your rule, one clear market price' };
+    return { publishPrice: null, publishReason: 'several market prices/quality options — ask on WhatsApp' };
+  }
+  return { publishPrice: null, publishReason: d.flag.startsWith('SET MANUALLY') ? 'SET MANUALLY — no draft from the rule' : 'no price yet' };
+}
+
+function buildDrafts(products, refBySlug, fixesById = new Map(), oldRefBySlug = new Map()) {
   return products.map((p) => {
     const r = refBySlug.get(p.slug) || {};
+    const decide = (d) => ({ ...d, ...decideExistingPrice(p, d, fixesById.get(p.id), r, oldRefBySlug.get(p.slug)) });
     const current = num(p.price);
     const draft = num(r.draft_price_bdt);
     const flag = r.draft_flag || '';
@@ -216,7 +247,8 @@ function buildDrafts(products, refBySlug) {
     let priceNote;
     if (p.slug === TEST_PRODUCT_SLUG) {
       return { id: p.id, slug: p.slug, name: p.name, category: p.category, currentPrice: current, draftPrice: null, referencePrice: null,
-        priceNote: 'test product — unpublished', priceStatus: 'draft', flag: 'TEST PRODUCT', matchStatus: r.match_status || '', unpublish: true };
+        priceNote: 'test product — unpublished', priceStatus: 'draft', flag: 'TEST PRODUCT', matchStatus: r.match_status || '', unpublish: true,
+        publishPrice: null, publishReason: 'test product — unpublished' };
     }
     if ((r.draft_source || '').startsWith('etel')) {
       priceNote = `${r.draft_source} · ${RULE_VERSION}${options.length > 1 ? ` · all options: ${options.join(' | ')}` : ''}`;
@@ -229,7 +261,7 @@ function buildDrafts(products, refBySlug) {
     } else {
       priceNote = `no market price found — set the price yourself · ${RULE_VERSION}`;
     }
-    return {
+    return decide({
       id: p.id,
       slug: p.slug,
       name: p.name,
@@ -242,7 +274,7 @@ function buildDrafts(products, refBySlug) {
       flag: flag || (draft ? '' : 'NO DRAFT'),
       matchStatus: r.match_status || 'NO MATCH',
       unpublish: Boolean(findDisabledCategory(p.categories || p.category)),
-    };
+    });
   });
 }
 
@@ -386,6 +418,8 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
     const optionCount = optionsText.split(' | ').filter(Boolean).length;
     const grades = qualityGrades(e.options);
     const draft = num(e.row.draft_price_bdt);
+    // Shown only with one clear price (one quality option, no flag) — see CLAUDE.md.
+    const publish = Boolean(draft) && !e.row.flag && optionCount === 1;
     products.push({
       name,
       slug,
@@ -399,8 +433,8 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
       draftPrice: draft,
       referencePrice: num(e.row.etel_price_bdt),
       priceNote: newProductPriceNote(e.row, optionsText, optionCount),
-      priceStatus: 'draft',
-      price: null,
+      priceStatus: publish ? 'published' : 'draft',
+      price: publish ? draft : null,
       flag: e.row.flag || '',
       grades,
       warranty: '7 Days Testing Warranty',
@@ -518,8 +552,9 @@ function main() {
   const brandIndex = buildBrandIndex(readCsv(path.join(DATA, 'etel_all_products.csv')));
   const summary = { builtAt: new Date().toISOString(), products: products.length, priceReference: path.basename(refFile) };
 
-  const drafts = buildDrafts(products, refBySlug);
   const fixes = buildNameFixes(products, brandIndex);
+  const oldRefBySlug = new Map(readCsv(path.join(DATA, 'noyon_price_reference.csv')).map((r) => [r.noyon_slug, r]));
+  const drafts = buildDrafts(products, refBySlug, new Map(fixes.map((f) => [f.id, f])), oldRefBySlug);
 
   if (PHASES.has('3')) {
     fs.writeFileSync(path.join(OUT, 'drafts-existing.json'), JSON.stringify(drafts, null, 1));
@@ -531,6 +566,8 @@ function main() {
       setManually: drafts.filter((d) => d.flag.startsWith('SET MANUALLY')).length,
       noDraftOther: drafts.filter((d) => !d.draftPrice && !d.flag.startsWith('SET MANUALLY')).length,
       unpublish: drafts.filter((d) => d.unpublish).length,
+      priceShown: drafts.filter((d) => d.publishPrice).length,
+      priceHidden: drafts.filter((d) => !d.publishPrice).length,
     };
   }
   if (PHASES.has('4')) {
@@ -560,6 +597,8 @@ function main() {
       skipped,
       heldBack,
       withDraft: newProducts.filter((p) => p.draftPrice).length,
+      priceShown: newProducts.filter((p) => p.priceStatus === 'published').length,
+      priceHidden: newProducts.filter((p) => p.priceStatus !== 'published').length,
       setManually: newProducts.filter((p) => p.flag.startsWith('SET MANUALLY')).length,
       noMarketPrice: newProducts.filter((p) => p.flag === 'NO PRICE').length,
       descriptions: WITH_DESCRIPTIONS,

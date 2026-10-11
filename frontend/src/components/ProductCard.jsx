@@ -55,9 +55,9 @@ export default function ProductCard({ product, onAdd }) {
     <div className="card">
       <Link to={productUrl(product)}>
         <div className="card-img">
-          {priceUnavailable ? null : outOfStock ? (
-            <span className="card-tag" style={{ background: 'var(--muted)' }}>{t('card.soldOut')}</span>
-          ) : dealerSaving ? (
+          {/* Stock 0 means "ask us" (stock isn't tracked for most of the
+              catalog), so no "Sold out" tag — the WhatsApp button asks. */}
+          {priceUnavailable || outOfStock ? null : dealerSaving ? (
             <span className="card-tag" style={{ background: 'var(--ink)' }}>{t('product.dealerPrice')}</span>
           ) : (
             onSale && <span className="card-tag">{t('card.sale')}</span>

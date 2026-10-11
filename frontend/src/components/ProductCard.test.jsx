@@ -37,6 +37,13 @@ describe('ProductCard — hidden draft price', () => {
     expect(screen.queryByRole('button', { name: 'কার্টে যোগ করুন' })).toBeNull();
   });
 
+  it('a published price with stock 0 shows the price and a WhatsApp stock button, never "Sold out"', () => {
+    const { container } = renderCard({ ...base, price: 1150, retailPrice: 1150, stock: 0 });
+    expect(container.textContent).toContain('৳1,150');
+    expect(container.textContent).not.toContain('স্টক শেষ');
+    expect(screen.getByRole('link', { name: /স্টক জানতে WhatsApp করুন/ })).toHaveAttribute('href', expect.stringContaining('wa.me/8801560047377'));
+  });
+
   it('a published price shows the price and add-to-cart', () => {
     const { container } = renderCard({ ...base, price: 1150, retailPrice: 1150, stock: 5 });
     expect(container.textContent).toContain('৳1,150');

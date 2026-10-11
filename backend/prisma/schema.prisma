@@ -171,7 +171,7 @@ model Product {
   @@index([modelSlugs], type: Gin)
   // Default storefront sort (sellable first, newest first) and the admin
   // list (newest first) stay index scans with ~18,000 products.
-  @@index([readyToSell, createdAt])
+  @@index([readyToSell, priceStatus, createdAt])
   @@index([createdAt])
 }
 

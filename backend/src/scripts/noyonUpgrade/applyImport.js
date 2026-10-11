@@ -6,6 +6,10 @@
 //   import/existing-descriptions.json  new English descriptions for existing products (optional)
 //   import/new-products.json        the new products (A–Z, except Battery)
 //
+// Prices: shown where the builder found them reliable (owner's decision, 11
+// Oct 2026 — see CLAUDE.md), hidden otherwise. --no-publish hides every price
+// instead (all drafts).
+//
 // --apply first writes a full JSON backup of the Product and
 // ProductSlugRedirect tables to --backup-dir, then writes in batches of 100.
 // Re-running is safe: new products are matched by SKU and slug, so nothing is
@@ -36,6 +40,7 @@ const has = (flag) => process.argv.includes(`--${flag}`);
 const IMPORT_DIR = path.resolve(arg('import', '../../import'));
 const APPLY = has('apply');
 const BACKUP_DIR = path.resolve(arg('backup-dir', '../../backups'));
+const PUBLISH = !has('no-publish');
 
 function readJson(name, fallback = null) {
   const file = path.join(IMPORT_DIR, name);
@@ -72,7 +77,12 @@ function planExisting(dbProducts, drafts, fixes, descriptions) {
       data.draftPrice = d.draftPrice;
       data.referencePrice = d.referencePrice;
       data.priceNote = d.priceNote;
-      data.priceStatus = 'draft';
+      if (PUBLISH && d.publishPrice) {
+        data.price = d.publishPrice;
+        data.priceStatus = 'published';
+      } else {
+        data.priceStatus = 'draft';
+      }
     }
     let redirectFrom = null;
     if (f && f.status === 'auto-fix') {
@@ -110,6 +120,7 @@ function planNew(newProducts, dbProducts) {
 }
 
 function toCreateData(n) {
+  const shown = PUBLISH && n.priceStatus === 'published' && n.price > 0;
   return {
     slug: n.slug,
     name: n.name,
@@ -118,8 +129,8 @@ function toCreateData(n) {
     category: n.category,
     images: n.images || [],
     img: n.img || '',
-    price: 0,
-    priceStatus: 'draft',
+    price: shown ? n.price : 0,
+    priceStatus: shown ? 'published' : 'draft',
     draftPrice: n.draftPrice,
     referencePrice: n.referencePrice,
     priceNote: n.priceNote,
@@ -166,6 +177,8 @@ async function main() {
     existing: {
       updated: existingPlan.length,
       draftPriceSet: existingPlan.filter((x) => x.data.draftPrice).length,
+      priceShown: existingPlan.filter((x) => x.data.priceStatus === 'published').length,
+      priceHidden: existingPlan.filter((x) => x.data.priceStatus === 'draft').length,
       noDraft: existingPlan.filter((x) => 'draftPrice' in x.data && !x.data.draftPrice).length,
       renamed: existingPlan.filter((x) => x.data.name).length,
       slugChanges: existingPlan.filter((x) => x.redirectFrom).length,
@@ -179,6 +192,7 @@ async function main() {
       toCreate: create.length,
       alreadyInDatabase: alreadyThere,
       withDraft: create.filter((n) => n.draftPrice).length,
+      priceShown: PUBLISH ? create.filter((n) => n.priceStatus === 'published').length : 0,
       setManually: create.filter((n) => String(n.flag || '').startsWith('SET MANUALLY')).length,
       byCategory: tally(create, 'category'),
       byBrand: tally(create, 'brand'),

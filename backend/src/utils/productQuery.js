@@ -39,7 +39,7 @@ export function buildProductWhere({ category, brand, search, status, priceStatus
   const q = (search || '').toString().trim();
   if (q) {
     // Split into words and require each word to appear *somewhere*
-    // (name/desc/sku/brand), rather than requiring the whole typed phrase
+    // (name/sku/brand), rather than requiring the whole typed phrase
     // to appear verbatim as one substring. That old behavior meant
     // "iphone 13 screen" wouldn't match a product named "iPhone 13 Pro
     // Screen" — the extra word "Pro" broke the match. Per-word AND-of-OR
@@ -49,8 +49,11 @@ export function buildProductWhere({ category, brand, search, status, priceStatus
     const words = q.split(/\s+/).filter(Boolean);
     and.unshift(...words.map((w) => ({
       OR: [
+        // Not `desc`: descriptions are long, mostly shared template text
+        // (every one says "display", "warranty", "Bangladesh"), so matching
+        // them made results noisy and search slow at ~18,000 products —
+        // names already carry brand + model + part.
         { name: { contains: w, mode: 'insensitive' } },
-        { desc: { contains: w, mode: 'insensitive' } },
         { sku: { contains: w, mode: 'insensitive' } },
         { brand: { contains: w, mode: 'insensitive' } },
       ],
@@ -124,11 +127,10 @@ export function buildProductOrderBy(sort) {
   if (sort === 'price-asc') return [{ priceStatus: 'desc' }, { price: 'asc' }, { createdAt: 'desc' }];
   if (sort === 'price-desc') return [{ priceStatus: 'desc' }, { price: 'desc' }, { createdAt: 'desc' }];
   if (sort === 'rating') return { rating: 'desc' };
-  // Default ("Featured"): sellable products (in stock, real price) surface
-  // first; out-of-stock/unpriced ones sink to the end instead of being
-  // interleaved by raw creation date — newest-first within each of those
-  // two groups.
-  return [{ readyToSell: 'desc' }, { createdAt: 'desc' }];
+  // Default ("Featured"): sellable products (in stock, published price)
+  // first, then the rest with a shown price, then "ask price on WhatsApp"
+  // ones — newest first within each group.
+  return [{ readyToSell: 'desc' }, { priceStatus: 'desc' }, { createdAt: 'desc' }];
 }
 
 // Clamps/normalizes page + limit query params into safe integers, so a
