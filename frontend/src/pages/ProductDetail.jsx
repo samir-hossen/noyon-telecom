@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { api, resolveImg, productImg } from '../api';
+import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
@@ -10,6 +10,7 @@ import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import ProductCard from '../components/ProductCard.jsx';
+import PartTile from '../components/PartTile.jsx';
 import { trackViewItem, trackRequestQuote, trackWhatsappClick } from '../ecommerce.js';
 import { getPostForCategory } from '../content/blogPosts';
 import { productUrl } from '../utils/slug';
@@ -308,7 +309,6 @@ export default function ProductDetail() {
   // Several grades with their own price: picked here, ordered on WhatsApp.
   const grades = priceUnavailable ? [] : qualityOptions(product);
   const graded = grades.length > 0;
-  const range = graded ? priceRange(product) : null;
   const selectedGrade = grades.find((g) => g.label === gradeLabel) || grades[0] || null;
 
   async function handleAdd() {
@@ -419,14 +419,18 @@ export default function ProductDetail() {
       <div className="pd-grid">
         <div>
           <div className="pd-img">
-            <img
-              src={gallery.length ? resolveImg(gallery[activeImg] || gallery[0], 800) : productImg(product)}
-              alt={product.name}
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
-            />
+            {gallery.length ? (
+              <img
+                src={resolveImg(gallery[activeImg] || gallery[0], 800)}
+                alt={product.name}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }}
+              />
+            ) : (
+              <PartTile product={product} large />
+            )}
           </div>
           {gallery.length > 1 && (
             <div className="pd-thumb-row">
@@ -487,10 +491,9 @@ export default function ProductDetail() {
               >
                 {t('card.askPrice')}
               </a>
-            ) : range ? (
-              <span className="now">{formatPrice(range.min)} – {formatPrice(range.max)}</span>
             ) : (
-              <span className="now">{formatPrice(product.price)}</span>
+              // Several grades: the chosen grade's price (the picker below).
+              <span className="now">{formatPrice(selectedGrade ? selectedGrade.price : product.price)}</span>
             )}
             {!priceUnavailable && !graded && (onSale || (product.retailPrice && product.retailPrice > product.price)) && (
               <span className="was">{formatPrice(product.retailPrice || product.compareAt)}</span>
@@ -502,24 +505,14 @@ export default function ProductDetail() {
 
           {graded ? (
             <>
-              <div className="pd-quality">
-                <span className="pd-quality-label">{t('pd.quality')}</span>
-                <div className="pd-quality-options" role="radiogroup" aria-label={t('pd.quality')}>
+              <label className="pd-quality-select">
+                <span>{t('pd.quality')}</span>
+                <select value={selectedGrade?.label || ''} onChange={(e) => setGradeLabel(e.target.value)}>
                   {grades.map((g) => (
-                    <button
-                      key={g.label}
-                      type="button"
-                      role="radio"
-                      aria-checked={selectedGrade?.label === g.label}
-                      className={`pd-quality-option ${selectedGrade?.label === g.label ? 'active' : ''}`}
-                      onClick={() => setGradeLabel(g.label)}
-                    >
-                      <span>{g.label}</span>
-                      <strong>{formatPrice(g.price)}</strong>
-                    </button>
+                    <option key={g.label} value={g.label}>{g.label} — {formatPrice(g.price)}</option>
                   ))}
-                </div>
-              </div>
+                </select>
+              </label>
               <div className="pd-action-row">
                 <a
                   className="btn pd-whatsapp-btn pd-whatsapp-primary"

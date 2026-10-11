@@ -32,7 +32,7 @@ export function brandFromSlug(slug) {
 
 function realImages(p) {
   const list = Array.isArray(p.images) && p.images.length ? p.images : [p.img];
-  return list.filter((src) => src && !src.startsWith('/images/placeholders/')).map((src) => (src.startsWith('http') ? src : absoluteUrl(src)));
+  return list.filter((src) => src && !src.startsWith('/images/placeholders/') && !src.startsWith('/images/parts/')).map((src) => (src.startsWith('http') ? src : absoluteUrl(src)));
 }
 
 function firstParagraph(text) {

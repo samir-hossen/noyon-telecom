@@ -10,6 +10,7 @@ import { productUrl } from '../utils/slug';
 import { trackWhatsappClick } from '../ecommerce.js';
 import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath } from '../utils/whatsapp';
 import { hasQualityOptions, priceRange } from '../utils/quality';
+import PartTile from './PartTile.jsx';
 
 export default function ProductCard({ product, onAdd }) {
   const { user } = useAuth();
@@ -74,7 +75,11 @@ export default function ProductCard({ product, onAdd }) {
           >
             {saved ? '♥' : '♡'}
           </button>
-          <img src={productImg(product, 400)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+          {product.img ? (
+            <img src={productImg(product, 400)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+          ) : (
+            <PartTile product={product} />
+          )}
         </div>
       </Link>
       <div className="card-body">

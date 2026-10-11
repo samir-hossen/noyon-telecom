@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-hidden="true">
+  <defs>
+    <pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.8" fill="#6c727c"/></pattern>
+  </defs>
+  <ellipse cx="100" cy="166" rx="66" ry="6" fill="#000" opacity=".09"/>
+  <rect x="36" y="46" width="128" height="106" rx="16" fill="#1f2229"/>
+  <rect x="48" y="58" width="104" height="66" rx="10" fill="#2c3038"/>
+  <rect x="52" y="62" width="96" height="58" rx="8" fill="url(#h)"/>
+  <rect x="62" y="132" width="16" height="10" rx="2" fill="#c9a24a"/><rect x="84" y="132" width="16" height="10" rx="2" fill="#c9a24a"/>
+  <circle cx="142" cy="137" r="4" fill="#444a54"/>
+</svg>
