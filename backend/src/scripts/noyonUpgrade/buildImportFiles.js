@@ -29,6 +29,10 @@ const PHASES = new Set(arg('phases', '3,4').split(',').map((s) => s.trim()));
 // Descriptions are only written with --descriptions (after the owner OKs the
 // templates — see CLAUDE.md "Language rule").
 const WITH_DESCRIPTIONS = process.argv.includes('--descriptions');
+// Owner, 11 Oct 2026: "every product live" — also add the new products that
+// may be the same part as an existing product whose brand is still unclear
+// (OWNER-QUESTIONS A1); they're merged after the owner answers.
+const INCLUDE_WAITING = process.argv.includes('--include-waiting');
 const DATA = path.join(KIT, 'data');
 // Price matches: the kit's file, or (better) the re-match on clean names
 // from rematchCleanNames.js.
@@ -386,9 +390,13 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
       continue;
     }
     if (waiting.has(key)) {
-      skipped.waitingForOwner++;
-      heldBack.push(`${cleaned.fullModel} ${label} (held back until you answer about "${waiting.get(key)}")`);
-      continue;
+      const yours = waiting.get(key);
+      if (!INCLUDE_WAITING) {
+        skipped.waitingForOwner++;
+        heldBack.push(`${cleaned.fullModel} ${label} (held back until you answer about "${yours}")`);
+        continue;
+      }
+      if (!byKey.has(key)) heldBack.push(`${cleaned.fullModel} ${label} (live — if your "${yours}" is this one, the two are merged after you answer)`);
     }
     const price = Number(row.etel_price_bdt) || 0;
     const prev = byKey.get(key);
@@ -504,8 +512,13 @@ function ownerQuestionsBlock({ fixes, drafts, heldBack = [], newSummary = null }
   }
 
   if (newSummary) {
-    lines.push(`## D. New products (A–Z list) waiting for your answers in A1 (${heldBack.length})`, '');
-    lines.push('Not added yet, so answering A1 can\'t leave two copies of the same part. After you answer, the matching one is added (or merged with your existing product).', '');
+    if (INCLUDE_WAITING) {
+      lines.push(`## D. New products that may be the same part as one of your A1 products (${heldBack.length})`, '');
+      lines.push('They are live, as you asked. When you answer A1, your product gets the right brand and the copy is merged into it (its link 301-redirects to yours).', '');
+    } else {
+      lines.push(`## D. New products (A–Z list) waiting for your answers in A1 (${heldBack.length})`, '');
+      lines.push('Not added yet, so answering A1 can\'t leave two copies of the same part. After you answer, the matching one is added (or merged with your existing product).', '');
+    }
     for (const h of heldBack) lines.push(`- ${h}`);
     lines.push('', `## E. New products with no draft price — "SET MANUALLY" (${newSummary.setManually}) and no market price (${newSummary.noMarketPrice})`, '');
     lines.push('Mostly SIM trays, speakers, camera glass, flex cables and cheap charging boards (market ৳199–৳399). They are listed in `import/new-products.json` (flag "SET MANUALLY"). Give me one rule for small parts (for example "market price − 20%") and I will fill them all, or set prices in the admin panel.', '');
