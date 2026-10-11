@@ -486,7 +486,7 @@ function ownerQuestionsBlock({ fixes, drafts, heldBack = [], newSummary = null }
   lines.push('', '### A2. Model code only — what is the phone\'s marketing name?', '', '(Check the phone: Settings → About phone, or the supplier\'s label. The code stays in brackets in the new name, e.g. `Infinix Smart 7 HD (X6516) Display`.)', '', '| Product now | Possible name (please verify) | Your answer |', '|---|---|---|');
   for (const f of byKind('model-code')) lines.push(`| ${f.old_name} | ${MODEL_CODE_HINTS[kitKey(f.old_name.replace(/\s*display$/i, ''))] || '—'} |  |`);
   lines.push('', '### A3. Model unclear', '', '| Product now | Problem | Your answer |', '|---|---|---|');
-  for (const f of byKind('unknown-model')) lines.push(`| ${f.old_name} | ${f.reason} |  |`);
+  for (const f of byKind('unknown-model')) lines.push(`| ${f.old_name} | ${f.note || '—'} |  |`);
   lines.push('');
 
   const manual = drafts.filter((d) => d.flag.startsWith('SET MANUALLY'));
