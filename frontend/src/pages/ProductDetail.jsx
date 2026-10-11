@@ -93,6 +93,8 @@ export default function ProductDetail() {
   }, [product]);
   const [activeImg, setActiveImg] = useState(0);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  // Other parts for the same phone model (links to the /model/<slug> hub).
+  const [modelParts, setModelParts] = useState({ model: null, products: [] });
   const { addToCart } = useCart();
   const { ids, toggle } = useWishlist();
   const { user } = useAuth();
@@ -162,6 +164,13 @@ export default function ProductDetail() {
       setRelated(d.products.filter((p) => p.id !== product.id).slice(0, 4));
     });
     api.get(`/products/${product.id}/reviews`).then((d) => setReviews(d.reviews));
+    const modelSlug = product.modelSlugs?.[0];
+    setModelParts({ model: null, products: [] });
+    if (modelSlug) {
+      api.get(`/products/model/${encodeURIComponent(modelSlug)}?exclude=${encodeURIComponent(product.id)}&limit=12`)
+        .then((d) => setModelParts({ model: d.model, products: d.products }))
+        .catch(() => {});
+    }
 
     const viewedIds = readRecentlyViewed().filter((x) => x !== product.id);
     if (viewedIds.length > 0) {
@@ -172,9 +181,12 @@ export default function ProductDetail() {
     }
   }, [product]);
 
+  // Title + meta come from the backend (same templates as the server-
+  // rendered page — English, owner's language rule).
+  const productImages = product ? (Array.isArray(product.images) ? product.images : [product.img]).filter(Boolean) : [];
   usePageMeta(
-    product ? `${product.name} Price in Bangladesh` : undefined,
-    product ? buildMetaDescription(product, t) : undefined,
+    product ? product.seo?.title || `${product.name} Wholesale Price in Bangladesh` : undefined,
+    product ? product.seo?.description || buildMetaDescription(product, t) : undefined,
     // Only pass a real image URL — resolveImg() falls back to an inline SVG
     // data: URI when a product has no photo yet (see utils/fallbackImage.js),
     // which is exactly right for an <img> tag but wrong here: Facebook/
@@ -193,11 +205,12 @@ export default function ProductDetail() {
               '@context': 'https://schema.org',
               '@type': 'Product',
               name: product.name,
-              description: product.desc,
-              image: (product.images || [product.img]).map((img) => resolveImg(img)),
+              description: String(product.desc || '').split(/\n\s*\n/)[0] || product.name,
+              ...(productImages.length ? { image: productImages.map((img) => resolveImg(img)) } : {}),
               sku: product.sku || undefined,
               mpn: product.sku || undefined,
               brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+              category: `Mobile Phone Parts > ${product.category}`,
               // A product with no real price yet (the "contact for price"
               // convention — price: 0) must not claim a fake ৳0 Offer at
               // all: Google's Merchant/Rich Results policy treats a
@@ -236,7 +249,8 @@ export default function ProductDetail() {
     // noindex once the fetch has definitively failed (deleted product, bad
     // link, etc) — without this, a dead product URL kept whatever meta the
     // previously-viewed page left behind and was never marked non-indexable.
-    !!loadError
+    !!loadError,
+    { exactTitle: Boolean(product?.seo?.title), ogType: product ? 'product' : 'website' }
   );
 
   if (loadError) {
@@ -510,7 +524,11 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <p className="pd-desc">{product.desc}</p>
+          <div className="pd-desc">
+            {String(product.desc || '').split(/\n\s*\n/).filter((para) => para.trim()).map((para, i) => (
+              <p key={i}>{para.trim()}</p>
+            ))}
+          </div>
 
           {(() => {
             const guide = getPostForCategory(product.category);
@@ -708,6 +726,22 @@ export default function ProductDetail() {
           <img src={lightboxImg} alt="Customer review photo, full size" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
           <button type="button" className="review-lightbox-close" onClick={() => setLightboxImg(null)} aria-label="Close">✕</button>
         </div>
+      )}
+
+      {modelParts.model && modelParts.products.length > 0 && (
+        <section className="section" style={{ borderTop: '1px solid var(--line)' }}>
+          <div className="section-head">
+            <h2 className="section-title">{t('pd.otherPartsForModel', null, { model: modelParts.model.name })}</h2>
+            <Link to={`/model/${modelParts.model.slug}`} className="section-link">
+              {t('pd.allModelParts', null, { model: modelParts.model.name })}
+            </Link>
+          </div>
+          <div className="grid">
+            {modelParts.products.map((p) => (
+              <ProductCard key={p.id} product={p} onAdd={handleAddRelated} />
+            ))}
+          </div>
+        </section>
       )}
 
       {related.length > 0 && (

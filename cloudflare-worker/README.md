@@ -1,5 +1,12 @@
 # Product-page link previews for WhatsApp/Facebook (optional)
 
+> **Superseded (Oct 2026):** the backend now server-renders every product,
+> category, brand and model page (`backend/src/routes/seo.routes.js`), and the
+> storefront's Render rewrite rules send those URLs to it (see `render.yaml`) —
+> real title, H1, description and JSON-LD for every visitor and bot, no
+> Cloudflare needed. Keep this worker only if the domain ever moves to
+> Cloudflare and you want previews without the rewrite rules.
+
 ## The problem this fixes
 
 The storefront is a client-rendered React SPA (Vite) on static hosting

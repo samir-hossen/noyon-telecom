@@ -9,6 +9,8 @@ import { ALL_CATEGORIES, ALL_BRANDS, DISABLED_CATEGORIES_LOWER, findDisabledCate
 import { setProductCacheControl } from '../utils/cacheControl.js';
 import { getOrSet, invalidateProductCache } from '../utils/cache.js';
 import { searchProductIds, isSearchEngineEnabled } from '../utils/search.js';
+import { productSeo } from '../seo/pages.js';
+import { modelSlugsFor } from '../utils/modelSlugs.js';
 
 const router = Router();
 
@@ -151,6 +153,38 @@ router.get('/', optionalAuth, async (req, res, next) => {
   }
 });
 
+// Every part we list for one phone model (/model/<slug> pages and the
+// "other parts for this model" block on product pages).
+router.get('/model/:slug', optionalAuth, async (req, res, next) => {
+  try {
+    setProductCacheControl(req, res);
+    const slug = String(req.params.slug);
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 200));
+    const rows = await getOrSet(`products:model:${slug}`, 120, () =>
+      prisma.product.findMany({
+        where: storefrontWhere({ modelSlugs: { has: slug } }),
+        orderBy: [{ category: 'asc' }, { name: 'asc' }],
+        take: 200,
+      })
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Model not found' });
+    const names = new Map();
+    for (const r of rows) {
+      for (const m of r.compatibleModels || []) if (modelSlugsFor([m])[0] === slug) names.set(m, (names.get(m) || 0) + 1);
+    }
+    const name = [...names.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || slug;
+    const exclude = String(req.query.exclude || '');
+    const list = rows.filter((p) => p.id !== exclude && p.slug !== exclude);
+    res.json({
+      model: { slug, name, brand: rows[0].brand },
+      products: list.slice(0, limit).map((p) => withViewerPricing(serializeProduct(p), req.user)),
+      total: list.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     setProductCacheControl(req, res);
@@ -173,7 +207,8 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
     if ((!product.published || findDisabledCategory(product.categories)) && req.user?.role !== 'admin') {
       return res.status(404).json({ error: 'Product not found' });
     }
-    res.json({ product: withViewerPricing(serializeProduct(product), req.user) });
+    // Page title + meta from the same templates as the server-rendered page.
+    res.json({ product: { ...withViewerPricing(serializeProduct(product), req.user), seo: productSeo(product) } });
   } catch (err) {
     next(err);
   }

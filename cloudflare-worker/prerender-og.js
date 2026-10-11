@@ -50,6 +50,8 @@ function resolveImageUrl(img, siteUrl) {
 // specific product is invented.
 function buildProductHtml(product, siteUrl) {
   const title = `${product.name} Price in Bangladesh — Noyon Telecom`;
+  // price is null until the owner publishes it (hidden draft price) — then
+  // there's no price in the text and no Offer in the JSON-LD.
   const priceText = product.price > 0 ? `at ৳${Math.round(product.price).toLocaleString('en-BD')} ` : '';
   const stockText = product.stock > 0 ? 'In stock.' : 'Currently out of stock.';
   const detail = product.desc ? product.desc.slice(0, 90) : `Shop ${product.category} at Noyon Telecom.`;
@@ -65,13 +67,17 @@ function buildProductHtml(product, siteUrl) {
     image: (Array.isArray(product.images) && product.images.length ? product.images : [product.img]).map((i) => resolveImageUrl(i, siteUrl)),
     sku: product.sku || undefined,
     brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'BDT',
-      price: product.price,
-      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      url,
-    },
+    ...(product.price > 0
+      ? {
+          offers: {
+            '@type': 'Offer',
+            priceCurrency: 'BDT',
+            price: product.price,
+            availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            url,
+          },
+        }
+      : {}),
     ...(product.reviewCount > 0
       ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
       : {}),

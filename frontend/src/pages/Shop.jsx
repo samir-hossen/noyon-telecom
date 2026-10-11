@@ -10,129 +10,12 @@ import { buildPageWindow } from '../utils/pagination.js';
 import { useLanguage } from '../context/LanguageContext';
 import { productUrl } from '../utils/slug';
 import { categoryFromSlug, brandFromSlug, categoryUrl, brandUrl, brandCategoryUrl, isDisabledCategory } from '../utils/taxonomy';
-import { CATEGORY_INTRO, buildCategoryFaq, buildBrandIntro } from '../content/categoryContent.js';
 import NotFound from './NotFound.jsx';
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 24; // same page size as the server-rendered category/brand pages
 
-// ক্যাটাগরিভিত্তিক হাই-ভ্যালু এসইও কিওয়ার্ড ম্যাপিং
-const CATEGORY_SEO = {
-  display: {
-    title: 'Mobile Display Wholesale in Bangladesh',
-    h1: 'Mobile Display Wholesale in Bangladesh',
-    desc: 'Wholesale importer of original smartphone LCD and OLED displays in Bangladesh. Best wholesale rates for repair shops in Gulistan, Dhaka.',
-  },
-  'upper glass': {
-    title: 'Display Upper Glass Wholesale in Bangladesh',
-    h1: 'Display Upper Glass Wholesale in Bangladesh',
-    desc: 'Wholesale front (upper) glass for screen refurbishing — replace only the cracked glass when the display still works. For repair shops in Bangladesh.',
-  },
-  'charging port': {
-    title: 'Mobile Charging Port & Flex Ribbon Wholesale BD',
-    h1: 'Mobile Charging Port Wholesale in Bangladesh',
-    desc: 'Wholesale supplier of smartphone charging ports, sub-boards, and flex ribbons across Bangladesh.',
-  },
-  'back glass': {
-    title: 'Mobile Back Glass & Housing Wholesale Bangladesh',
-    h1: 'Mobile Back Glass & Housing Wholesale BD',
-    desc: 'Imported smartphone back glass, camera glass, and body housing replacement parts at wholesale rates.',
-  },
-  oled: {
-    title: 'OLED Display Wholesale in Bangladesh',
-    h1: 'OLED Display Wholesale in Bangladesh',
-    desc: 'Wholesale OLED smartphone displays, pre-tested before dispatch, for repair shops and dealers across Bangladesh.',
-  },
-  lcd: {
-    title: 'LCD Display Wholesale in Bangladesh',
-    h1: 'LCD Display Wholesale in Bangladesh',
-    desc: 'Wholesale LCD smartphone displays at competitive rates, imported and tested for repair shops in Dhaka and nationwide.',
-  },
-  touch: {
-    title: 'Mobile Touch Screen Digitizer Wholesale BD',
-    h1: 'Mobile Touch Screen Wholesale in Bangladesh',
-    desc: 'Wholesale touch screen digitizers for smartphones, compatible with major brands, at dealer pricing in Bangladesh.',
-  },
-  housing: {
-    title: 'Mobile Housing & Body Wholesale in Bangladesh',
-    h1: 'Mobile Housing Wholesale in Bangladesh',
-    desc: 'Wholesale smartphone housing and body replacement parts for repair shops and dealers in Bangladesh.',
-  },
-  frame: {
-    title: 'Mobile Middle Frame Wholesale in Bangladesh',
-    h1: 'Mobile Frame Wholesale in Bangladesh',
-    desc: 'Wholesale middle frame and chassis replacement parts for smartphones, at dealer rates in Bangladesh.',
-  },
-  camera: {
-    title: 'Mobile Camera Module Wholesale in Bangladesh',
-    h1: 'Mobile Camera Module Wholesale in Bangladesh',
-    desc: 'Wholesale front and rear camera module replacements for smartphones, for repair shops and technicians in Bangladesh.',
-  },
-  speaker: {
-    title: 'Mobile Speaker & Ringer Wholesale in Bangladesh',
-    h1: 'Mobile Speaker Wholesale in Bangladesh',
-    desc: 'Wholesale loudspeaker and ringer replacement parts for smartphones, at competitive dealer rates in Bangladesh.',
-  },
-  microphone: {
-    title: 'Mobile Microphone Wholesale in Bangladesh',
-    h1: 'Mobile Microphone Wholesale in Bangladesh',
-    desc: 'Wholesale microphone replacement parts for smartphones, for repair shops and service centers in Bangladesh.',
-  },
-  flex: {
-    title: 'Mobile Flex Cable Wholesale in Bangladesh',
-    h1: 'Mobile Flex Cable Wholesale in Bangladesh',
-    desc: 'Wholesale flex cables and ribbon connectors for smartphones, at dealer pricing for repair shops in Bangladesh.',
-  },
-  'logic board': {
-    title: 'Mobile Logic Board Wholesale in Bangladesh',
-    h1: 'Mobile Logic Board Wholesale in Bangladesh',
-    desc: 'Wholesale logic board and small board replacement parts for smartphones, for technicians and repair shops in Bangladesh.',
-  },
-  motherboard: {
-    title: 'Mobile Motherboard Wholesale in Bangladesh',
-    h1: 'Mobile Motherboard Wholesale in Bangladesh',
-    desc: 'Wholesale motherboard and mainboard replacement parts for smartphones, for repair shops and dealers in Bangladesh.',
-  },
-  ic: {
-    title: 'Mobile IC Chip Wholesale in Bangladesh',
-    h1: 'Mobile IC Wholesale in Bangladesh',
-    desc: 'Wholesale power IC, charging IC, and other smartphone repair chips, for technicians and repair shops in Bangladesh.',
-  },
-  cpu: {
-    title: 'Mobile CPU Wholesale in Bangladesh',
-    h1: 'Mobile CPU Wholesale in Bangladesh',
-    desc: 'Wholesale CPU/processor replacement chips for smartphone repair, for technicians and service centers in Bangladesh.',
-  },
-  buttons: {
-    title: 'Mobile Buttons & Switches Wholesale BD',
-    h1: 'Mobile Buttons Wholesale in Bangladesh',
-    desc: 'Wholesale power, volume, and home button replacement parts for smartphones, at dealer rates in Bangladesh.',
-  },
-  'sim tray': {
-    title: 'Mobile SIM Tray Wholesale in Bangladesh',
-    h1: 'Mobile SIM Tray Wholesale in Bangladesh',
-    desc: 'Wholesale SIM card tray replacement parts for smartphones, for repair shops and dealers in Bangladesh.',
-  },
-  fingerprint: {
-    title: 'Mobile Fingerprint Sensor Wholesale BD',
-    h1: 'Mobile Fingerprint Sensor Wholesale in Bangladesh',
-    desc: 'Wholesale fingerprint sensor replacement parts for smartphones, for repair shops and technicians in Bangladesh.',
-  },
-  'face id': {
-    title: 'Mobile Face ID Module Wholesale in Bangladesh',
-    h1: 'Mobile Face ID Module Wholesale in Bangladesh',
-    desc: 'Wholesale Face ID / dot projector module replacement parts for smartphones, for repair shops in Bangladesh.',
-  },
-  'repair tools': {
-    title: 'Mobile Repair Tools Wholesale in Bangladesh',
-    h1: 'Mobile Repair Tools Wholesale in Bangladesh',
-    desc: 'Wholesale mobile phone repair tools and equipment for technicians and repair shops in Bangladesh.',
-  },
-  accessories: {
-    title: 'Mobile Accessories Wholesale in Bangladesh',
-    h1: 'Mobile Accessories Wholesale in Bangladesh',
-    desc: 'Wholesale mobile phone accessories for dealers and shops across Bangladesh, at competitive rates.',
-  },
-};
+// Category/brand page text (title, meta, H1, intro, FAQ, links) comes from
+// GET /api/seo/page — the same source as the server-rendered pages.
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
@@ -143,6 +26,7 @@ export default function Shop() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [seoPage, setSeoPage] = useState(null);
   const { addToCart } = useCart();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -186,9 +70,8 @@ export default function Shop() {
 
   const activeFilterName = category !== 'All' ? category : brand !== 'All' ? brand : null;
 
-  // বর্তমান ক্যাটাগরি কিওয়ার্ড শনাক্তকরণ
-  const catKey = category !== 'All' ? category.toLowerCase().replace(/-/g, ' ') : null;
-  const currentSEO = catKey ? CATEGORY_SEO[catKey] : null;
+  // Page text for a category/brand page (not for search results).
+  const seoForThisPage = seoPage && seoPage.basePath === canonicalPath ? seoPage : null;
 
   // A search-results view (/shop?search=...) canonicalizes back to the
   // plain /shop or /shop?category=X page above, but that alone still lets
@@ -206,7 +89,7 @@ export default function Shop() {
         data: {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
-          name: currentSEO ? currentSEO.h1 : activeFilterName || 'Shop',
+          name: seoForThisPage?.h1 || activeFilterName || 'Shop',
           url: `${window.location.origin}${canonicalPath}`,
           mainEntity: {
             '@type': 'ItemList',
@@ -220,13 +103,8 @@ export default function Shop() {
       }
     : null;
 
-  // Category takes priority when both a category and brand are active
-  // (e.g. /brand/samsung/display) — it's the more specific, more useful
-  // text for that combination. Falls back to a brand-only intro, or none
-  // at all on the unfiltered /shop page (a generic "welcome to our shop"
-  // paragraph adds no real value there).
-  const introText = catKey && CATEGORY_INTRO[catKey] ? CATEGORY_INTRO[catKey] : brand !== 'All' ? buildBrandIntro(brand, categories.slice(0, 6)) : null;
-  const faqItems = activeFilterName ? buildCategoryFaq(activeFilterName) : null;
+  const introText = !search ? seoForThisPage?.intro || null : null;
+  const faqItems = !search && seoForThisPage?.faq?.length ? seoForThisPage.faq : null;
   const faqJsonLd = faqItems
     ? {
         id: 'faq',
@@ -253,27 +131,41 @@ export default function Shop() {
       }
     : null;
 
-  // ডাইনামিক পেজ মেটা ও এসইও হ্যান্ডলার
+  // Title/meta: the backend's English page text on category/brand pages.
   usePageMeta(
     search
       ? t('shop.searchResultsTitle', null, { search })
-      : currentSEO
-      ? currentSEO.title
+      : seoForThisPage
+      ? seoForThisPage.head.title
       : category !== 'All'
       ? `${category} Wholesale in Bangladesh`
       : brand !== 'All'
-      ? `${brand} Mobile Spare Parts Wholesale`
+      ? `${brand} Mobile Parts Wholesale in Bangladesh`
       : t('shop.pageTitleDefault'),
-    currentSEO
-      ? currentSEO.desc
+    seoForThisPage
+      ? seoForThisPage.head.description
       : activeFilterName
       ? t('shop.pageMetaCategory', null, { category: activeFilterName })
       : t('shop.pageMetaDefault'),
     undefined,
-    canonicalPath,
+    seoForThisPage?.head.canonical || canonicalPath,
     [breadcrumbJsonLd, collectionJsonLd, faqJsonLd].filter(Boolean),
-    isSearchView || invalidSlug
+    isSearchView || invalidSlug,
+    { exactTitle: Boolean(seoForThisPage && !search) }
   );
+
+  // Category/brand page text from the backend (same as the server-rendered page).
+  useEffect(() => {
+    if (!activeFilterName || search || invalidSlug || isDisabledCategory(category)) {
+      setSeoPage(null);
+      return undefined;
+    }
+    let current = true;
+    api.get(`/seo/page?path=${encodeURIComponent(canonicalPath)}&page=${page}`)
+      .then((d) => { if (current) setSeoPage(d.status === 200 ? d : null); })
+      .catch(() => { if (current) setSeoPage(null); });
+    return () => { current = false; };
+  }, [canonicalPath, page, search, activeFilterName, invalidSlug, category]);
 
   // Keep the box in sync if the URL changes from elsewhere
   useEffect(() => {
@@ -394,8 +286,8 @@ export default function Shop() {
         <h1 className="page-title">
           {search ? (
             t('shop.resultsForPre', null, { search })
-          ) : currentSEO ? (
-            currentSEO.h1
+          ) : seoForThisPage ? (
+            seoForThisPage.h1
           ) : category !== 'All' ? (
             `${category} Wholesale in Bangladesh`
           ) : brand !== 'All' ? (
@@ -533,6 +425,41 @@ export default function Shop() {
             <Link className="page-btn" to={buildPageUrl(page + 1)} aria-label={t('shop.nextPage')}>
               →
             </Link>
+          )}
+        </div>
+      )}
+
+      {!search && seoForThisPage && (seoForThisPage.categories?.length > 0 || seoForThisPage.models?.length > 0 || seoForThisPage.brands?.length > 0) && (
+        <div className="form-panel wide" style={{ marginTop: 28 }}>
+          {seoForThisPage.categories?.length > 0 && (
+            <>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: 10 }}>{t('shop.partsByType')}</h2>
+              <div className="cat-strip" style={{ marginBottom: 16 }}>
+                {seoForThisPage.categories.map((c) => (
+                  <Link key={c.path} className="cat-pill" to={c.path}>{c.name} ({c.count})</Link>
+                ))}
+              </div>
+            </>
+          )}
+          {seoForThisPage.brands?.length > 0 && (
+            <>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: 10 }}>{t('shop.byBrand')}</h2>
+              <div className="cat-strip" style={{ marginBottom: 16 }}>
+                {seoForThisPage.brands.map((b) => (
+                  <Link key={b.path} className="cat-pill" to={b.path}>{b.name}</Link>
+                ))}
+              </div>
+            </>
+          )}
+          {seoForThisPage.models?.length > 0 && (
+            <>
+              <h2 style={{ fontSize: '1.1rem', marginBottom: 10 }}>{t('shop.partsByModel')}</h2>
+              <div className="cat-strip">
+                {seoForThisPage.models.map((m) => (
+                  <Link key={m.path} className="cat-pill" to={m.path}>{m.name}</Link>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}

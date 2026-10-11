@@ -24,6 +24,7 @@ import newsletterRoutes from './routes/newsletter.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import bannersRoutes from './routes/banners.routes.js';
 import webhooksRoutes from './routes/webhooks.routes.js';
+import { seoHtmlRouter, seoApiRouter } from './routes/seo.routes.js';
 
 const app = express();
 
@@ -75,6 +76,12 @@ app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '30d' }));
 
+// Server-rendered catalog pages, mounted before the rate limiter on purpose:
+// they reach us through the storefront's Render rewrite, so every visitor
+// (and Googlebot crawling thousands of pages) arrives from the same proxy
+// address and would share one per-IP budget. They're read-only and cached.
+app.use('/seo', seoHtmlRouter);
+
 // Generous global limit as a backstop; auth endpoints get a tighter one below
 // since they're the most attractive target for brute-forcing.
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 600, standardHeaders: true, legacyHeaders: false }));
@@ -123,6 +130,7 @@ app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/banners', bannersRoutes);
 app.use('/api/webhooks', webhooksRoutes);
+app.use('/api/seo', seoApiRouter);
 // Sitemap/feed are also exposed under /api since that's this backend's only
 // public prefix; see sitemap.routes.js and robots.txt for how these get
 // surfaced at the storefront's actual root domain in production.

@@ -18,6 +18,7 @@ export function serializeProduct(p) {
     sku: p.sku ?? null,
     brand: p.brand ?? null,
     compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : [],
+    modelSlugs: Array.isArray(p.modelSlugs) ? p.modelSlugs : [],
     moq: p.moq ?? 1,
     dealerPrice: p.dealerPrice ?? null,
     bulkPricing: Array.isArray(p.bulkPricing) ? p.bulkPricing : [],

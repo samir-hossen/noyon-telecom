@@ -15,6 +15,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import Home from './pages/Home.jsx';
 const Shop = lazy(() => import('./pages/Shop.jsx'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail.jsx'));
+const ModelHub = lazy(() => import('./pages/ModelHub.jsx'));
 const Cart = lazy(() => import('./pages/Cart.jsx'));
 const Wishlist = lazy(() => import('./pages/Wishlist.jsx'));
 const Checkout = lazy(() => import('./pages/Checkout.jsx'));
@@ -119,6 +120,8 @@ export default function App() {
               indexed under that shape still matches this route instead of
               404ing. */}
           <Route path="/product/:id/:legacySlug?" element={<ProductDetail />} />
+          {/* Every part for one phone model, e.g. /model/vivo-y21 */}
+          <Route path="/model/:modelSlug" element={<ModelHub />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/login" element={<Login />} />

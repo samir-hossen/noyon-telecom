@@ -99,6 +99,23 @@ export default defineConfig({
     setupFiles: './src/test/setup.js',
     globals: true,
   },
+  // `vite preview` (the built site) mirrors production routing: Render's
+  // rewrite rules send catalog pages to the backend's server-rendered HTML
+  // (/seo/...) and the sitemaps to the API — see render.yaml. Not used by
+  // `vite dev` (its index.html isn't the built one the backend injects into).
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': { target: 'http://localhost:4000', changeOrigin: true },
+      '/uploads': { target: 'http://localhost:4000', changeOrigin: true },
+      '^/(product|category|brand|model)/': { target: 'http://localhost:4000', changeOrigin: true, rewrite: (path) => `/seo${path}` },
+      '^/sitemap(-[a-z]+)?\\.xml$': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        rewrite: (path) => (path === '/sitemap.xml' ? '/api/sitemap-index.xml' : `/api${path}`),
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

@@ -2874,3 +2874,9 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 .admin-price-badge.hidden { background: #fff1e3; color: #a35a00; }
 .admin-price-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .admin-bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fafafa; font-size: 0.86rem; }
+
+/* Product description paragraphs (descriptions are now several paragraphs). */
+.pd-desc p + p { margin-top: 10px; }
+/* Server-rendered catalog pages (before the app takes over). */
+.ssr-product-list, .ssr-link-list { list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 8px; }
+.ssr-link-list { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }

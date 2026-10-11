@@ -84,14 +84,19 @@ function setJsonLd(id, data) {
 // important for /shop, which otherwise generates near-infinite duplicate
 // URLs from category/brand/sort/page/search combinations.
 // jsonLd: optional { id, data } (or array of them) for structured data.
+// options.exactTitle: the title is already complete (e.g. the backend's
+// "{Name} Wholesale Price in Bangladesh | Noyon Telecom") — don't append the
+// site name again.
 // noindex: set true for pages that shouldn't be indexed (404, thank-you/
 // confirmation pages, etc). Since this is a client-rendered SPA, an unknown
 // route still serves the app shell with an HTTP 200 unless the host is
 // configured to send a real 404 status — this tag is the fallback that
 // tells crawlers not to index the page's content regardless of status code.
-export function usePageMeta(title, description, image, canonicalPath, jsonLd, noindex) {
+export function usePageMeta(title, description, image, canonicalPath, jsonLd, noindex, options = {}) {
+  const exactTitle = Boolean(options.exactTitle);
+  const ogType = options.ogType || 'website';
   useEffect(() => {
-    const fullTitle = title ? title + ' — ' + SITE_NAME : DEFAULT_TITLE;
+    const fullTitle = title ? (exactTitle ? title : title + ' — ' + SITE_NAME) : DEFAULT_TITLE;
     const desc = description || DEFAULT_DESCRIPTION;
     // Drops the query string when a page doesn't pass its own canonicalPath
     // (e.g. /request-quote?productId=... prefilled from a product page, or
@@ -111,7 +116,7 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
     // link shared from a URL carrying ?utm_source=/fbclid=/etc tracking
     // params gets that tracking noise baked into the share preview's URL.
     setMeta('og:url', canonicalUrl, 'property');
-    setMeta('og:type', 'website', 'property');
+    setMeta('og:type', ogType, 'property');
     if (image) setMeta('og:image', image, 'property');
 
     setMeta('twitter:card', 'summary_large_image');
@@ -133,7 +138,7 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
       if (noindex) setOrRemoveMeta('robots', null);
     };
      
-  }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex]);
+  }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex, exactTitle, ogType]);
 }
 
 // Back-compat alias for older call sites that only set a title.

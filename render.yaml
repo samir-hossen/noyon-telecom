@@ -130,16 +130,48 @@ services:
     # same-origin proxy — a static site can only redirect to an external
     # URL, never fetch-and-inline one) instead of falling through to the SPA
     # shell.
+    #
+    # Oct 2026 (noyon-upgrade): the catalog pages are server-rendered by the
+    # backend and the sitemaps are served on this domain. A Render REWRITE to
+    # a public URL is a proxy (the visitor stays on noyontelecom.com). Set
+    # these in the dashboard in this order, ABOVE the catch-all — the old
+    # sitemap/feed REDIRECTS are replaced by rewrites:
+    #   1. rewrite /product/*  -> https://noyon-telecom-api.onrender.com/seo/product/*
+    #   2. rewrite /category/* -> https://noyon-telecom-api.onrender.com/seo/category/*
+    #      (/category/battery gets a 301 to /shop from the backend)
+    #   3. rewrite /brand/*    -> https://noyon-telecom-api.onrender.com/seo/brand/*
+    #   4. rewrite /model/*    -> https://noyon-telecom-api.onrender.com/seo/model/*
+    #   5. rewrite /sitemap.xml          -> https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
+    #   6. rewrite /sitemap-pages.xml    -> https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml
+    #   7. rewrite /sitemap-products.xml -> https://noyon-telecom-api.onrender.com/api/sitemap-products.xml
+    #   8. rewrite /sitemap-models.xml   -> https://noyon-telecom-api.onrender.com/api/sitemap-models.xml
+    #   9. redirect /google-merchant.xml -> https://noyon-telecom-api.onrender.com/api/google-merchant.xml (unchanged)
+    #  10. rewrite /* -> /index.html (catch-all, last)
     routes:
-      - type: redirect
+      - type: rewrite
+        source: /product/*
+        destination: https://noyon-telecom-api.onrender.com/seo/product/*
+      - type: rewrite
+        source: /category/*
+        destination: https://noyon-telecom-api.onrender.com/seo/category/*
+      - type: rewrite
+        source: /brand/*
+        destination: https://noyon-telecom-api.onrender.com/seo/brand/*
+      - type: rewrite
+        source: /model/*
+        destination: https://noyon-telecom-api.onrender.com/seo/model/*
+      - type: rewrite
         source: /sitemap.xml
         destination: https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
-      - type: redirect
+      - type: rewrite
         source: /sitemap-pages.xml
         destination: https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml
-      - type: redirect
+      - type: rewrite
         source: /sitemap-products.xml
         destination: https://noyon-telecom-api.onrender.com/api/sitemap-products.xml
+      - type: rewrite
+        source: /sitemap-models.xml
+        destination: https://noyon-telecom-api.onrender.com/api/sitemap-models.xml
       - type: redirect
         source: /google-merchant.xml
         destination: https://noyon-telecom-api.onrender.com/api/google-merchant.xml

@@ -4,7 +4,7 @@ import { getOrSet } from '../utils/cache.js';
 import { getActiveCategories, getActiveBrands, getActiveBrandCategoryPairs, storefrontWhere } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS } from './products.routes.js';
 import { productPath, slugify } from '../utils/slug.js';
-import { isDisabledCategory } from '../config/catalog.js';
+import { isDisabledCategory, DISABLED_CATEGORIES_LOWER } from '../config/catalog.js';
 
 const router = Router();
 // Set SITE_URL in the backend .env to your real storefront domain in production.
@@ -19,42 +19,41 @@ if (process.env.NODE_ENV === 'production' && !process.env.SITE_URL) {
   throw new Error('SITE_URL must be set in production (see backend/.env.example) — refusing to generate sitemaps with a placeholder domain.');
 }
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
-// /api/sitemap-pages.xml and /api/sitemap-products.xml below are served by
-// THIS backend, not the frontend — they need the backend's own public URL.
-// noyontelecom.com/sitemap.xml (and the other public-facing paths) 301-
-// redirect here — see the frontend static site's `routes` in ../../render.yaml
-// for why that has to be a redirect rather than a same-origin proxy (a
-// same-origin proxy through the frontend's _redirects was tried first and
-// reverted — Render's static sites don't read that file at all).
-const API_URL = (process.env.API_URL || `http://localhost:${process.env.PORT || 4000}`).replace(/\/$/, '');
 
 function escapeXml(s) {
   return String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 }
 
-// Single entry point for search engines / Search Console: merges the
-// dynamic pages sitemap (home/static/category/brand URLs) with the dynamic,
-// always-current product sitemap below into one <sitemapindex>, so nobody
-// has to remember to submit two separate URLs.
-router.get('/sitemap-index.xml', (req, res) => {
-  const lastmod = new Date().toISOString();
-  res.set('Content-Type', 'application/xml');
-  // Fully public, crawler-facing, never personalized — safe to cache
-  // unconditionally. 5 minutes is conservative enough that a fresh
-  // product/catalog change is still reflected quickly, while sparing a
-  // repeat-crawl request from regenerating this on every hit.
-  res.set('Cache-Control', 'public, max-age=300');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+// Newest product change in the storefront catalog (the sitemaps' lastmod).
+async function latestCatalogChange() {
+  const rows = await prisma.$queryRaw`
+    SELECT max("updatedAt") AS at FROM "Product"
+    WHERE published = true
+      AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))`;
+  return rows[0]?.at ? new Date(rows[0].at) : new Date();
+}
+
+// Single entry point for search engines / Search Console. Every sitemap is
+// listed on the storefront's own domain (SITE_URL) — noyontelecom.com/sitemap-*.xml
+// are rewritten to this backend by the storefront's Render rules, so Google
+// sees one host (cross-host sitemaps need both hosts verified).
+router.get('/sitemap-index.xml', async (req, res, next) => {
+  try {
+    const lastmod = (await getOrSet('sitemap:latest', 300, latestCatalogChange)).toISOString();
+    res.set('Content-Type', 'application/xml');
+    // Fully public, crawler-facing, never personalized — safe to cache.
+    res.set('Cache-Control', 'public, max-age=300');
+    const maps = ['sitemap-pages.xml', 'sitemap-products.xml', 'sitemap-models.xml'];
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap>
-    <loc>${API_URL}/api/sitemap-pages.xml</loc>
+${maps.map((m) => `  <sitemap>
+    <loc>${SITE_URL}/${m}</loc>
     <lastmod>${lastmod}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>${API_URL}/api/sitemap-products.xml</loc>
-    <lastmod>${lastmod}</lastmod>
-  </sitemap>
+  </sitemap>`).join('\n')}
 </sitemapindex>`);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Homepage + the storefront's evergreen marketing pages, plus every
@@ -80,24 +79,26 @@ const BLOG_SLUGS = [
   'paikari-mobile-parts-kenar-age-7-bishoy',
 ];
 
-export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brands, brandCategoryPairs: allPairs = [] }) {
+export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brands, brandCategoryPairs: allPairs = [], lastmod = {} }) {
   // Switched-off categories (Battery) never go in, whatever the caller passes.
   const categories = allCategories.filter((c) => !isDisabledCategory(c));
   const brandCategoryPairs = allPairs.filter((p) => !isDisabledCategory(p.category));
+  // lastmod = newest product change on that page (when known).
+  const at = (d) => (d ? new Date(d).toISOString() : undefined);
   const entries = [
-    { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
-    { loc: `${siteUrl}/shop`, priority: '0.9', changefreq: 'daily' },
+    { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily', lastmod: at(lastmod.all) },
+    { loc: `${siteUrl}/shop`, priority: '0.9', changefreq: 'daily', lastmod: at(lastmod.all) },
     // Clean paths, matching the frontend's canonical /category/<slug> and
     // /brand/<slug> routes (see frontend/src/utils/taxonomy.js) — these
     // replaced the old /shop?category=/?brand= query-string URLs, which
     // self-canonicalize to this same clean form now instead of being what
     // gets submitted to Google.
-    ...categories.map((c) => ({ loc: `${siteUrl}/category/${slugify(c)}`, priority: '0.7' })),
-    ...brands.map((b) => ({ loc: `${siteUrl}/brand/${slugify(b)}`, priority: '0.6' })),
+    ...categories.map((c) => ({ loc: `${siteUrl}/category/${slugify(c)}`, priority: '0.7', lastmod: at(lastmod.category?.get(c)) })),
+    ...brands.map((b) => ({ loc: `${siteUrl}/brand/${slugify(b)}`, priority: '0.6', lastmod: at(lastmod.brand?.get(b)) })),
     // /brand/<brand>/<category> (e.g. /brand/samsung/display) — the route
     // already existed and resolves fine, it just wasn't submitted anywhere,
     // so Google had no way to discover it on its own.
-    ...brandCategoryPairs.map((p) => ({ loc: `${siteUrl}/brand/${slugify(p.brand)}/${slugify(p.category)}`, priority: '0.5' })),
+    ...brandCategoryPairs.map((p) => ({ loc: `${siteUrl}/brand/${slugify(p.brand)}/${slugify(p.category)}`, priority: '0.5', lastmod: at(p.lastmod) })),
     { loc: `${siteUrl}/about`, priority: '0.6' },
     { loc: `${siteUrl}/blog`, priority: '0.7', changefreq: 'weekly' },
     ...BLOG_SLUGS.map((slug) => ({ loc: `${siteUrl}/blog/${slug}`, priority: '0.6' })),
@@ -114,12 +115,37 @@ export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brand
   const urls = entries
     .map(
       (e) => `  <url>
-    <loc>${escapeXml(e.loc)}</loc>
+    <loc>${escapeXml(e.loc)}</loc>${e.lastmod ? `\n    <lastmod>${e.lastmod}</lastmod>` : ''}
     <priority>${e.priority}</priority>${e.changefreq ? `\n    <changefreq>${e.changefreq}</changefreq>` : ''}
   </url>`
     )
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+}
+
+// Newest product change per category, brand and brand + category.
+async function pageLastmods() {
+  const rows = await prisma.$queryRaw`
+    SELECT brand, cat, max("updatedAt") AS at
+    FROM "Product", jsonb_array_elements_text(categories) cat
+    WHERE published = true
+      AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
+    GROUP BY brand, cat`;
+  const category = new Map();
+  const brand = new Map();
+  const pair = new Map();
+  let all = null;
+  const newer = (a, b) => (!a || b > a ? b : a);
+  for (const r of rows) {
+    const t = new Date(r.at);
+    category.set(r.cat, newer(category.get(r.cat), t));
+    if (r.brand) {
+      brand.set(r.brand, newer(brand.get(r.brand), t));
+      pair.set(`${r.brand}|${r.cat}`, t);
+    }
+    all = newer(all, t);
+  }
+  return { all, category, brand, pair };
 }
 
 router.get('/sitemap-pages.xml', async (req, res, next) => {
@@ -129,12 +155,14 @@ router.get('/sitemap-pages.xml', async (req, res, next) => {
     // too, so a newly active category/brand doesn't wait out the TTL.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('sitemap:pages-xml', 300, async () => {
-      const [categories, brands, brandCategoryPairs] = await Promise.all([
+      const [categories, brands, brandCategoryPairs, lastmod] = await Promise.all([
         getActiveCategories(prisma, ALL_CATEGORIES),
         getActiveBrands(prisma, ALL_BRANDS),
         getActiveBrandCategoryPairs(prisma),
+        pageLastmods(),
       ]);
-      return buildPagesSitemapXml({ siteUrl: SITE_URL, categories, brands, brandCategoryPairs });
+      const pairs = brandCategoryPairs.map((p) => ({ ...p, lastmod: lastmod.pair.get(`${p.brand}|${p.category}`) }));
+      return buildPagesSitemapXml({ siteUrl: SITE_URL, categories, brands, brandCategoryPairs: pairs, lastmod });
     });
     res.set('Content-Type', 'application/xml');
     res.send(xml);
@@ -171,6 +199,37 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
       return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
     });
 
+    res.set('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Model hub pages (/model/<slug>) with at least two parts — a hub with a
+// single part would just repeat that product page.
+router.get('/sitemap-models.xml', async (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'public, max-age=300');
+    const xml = await getOrSet('sitemap:models-xml', 300, async () => {
+      const rows = await prisma.$queryRaw`
+        SELECT ms AS slug, count(*)::int AS n, max("updatedAt") AS at
+        FROM "Product", unnest("modelSlugs") ms
+        WHERE published = true
+          AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
+        GROUP BY ms HAVING count(*) >= 2 ORDER BY ms`;
+      const urls = rows
+        .map(
+          (r) => `  <url>
+    <loc>${SITE_URL}/model/${escapeXml(r.slug)}</loc>
+    <lastmod>${new Date(r.at).toISOString()}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`
+        )
+        .join('\n');
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+    });
     res.set('Content-Type', 'application/xml');
     res.send(xml);
   } catch (err) {
