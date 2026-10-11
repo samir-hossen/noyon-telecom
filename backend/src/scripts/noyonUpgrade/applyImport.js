@@ -170,7 +170,9 @@ async function main() {
           });
         }
       }
-    });
+      // Up to 200 round trips to a remote database per batch — far past
+      // Prisma's default 5-second interactive-transaction limit.
+    }, { maxWait: 60_000, timeout: 300_000 });
     done += batch.length;
     console.log(`existing: ${done}/${existingPlan.length}`);
   }
