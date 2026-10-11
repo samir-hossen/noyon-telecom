@@ -3,13 +3,15 @@ import { slugify } from '../utils/slug';
 // Shown instead of a photo until the owner adds one: a clean tile with the
 // part's icon, the brand, the model and the part — not "photo coming soon"
 // on thousands of products. Real photos (the owner's own, or supplier photos
-// he may use) replace it as soon as they're uploaded.
+// they're allowed to use) replace it as soon as they're uploaded.
 const PART_LABELS = [
   'Motherboard Flex Cable', 'Charging Flex Cable', 'Display Upper Glass', 'Upper Glass', 'Back Glass', 'Back Camera',
   'Front Camera', 'Camera Glass', 'Charging Port', 'SIM Tray', 'Loudspeaker', 'Ear Speaker', 'Flex Cable',
   'Middle Frame', 'Logic Board', 'Display',
 ];
 const ICONS = new Set(['display', 'upper-glass', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board']);
+// Parts that look different from the rest of their category.
+const ICON_BY_PART = { 'Front Camera': 'front-camera', 'Camera Glass': 'camera-glass', 'Ear Speaker': 'ear-speaker' };
 
 // "Samsung Galaxy A15 Display" (brand Samsung) -> { brand, model: "Galaxy A15", part: "Display" }
 export function splitProductName(product) {
@@ -24,7 +26,7 @@ export function splitProductName(product) {
 export default function PartTile({ product, large = false }) {
   const { brand, model, part } = splitProductName(product);
   const slug = slugify(product?.category || '');
-  const icon = ICONS.has(slug) ? slug : 'default';
+  const icon = ICON_BY_PART[part] || (ICONS.has(slug) ? slug : 'default');
   return (
     <div className={`part-tile${large ? ' part-tile-lg' : ''}`} role="img" aria-label={product?.name}>
       <span className="part-tile-icon" style={{ backgroundImage: `url(/images/parts/${icon}.svg)` }} aria-hidden="true" />

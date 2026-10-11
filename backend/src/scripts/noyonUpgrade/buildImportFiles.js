@@ -34,6 +34,8 @@ const WITH_DESCRIPTIONS = process.argv.includes('--descriptions');
 // may be the same part as an existing product whose brand is still unclear
 // (OWNER-QUESTIONS A1); they're merged after the owner answers.
 const INCLUDE_WAITING = process.argv.includes('--include-waiting');
+// Market rows whose model isn't a real phone (found in the price check, 12 Oct 2026).
+const NOT_A_PHONE = [/^iPhone Duo$/i];
 const DATA = path.join(KIT, 'data');
 // Price matches: the kit's file, or (better) the re-match on clean names
 // from rematchCleanNames.js.
@@ -386,6 +388,11 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
     const cleaned = cleanEtelModel(row, partKey);
     if (!cleaned) {
       skipped.garbled++;
+      continue;
+    }
+    // Market listings for phones that don't exist (data errors).
+    if (NOT_A_PHONE.some((re) => re.test(cleaned.fullModel))) {
+      skipped.notARealPhone = (skipped.notARealPhone || 0) + 1;
       continue;
     }
     const { label, category } = PART_TYPES[partKey];

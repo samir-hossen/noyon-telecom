@@ -11,6 +11,8 @@ import { findDisabledCategory, disabledCategoryError } from '../config/catalog.j
 import { modelSlugsFor } from '../utils/modelSlugs.js';
 import { logAdminAction } from '../utils/audit.js';
 import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js';
+import { photoKeys, withPhoto } from '../utils/photoMatch.js';
+import fs from 'node:fs';
 import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '../utils/totp.js';
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
@@ -804,6 +806,50 @@ router.post('/upload-multiple', requireCsrf, upload.array('images', 8), async (r
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: 'No images uploaded' });
     const urls = await Promise.all(req.files.map(storeUploadedFile));
     res.json({ urls });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Bulk photos: each file named after its product's SKU or link
+// ("NT-DIS-SAMSUNG-GALAXY-A15.jpg", "samsung-galaxy-a15-display-2.jpg"),
+// up to 8 per request (the admin page sends them in batches). A photo is
+// matched before it's stored, so an unmatched one leaves nothing behind.
+async function productForPhotoKey(key) {
+  if (!key) return null;
+  return prisma.product.findFirst({ where: { OR: [{ sku: { equals: key, mode: 'insensitive' } }, { slug: key }] } });
+}
+
+router.post('/products/photos', requireCsrf, upload.array('images', 8), async (req, res, next) => {
+  try {
+    const files = req.files || [];
+    if (files.length === 0) return res.status(400).json({ error: 'No images uploaded' });
+    const results = [];
+    for (const file of files) {
+      const { exact, stripped, index } = photoKeys(file.originalname);
+      let product = await productForPhotoKey(exact);
+      let extra = false;
+      if (!product && stripped && index >= 2 && index <= 8) {
+        product = await productForPhotoKey(stripped);
+        extra = Boolean(product);
+      }
+      if (!product) {
+        if (file.path) fs.promises.unlink(file.path).catch(() => {});
+        results.push({ file: file.originalname, status: 'not-found' });
+        continue;
+      }
+      const url = await storeUploadedFile(file);
+      const images = withPhoto(product.images, url, { extra });
+      const updated = await prisma.product.update({ where: { id: product.id }, data: { images, img: images[0] } });
+      indexProduct(updated).catch((err) => console.error('Meilisearch index failed:', err.message));
+      results.push({ file: file.originalname, status: 'ok', product: updated.name, slug: updated.slug, extra });
+    }
+    const added = results.filter((r) => r.status === 'ok').length;
+    if (added) {
+      await logAdminAction(req.user, 'product.bulk_photos', { added, notFound: results.length - added });
+      invalidateProductCache();
+    }
+    res.json({ results });
   } catch (err) {
     next(err);
   }

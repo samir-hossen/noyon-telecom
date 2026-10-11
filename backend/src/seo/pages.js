@@ -154,12 +154,22 @@ async function productPage(slug) {
     })
     : [];
   const images = realImages(row);
-  const crumbs = [
-    { name: 'Home', path: '/' },
-    { name: 'Shop', path: '/shop' },
-    { name: row.category, path: `/category/${slugify(row.category)}` },
-    { name: row.name, path },
-  ];
+  // Home › Samsung › Samsung Display › Galaxy A15 Display — links the
+  // brand and brand+part pages (Shop › Display when the brand isn't listed).
+  const brandName = row.brand ? brandFromSlug(slugify(row.brand)) : null;
+  const crumbs = brandName
+    ? [
+      { name: 'Home', path: '/' },
+      { name: brandName, path: `/brand/${slugify(brandName)}` },
+      { name: `${brandName} ${row.category}`, path: `/brand/${slugify(brandName)}/${slugify(row.category)}` },
+      { name: row.name, path },
+    ]
+    : [
+      { name: 'Home', path: '/' },
+      { name: 'Shop', path: '/shop' },
+      { name: row.category, path: `/category/${slugify(row.category)}` },
+      { name: row.name, path },
+    ];
   const productLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -276,7 +286,7 @@ async function categoryPage(slug, page) {
   const where = buildProductWhere({ category, status: 'published', storefront: true });
   const [list, brands] = await Promise.all([listProducts(where, page), getOrSet(`seo:brands-in:${category}`, 300, () => brandsInCategory(category))]);
   if (list.total === 0 || page > list.totalPages) return notFound();
-  const head = content.categoryHead(category);
+  const head = content.categoryHead(category, page);
   const faq = content.categoryFaq(category, brands);
   const crumbs = [{ name: 'Home', path: '/' }, { name: 'Shop', path: '/shop' }, { name: category, path }];
   return {
@@ -307,7 +317,7 @@ async function brandPage(brandSlug, page) {
     getOrSet(`seo:models-for:${brand}`, 300, () => modelsForBrand(brand)),
   ]);
   if (list.total === 0 || page > list.totalPages) return notFound();
-  const head = content.brandHead(brand, categories);
+  const head = content.brandHead(brand, categories, page);
   const faq = content.brandFaq(brand, categories);
   const crumbs = [{ name: 'Home', path: '/' }, { name: 'Shop', path: '/shop' }, { name: brand, path }];
   return {
@@ -337,7 +347,7 @@ async function brandCategoryPage(brandSlug, categorySlug, page) {
   const where = buildProductWhere({ brand, category, status: 'published', storefront: true });
   const [list, models] = await Promise.all([listProducts(where, page), getOrSet(`seo:models-for:${brand}:${category}`, 300, () => modelsForBrand(brand, category))]);
   if (list.total === 0 || page > list.totalPages) return notFound();
-  const head = content.brandCategoryHead(brand, category, list.total);
+  const head = content.brandCategoryHead(brand, category, list.total, page);
   const faq = content.categoryFaq(category, [brand]);
   const crumbs = [{ name: 'Home', path: '/' }, { name: 'Shop', path: '/shop' }, { name: brand, path: `/brand/${brandSlug}` }, { name: `${brand} ${category}`, path }];
   return {

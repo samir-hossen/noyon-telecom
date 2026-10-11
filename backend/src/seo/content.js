@@ -8,9 +8,22 @@ const SITE = 'Noyon Telecom';
 const TITLE_MAX = 65;
 
 // "{base} | Noyon Telecom", shortened step by step past ~65 characters.
-export function pageTitle(base) {
-  const candidates = [`${base} | ${SITE}`, base, base.replace(/ in Bangladesh$/, ' in BD'), base.replace(/ in Bangladesh$/, '')];
+// Page 2+ of a listing gets " — Page N", so 100 pages of one category don't
+// share one title.
+export function pageTitle(base, page = 1) {
+  const sfx = page > 1 ? ` — Page ${page}` : '';
+  const variants = [base, base.replace(/ in Bangladesh$/, ' in BD'), base.replace(/ in Bangladesh$/, '')];
+  const candidates = [`${base}${sfx} | ${SITE}`, ...variants.map((v) => `${v}${sfx}`)];
   return candidates.find((c) => c.length <= TITLE_MAX) || candidates[candidates.length - 1];
+}
+
+// Meta descriptions: the first candidate that fits Google's ~160 characters;
+// page 2+ starts with "Page N:".
+const DESC_MAX = 160;
+function fitDescription(candidates, page = 1) {
+  const pre = page > 1 ? `Page ${page}: ` : '';
+  const list = candidates.filter(Boolean).map((c) => `${pre}${c}`);
+  return list.find((c) => c.length <= DESC_MAX) || list[list.length - 1];
 }
 
 // Category intros (one per category, keyed by the lower-case name).
@@ -42,7 +55,7 @@ export const CATEGORY_INTRO = {
 
 // Category <title>/H1/meta.
 export const CATEGORY_SEO = {
-  display: {"title": "Mobile Display Wholesale in Bangladesh", "h1": "Mobile Display Wholesale in Bangladesh", "desc": "Wholesale importer of original smartphone LCD and OLED displays in Bangladesh. Best wholesale rates for repair shops in Gulistan, Dhaka."},
+  display: {"title": "Mobile Display Wholesale in Bangladesh", "h1": "Mobile Display Wholesale in Bangladesh", "desc": "Wholesale smartphone displays in Bangladesh — IPS/LCD, OLED and original grades. Pre-tested, 7-day testing warranty, from Gulistan, Dhaka."},
   "upper glass": {"title": "Display Upper Glass Wholesale in Bangladesh", "h1": "Display Upper Glass Wholesale in Bangladesh", "desc": "Wholesale front (upper) glass for screen refurbishing — replace only the cracked glass when the display still works. For repair shops in Bangladesh."},
   "charging port": {"title": "Mobile Charging Port & Flex Ribbon Wholesale BD", "h1": "Mobile Charging Port Wholesale in Bangladesh", "desc": "Wholesale supplier of smartphone charging ports, sub-boards, and flex ribbons across Bangladesh."},
   "back glass": {"title": "Mobile Back Glass & Housing Wholesale Bangladesh", "h1": "Mobile Back Glass & Housing Wholesale BD", "desc": "Imported smartphone back glass, camera glass, and body housing replacement parts at wholesale rates."},
@@ -110,14 +123,16 @@ function listText(items) {
 }
 
 // ---------- category pages ----------
-export function categoryHead(category) {
+export function categoryHead(category, page = 1) {
   const seo = CATEGORY_SEO[key(category)];
   const base = seo ? seo.title : `${category} Wholesale in Bangladesh`;
   return {
-    title: pageTitle(base),
-    description: seo
-      ? seo.desc
-      : `Wholesale ${pluralCategory(category)} for repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh. Ask price on WhatsApp.`,
+    title: pageTitle(base, page),
+    description: fitDescription([
+      seo?.desc,
+      `Wholesale ${pluralCategory(category)} for repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh.`,
+      `Wholesale ${pluralCategory(category)} in Bangladesh. Pre-tested, 7-day testing warranty.`,
+    ], page),
     h1: seo ? seo.h1 : base,
   };
 }
@@ -153,11 +168,15 @@ export function categoryFaq(category, brands = []) {
 }
 
 // ---------- brand pages ----------
-export function brandHead(brand, categories = []) {
+export function brandHead(brand, categories = [], page = 1) {
   const top = categories.slice(0, 4).map((c) => pluralCategory(c.name));
   return {
-    title: pageTitle(`${brand} Mobile Parts Wholesale Price in Bangladesh`),
-    description: `Wholesale ${brand} spare parts for repair shops and dealers in Bangladesh${top.length ? ` — ${listText(top)}` : ''}. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh. Ask price on WhatsApp.`,
+    title: pageTitle(`${brand} Mobile Parts Wholesale Price in Bangladesh`, page),
+    description: fitDescription([
+      top.length ? `Wholesale ${brand} spare parts in Bangladesh — ${listText(top)}. Pre-tested, 7-day testing warranty, fast delivery.` : null,
+      top.length > 2 ? `Wholesale ${brand} spare parts in Bangladesh — ${listText(top.slice(0, 2))} and more. Pre-tested, 7-day warranty.` : null,
+      `Wholesale ${brand} spare parts for repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery.`,
+    ], page),
     h1: `${brand} Mobile Parts Wholesale in Bangladesh`,
   };
 }
@@ -196,11 +215,14 @@ export function brandFaq(brand, categories = []) {
 }
 
 // ---------- brand + category pages ----------
-export function brandCategoryHead(brand, category, count = 0) {
+export function brandCategoryHead(brand, category, count = 0, page = 1) {
   const parts = pluralCategory(category);
   return {
-    title: pageTitle(`${brand} ${category} Wholesale Price in Bangladesh`),
-    description: `Wholesale ${brand} ${parts}${count ? ` for ${count} models` : ''}, for repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh. Ask price on WhatsApp.`,
+    title: pageTitle(`${brand} ${category} Wholesale Price in Bangladesh`, page),
+    description: fitDescription([
+      `Wholesale ${brand} ${parts}${count ? ` for ${count} models` : ''} in Bangladesh, for repair shops and dealers. Pre-tested, 7-day testing warranty.`,
+      `Wholesale ${brand} ${parts} in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery.`,
+    ], page),
     h1: `${brand} ${category} Wholesale in Bangladesh`,
   };
 }
@@ -220,7 +242,11 @@ export function brandCategoryIntro(brand, category, count = 0, sampleModels = []
 export function modelHead(model, parts = []) {
   return {
     title: pageTitle(`${model} Parts Wholesale Price in Bangladesh`),
-    description: `All ${model} spare parts at wholesale${parts.length ? ` — ${listText(parts.slice(0, 5).map(inSentence))}` : ''}. For repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty. Ask price on WhatsApp.`,
+    description: fitDescription([
+      parts.length ? `All ${model} spare parts at wholesale — ${listText(parts.slice(0, 5).map(inSentence))}. Pre-tested, 7-day testing warranty, Bangladesh.` : null,
+      parts.length > 3 ? `All ${model} spare parts at wholesale — ${listText(parts.slice(0, 3).map(inSentence))} and more. Pre-tested, 7-day warranty.` : null,
+      `All ${model} spare parts at wholesale in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery.`,
+    ]),
     h1: `${model} Parts — Wholesale Price in Bangladesh`,
   };
 }

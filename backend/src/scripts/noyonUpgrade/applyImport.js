@@ -28,7 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import prisma from '../../prismaClient.js';
 import { isLocalDatabase, databaseHost } from './dbGuard.js';
-import { planExisting, planNew, planOldAdminPrices, planGradeUpdates, toCreateData } from './importPlan.js';
+import { planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, toCreateData } from './importPlan.js';
 import { backfillReadyToSell } from '../../backfillReadyToSell.js';
 import { indexProducts } from '../../utils/search.js';
 
@@ -107,6 +107,7 @@ async function main() {
   const existingPlan = planExisting(dbProducts, { drafts, fixes, descriptions, snapshot, publish: PUBLISH });
   const { create, alreadyThere } = planNew(newProducts, dbProducts);
   const gradeUpdates = planGradeUpdates(newProducts, dbProducts, { publish: PUBLISH });
+  const corrections = planCorrections(readJson('corrections.json', []), dbProducts);
   const oldAdminPrices = planOldAdminPrices(dbProducts, { drafts, newProducts, deployedAt: await hiddenPriceDeployedAt(), publish: PUBLISH });
 
   const summary = {
@@ -140,6 +141,7 @@ async function main() {
       byBrand: tally(create, 'brand'),
     },
     addedInAdminSince11Oct: { priceShownAgain: oldAdminPrices.map((p) => `${p.name} (৳${p.price})`) },
+    corrections: corrections.map((c) => `${c.name}: ${c.data.published === false ? 'unpublish' : 'hide price'} — ${c.reason}`),
     productsAfter: dbProducts.length + create.length,
   };
 
@@ -196,13 +198,16 @@ async function main() {
     console.log(`grade prices: ${graded}/${gradeUpdates.length}`);
   }
 
+  for (const c of corrections) await prisma.product.update({ where: { id: c.id }, data: c.data });
+  if (corrections.length) console.log(`corrections: ${corrections.length}`);
+
   if (oldAdminPrices.length) {
     await prisma.product.updateMany({ where: { id: { in: oldAdminPrices.map((p) => p.id) } }, data: { priceStatus: 'published' } });
     console.log(`prices typed in admin after 11 Oct shown again: ${oldAdminPrices.length}`);
   }
 
   const fixedReady = await backfillReadyToSell();
-  const touchedIds = [...existingPlan.map((x) => x.id), ...oldAdminPrices.map((p) => p.id), ...gradeUpdates.map((g) => g.id)];
+  const touchedIds = [...existingPlan.map((x) => x.id), ...oldAdminPrices.map((p) => p.id), ...gradeUpdates.map((g) => g.id), ...corrections.map((c) => c.id)];
   const touched = await prisma.product.findMany({ where: { OR: [{ id: { in: touchedIds } }, { sku: { in: create.map((n) => n.sku) } }] } });
   await indexProducts(touched).catch((err) => console.error('Search index update failed (non-fatal):', err.message));
   console.log(JSON.stringify({ ...summary, applied: { existingUpdated: done, newCreated: created, gradePricesAdded: graded, oldAdminPricesShown: oldAdminPrices.length, readyToSellFixed: fixedReady } }, null, 2));

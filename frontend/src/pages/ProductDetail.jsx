@@ -14,7 +14,8 @@ import PartTile from '../components/PartTile.jsx';
 import { trackViewItem, trackRequestQuote, trackWhatsappClick } from '../ecommerce.js';
 import { getPostForCategory } from '../content/blogPosts';
 import { productUrl } from '../utils/slug';
-import { categoryUrl } from '../utils/taxonomy';
+import { categoryUrl, brandUrl, brandCategoryUrl, brandFromSlug } from '../utils/taxonomy';
+import { slugify } from '../utils/slug';
 import { hasPublicPrice, priceRequestLink, stockRequestLink, orderRequestLink, quoteRequestPath, whatsappLink } from '../utils/whatsapp';
 import { qualityOptions, priceRange } from '../utils/quality';
 
@@ -61,6 +62,25 @@ function buildMetaDescription(product, t) {
   const stockText = product.stock > 0 ? 'In stock.' : 'Currently out of stock.';
   const detail = product.desc ? truncateAtWordBoundary(product.desc, 90) : t('pd.metaFallback', null, { category: product.category });
   return `Buy ${product.name} ${priceText}in Bangladesh. ${detail} ${stockText} Order from Noyon Telecom.`;
+}
+
+// Home › Samsung › Samsung Display › Galaxy A15 Display — same as the
+// server-rendered page (Shop › Display when the brand isn't one we list).
+function crumbsFor(product) {
+  const brand = product.brand ? brandFromSlug(slugify(product.brand)) : null;
+  return brand
+    ? [
+      { name: 'Home', path: '/' },
+      { name: brand, path: brandUrl(brand) },
+      { name: `${brand} ${product.category}`, path: brandCategoryUrl(brand, product.category) },
+      { name: product.name, path: productUrl(product) },
+    ]
+    : [
+      { name: 'Home', path: '/' },
+      { name: 'Shop', path: '/shop' },
+      { name: product.category, path: categoryUrl(product.category) },
+      { name: product.name, path: productUrl(product) },
+    ];
 }
 
 export default function ProductDetail() {
@@ -244,12 +264,7 @@ export default function ProductDetail() {
             data: {
               '@context': 'https://schema.org',
               '@type': 'BreadcrumbList',
-              itemListElement: [
-                { '@type': 'ListItem', position: 1, name: 'Home', item: window.location.origin },
-                { '@type': 'ListItem', position: 2, name: 'Shop', item: `${window.location.origin}/shop` },
-                { '@type': 'ListItem', position: 3, name: product.category, item: `${window.location.origin}${categoryUrl(product.category)}` },
-                { '@type': 'ListItem', position: 4, name: product.name, item: `${window.location.origin}${productUrl(product)}` },
-              ],
+              itemListElement: crumbsFor(product).map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: `${window.location.origin}${c.path}` })),
             },
           },
         ]
@@ -411,10 +426,11 @@ export default function ProductDetail() {
   return (
     <div className="container">
       <nav className="breadcrumb-trail" aria-label="Breadcrumb">
-        <Link to="/">{t('pd.breadcrumbHome')}</Link> <span>/</span>{' '}
-        <Link to="/shop">{t('pd.breadcrumbShop')}</Link> <span>/</span>{' '}
-        <Link to={categoryUrl(product.category)}>{product.category}</Link> <span>/</span>{' '}
-        <span aria-current="page">{product.name}</span>
+        {crumbsFor(product).map((c, i, all) => (i === all.length - 1 ? (
+          <span key={c.path} aria-current="page">{c.name}</span>
+        ) : (
+          <span key={c.path}><Link to={c.path}>{i === 0 ? t('pd.breadcrumbHome') : c.name}</Link> <span>/</span>{' '}</span>
+        )))}
       </nav>
       <div className="pd-grid">
         <div>

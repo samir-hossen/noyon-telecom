@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeQualityOptions, parseOptionList, qualityOptionsFromMarket, qualityLabel, hasQualityOptions, MAX_QUALITY_OPTIONS } from './qualityOptions.js';
+import { normalizeQualityOptions, parseOptionList, qualityOptionsFromMarket, qualityLabel, hasQualityOptions, looksWrong, MAX_QUALITY_OPTIONS } from './qualityOptions.js';
 
 test('qualityLabel: supplier grade names -> our names', () => {
   assert.equal(qualityLabel('Original Quality'), 'Original');
@@ -56,4 +56,10 @@ test('hasQualityOptions', () => {
   assert.equal(hasQualityOptions({ qualityOptions: [{ label: 'Original', price: 1 }] }), true);
   assert.equal(hasQualityOptions({ qualityOptions: [] }), false);
   assert.equal(hasQualityOptions(null), false);
+});
+
+test('market grades that cannot be right are not shown (Original cheaper than a copy grade)', () => {
+  assert.deepEqual(qualityOptionsFromMarket('Original 3829 -> 3629 | High Quality 18499 -> 17799'), []);
+  assert.equal(looksWrong([{ label: 'IPS', price: 1799 }, { label: 'Original', price: 15599 }]), false);
+  assert.equal(looksWrong([{ label: 'Original', price: 1099 }, { label: 'High Quality', price: 7299 }]), true);
 });

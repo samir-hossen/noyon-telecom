@@ -151,3 +151,23 @@ export function planOldAdminPrices(dbProducts, { drafts = [], newProducts = [], 
     && new Date(p.updatedAt) <= new Date(deployedAt)
     && !findDisabledCategory(p.categories || p.category));
 }
+
+// Corrections found after the import (owner, 12 Oct 2026: "fix prices that
+// look wrong"): unpublish a product that isn't a real phone, or hide a price
+// whose market data can't be right. Each applies only while the product is
+// still as the import left it (same name / same price), so an owner's fix
+// made later is never undone.
+export function planCorrections(corrections, dbProducts) {
+  const bySku = new Map(dbProducts.filter((p) => p.sku).map((p) => [p.sku, p]));
+  const out = [];
+  for (const c of corrections || []) {
+    const p = bySku.get(c.sku);
+    if (!p || (c.name && p.name !== c.name)) continue;
+    if (c.action === 'unpublish' && p.published) {
+      out.push({ id: p.id, name: p.name, reason: c.reason, data: { published: false } });
+    } else if (c.action === 'hide-price' && p.priceStatus === 'published' && Number(p.price) === Number(c.expectPrice)) {
+      out.push({ id: p.id, name: p.name, reason: c.reason, data: { priceStatus: 'draft', price: 0, qualityOptions: [], priceNote: `${c.reason} — set the price yourself` } });
+    }
+  }
+  return out;
+}

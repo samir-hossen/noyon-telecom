@@ -429,7 +429,7 @@ export default function Shop() {
       )}
 
       {!search && seoForThisPage && (seoForThisPage.categories?.length > 0 || seoForThisPage.models?.length > 0 || seoForThisPage.brands?.length > 0) && (
-        <div className="form-panel wide" style={{ marginTop: 28 }}>
+        <div className="form-panel wide shop-links-panel" style={{ marginTop: 28 }}>
           {seoForThisPage.categories?.length > 0 && (
             <>
               <h2 style={{ fontSize: '1.1rem', marginBottom: 10 }}>{t('shop.partsByType')}</h2>

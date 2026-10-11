@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderPage, escapeHtml } from './html.js';
-import { pageTitle, categoryHead, modelHead } from './content.js';
+import { pageTitle, categoryHead, modelHead, brandHead, brandCategoryHead } from './content.js';
 import { buildProductTitle, buildProductMetaDescription, buildProductH1 } from '../utils/productContent.js';
 
 const SHELL = `<!doctype html>
@@ -122,4 +122,20 @@ test('titles stay within ~65 characters', () => {
   assert.ok(modelHead('Samsung Galaxy J7 Prime 2 (2018)').title.length <= 65 || true);
   assert.equal(buildProductTitle('Vivo Y21 Display'), 'Vivo Y21 Display Wholesale Price in Bangladesh | Noyon Telecom');
   assert.equal(buildProductTitle('Xiaomi Redmi 8 / 8A / 8A Dual Charging Port'), 'Xiaomi Redmi 8 / 8A / 8A Dual Charging Port Wholesale Price in BD');
+});
+
+test('page 2+ of a listing has its own title and description', () => {
+  assert.equal(pageTitle('Mobile Display Wholesale in Bangladesh', 2), 'Mobile Display Wholesale in Bangladesh — Page 2 | Noyon Telecom');
+  assert.ok(pageTitle('Samsung Mobile Parts Wholesale Price in Bangladesh', 105).length <= 65);
+  assert.notEqual(categoryHead('Display', 2).title, categoryHead('Display').title);
+  assert.match(categoryHead('Display', 2).description, /^Page 2: /);
+  assert.doesNotMatch(categoryHead('Display').description, /original smartphone/i);
+});
+
+test('meta descriptions fit in ~160 characters', () => {
+  const cats = ['Camera', 'Display', 'Back Glass', 'Charging Port', 'Frame'].map((name) => ({ name }));
+  assert.ok(brandHead('Samsung', cats).description.length <= 160);
+  assert.ok(brandCategoryHead('Samsung', 'Display', 275).description.length <= 160);
+  assert.ok(modelHead('Samsung Galaxy A15', ['Back Glass', 'Display', 'SIM Tray']).description.length <= 160);
+  assert.ok(modelHead('Xiaomi Redmi Note 13 Pro Plus 5G', ['Back Glass', 'Display', 'Charging Port', 'Back Camera', 'Front Camera']).description.length <= 160);
 });

@@ -75,7 +75,16 @@ export function qualityOptionsFromMarket(texts) {
   const grades = new Set(parsed.filter((o) => o.label !== '(single option)').map((o) => qualityLabel(o.label).toLowerCase()));
   const models = new Set(parsed.map((o) => o.model.toLowerCase()));
   if (grades.size < 2 || models.size > 1) return [];
-  return normalizeQualityOptions(parsed.filter((o) => o.price && o.label !== '(single option)').map((o) => ({ label: qualityLabel(o.label), price: o.price })));
+  const options = normalizeQualityOptions(parsed.filter((o) => o.price && o.label !== '(single option)').map((o) => ({ label: qualityLabel(o.label), price: o.price })));
+  return looksWrong(options) ? [] : options;
+}
+
+// Market data that can't be right: "Original" cheaper than a copy grade
+// (e.g. a fold display at Original ৳3,629 but High Quality ৳17,799). Such a
+// product shows "দাম জানতে WhatsApp করুন" instead of wrong prices.
+export function looksWrong(options) {
+  const original = options.find((o) => o.label === 'Original');
+  return Boolean(original) && options.some((o) => o.label !== 'Original' && o.price > original.price);
 }
 
 export const QUALITY_ORDER_MESSAGE = 'এই পার্টসটা কয়েকটা কোয়ালিটিতে পাওয়া যায় — কোয়ালিটি বলে WhatsApp-এ অর্ডার করুন। (Please order this part on WhatsApp with the quality you want.)';

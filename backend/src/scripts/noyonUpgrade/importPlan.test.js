@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, toCreateData } from './importPlan.js';
+import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, toCreateData } from './importPlan.js';
 
 // One product as it was on 11 Oct, with its rows from the import files.
 const before = {
@@ -166,4 +166,24 @@ test('grades: products an earlier run created get them only if still untouched',
   assert.deepEqual(plan.map((g) => g.id), ['a']);
   assert.deepEqual(plan[0].data, { qualityOptions: grades, price: 1149, priceStatus: 'published' });
   assert.deepEqual(planGradeUpdates(newProducts, db, { publish: false }), []);
+});
+
+test('corrections apply only while the product is still as imported', () => {
+  const corrections = [
+    { sku: 'DUO', name: 'iPhone Duo Display', action: 'unpublish', reason: 'not a real phone' },
+    { sku: 'FOLD', name: 'Pixel Fold Display', action: 'hide-price', expectPrice: 3629, reason: 'grades wrong' },
+  ];
+  const db = [
+    { id: 'd', sku: 'DUO', name: 'iPhone Duo Display', published: true, priceStatus: 'published', price: 77299 },
+    { id: 'f', sku: 'FOLD', name: 'Pixel Fold Display', published: true, priceStatus: 'published', price: 3629, qualityOptions: [{ label: 'Original', price: 3629 }] },
+  ];
+  const plan = planCorrections(corrections, db);
+  assert.deepEqual(plan.map((x) => [x.id, x.data.published ?? x.data.priceStatus]), [['d', false], ['f', 'draft']]);
+  assert.deepEqual(plan[1].data.qualityOptions, []);
+  // the owner already fixed them: nothing to do
+  assert.deepEqual(planCorrections(corrections, [
+    { ...db[0], name: 'Surface Duo Display' },
+    { ...db[1], price: 18500 },
+  ]), []);
+  assert.deepEqual(planCorrections(corrections, [{ ...db[0], published: false }]), []);
 });

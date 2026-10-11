@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { resizeForUpload } from '../utils/resizeImage';
 import { api, resolveImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
@@ -130,6 +131,10 @@ export default function Admin() {
   const [quoteFilter, setQuoteFilter] = useState('pending');
   const [lowStock, setLowStock] = useState([]);
   const [importBusy, setImportBusy] = useState(false);
+  // Bulk photos (file name = product SKU or link), sent 8 at a time.
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoProgress, setPhotoProgress] = useState(null);
+  const [photoResults, setPhotoResults] = useState([]);
   const [importResult, setImportResult] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
@@ -447,6 +452,32 @@ export default function Admin() {
 
   // ---- Excel export/import (SheetJS reads/writes the .xlsx client-side;
   // the backend just accepts/returns plain JSON rows — see admin.routes.js) ----
+  async function uploadProductPhotos(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    setPhotoBusy(true);
+    setPhotoResults([]);
+    const results = [];
+    try {
+      for (let i = 0; i < files.length; i += 8) {
+        setPhotoProgress({ done: i, total: files.length });
+        const batch = await Promise.all(files.slice(i, i + 8).map((f) => resizeForUpload(f)));
+        const d = await api.uploadMultiple('/admin/products/photos', batch);
+        results.push(...d.results);
+        setPhotoResults([...results]);
+      }
+      const ok = results.filter((r) => r.status === 'ok').length;
+      showToast(`${ok}টা ছবি যোগ হয়েছে${results.length - ok ? ` · ${results.length - ok}টার প্রোডাক্ট পাওয়া যায়নি` : ''}`, ok ? 'success' : 'error');
+      loadProducts();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setPhotoBusy(false);
+      setPhotoProgress(null);
+    }
+  }
+
   async function exportProductsToExcel() {
     setExportBusy(true);
     try {
@@ -1901,6 +1932,35 @@ export default function Admin() {
               ))}
             </div>
           )}
+
+          <div className="analytics-panel">
+            <h3>ছবি একসাথে আপলোড</h3>
+            <p style={{ fontSize: '0.86rem', color: 'var(--muted)', marginBottom: 14, lineHeight: 1.7 }}>
+              অনেক ছবি একসাথে দিন। প্রতিটা ছবির ফাইলের নাম হবে প্রোডাক্টের <strong>SKU</strong> বা লিংকের শেষ অংশ —
+              যেমন <code>NT-DIS-SAMSUNG-GALAXY-A15.jpg</code> বা <code>samsung-galaxy-a15-display.jpg</code>।
+              একই প্রোডাক্টের আরও ছবি: <code>…-2.jpg</code>, <code>…-3.jpg</code>। ছবি নিজে থেকেই ছোট (১৬০০px) হয়ে আপলোড হবে,
+              আর প্রথম ছবিটা প্রোডাক্টের মূল ছবি হবে।
+            </p>
+            <label className="btn btn-primary" style={{ cursor: photoBusy ? 'wait' : 'pointer' }}>
+              {photoBusy ? `আপলোড হচ্ছে… ${photoProgress ? `${photoProgress.done}/${photoProgress.total}` : ''}` : '🖼️ ছবি বাছাই করুন'}
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden disabled={photoBusy} onChange={uploadProductPhotos} />
+            </label>
+            {photoResults.length > 0 && (
+              <div className="photo-results">
+                <p>
+                  <strong>{photoResults.filter((r) => r.status === 'ok').length}</strong>টা যোগ হয়েছে ·{' '}
+                  <strong>{photoResults.filter((r) => r.status !== 'ok').length}</strong>টার প্রোডাক্ট পাওয়া যায়নি
+                </p>
+                <ul>
+                  {photoResults.slice(0, 60).map((r) => (
+                    <li key={r.file} className={r.status === 'ok' ? 'ok' : 'miss'}>
+                      {r.file} → {r.status === 'ok' ? `${r.product}${r.extra ? ' (আরও একটা ছবি)' : ''}` : 'প্রোডাক্ট পাওয়া যায়নি — ফাইলের নাম SKU দিয়ে দিন'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
 
           <div className="analytics-panel">
             <h3>Excel Import / Export</h3>
