@@ -122,12 +122,12 @@ export function toCreateData(n, { publish = true } = {}) {
 // priced there before this upgrade: the deploy hid that price (every product
 // starts as "draft"), so the import shows it again. `deployedAt` = when the
 // hidden-price migration ran; a product touched since then (e.g. "দাম লুকাও"
-// in admin) is left alone.
+// in admin) is left alone, and so is a hidden (unpublished) product.
 export function planOldAdminPrices(dbProducts, { drafts = [], newProducts = [], deployedAt = null, publish = true } = {}) {
   if (!publish || !deployedAt) return [];
   const inFiles = new Set(drafts.map((d) => d.id));
   const ours = new Set(newProducts.map((n) => n.sku).filter(Boolean));
-  return dbProducts.filter((p) => !inFiles.has(p.id) && !ours.has(p.sku)
+  return dbProducts.filter((p) => !inFiles.has(p.id) && !ours.has(p.sku) && p.published !== false
     && p.price > 0 && p.priceStatus !== 'published' && p.draftPrice == null
     && new Date(p.updatedAt) <= new Date(deployedAt)
     && !findDisabledCategory(p.categories || p.category));

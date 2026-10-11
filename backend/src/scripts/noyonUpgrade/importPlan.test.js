@@ -131,6 +131,7 @@ test('a product added and priced in the old admin gets its price shown again; on
   assert.deepEqual(planOldAdminPrices([{ ...before, updatedAt: '2026-10-15T09:00:00Z' }], opts), []); // in the import files
   assert.deepEqual(planOldAdminPrices([{ ...added, price: 0 }], opts), []);
   assert.deepEqual(planOldAdminPrices([{ ...added, categories: ['Battery'] }], opts), []);
+  assert.deepEqual(planOldAdminPrices([{ ...added, published: false }], opts), []); // hidden test product
   assert.deepEqual(planOldAdminPrices([added], { ...opts, deployedAt: null }), []);
   assert.deepEqual(planOldAdminPrices([added], { ...opts, publish: false }), []);
 });
