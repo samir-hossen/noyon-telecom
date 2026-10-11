@@ -1,3 +1,5 @@
+import { normalizeQualityOptions } from './qualityOptions.js';
+
 // Normalizes a Prisma Product row into the exact shape the frontend expects
 // (categories/images come back as JSON columns, but should be plain arrays).
 export function serializeProduct(p) {
@@ -11,6 +13,9 @@ export function serializeProduct(p) {
     images: Array.isArray(p.images) ? p.images : [p.img],
     img: p.img,
     price: p.price,
+    // Grades with their own price (High Quality / Original …), cheapest
+    // first; `price` is the cheapest. Hidden with the price (below).
+    qualityOptions: normalizeQualityOptions(p.qualityOptions),
     compareAt: p.compareAt ?? null,
     stock: p.stock,
     rating: Math.round(p.rating * 10) / 10,
@@ -94,7 +99,7 @@ export function withViewerPricing(product, user, qty = 1) {
   const publicFields = { ...product };
   for (const field of ADMIN_ONLY_FIELDS) delete publicFields[field];
   if (!isPricePublished(product)) {
-    return { ...publicFields, price: null, retailPrice: null, compareAt: null, bulkPricing: [] };
+    return { ...publicFields, price: null, retailPrice: null, compareAt: null, bulkPricing: [], qualityOptions: [] };
   }
   const price = priceForViewer(product, user, qty); // needs the *original* product.dealerPrice internally
   const isApprovedDealer = user?.role === 'dealer' && user?.dealerStatus === 'approved';

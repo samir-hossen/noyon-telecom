@@ -17,6 +17,7 @@ import { PART_TYPES, partKeyFor, qualityGrades, buildProductDescription } from '
 import { slugify } from '../../utils/slug.js';
 import { findDisabledCategory } from '../../config/catalog.js';
 import { modelSlugsFor } from '../../utils/modelSlugs.js';
+import { qualityOptionsFromMarket } from '../../utils/qualityOptions.js';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
@@ -232,6 +233,10 @@ function decideExistingPrice(p, d, fix, r, oldRef) {
     }
     return { publishPrice: current, publishReason: share !== null ? `your current price (${Math.round(share * 100)}% of market)` : 'your current price (no market price to compare)' };
   }
+  // Several grades of the same model (owner, 11 Oct: show each grade's
+  // price): the owner's rule price per grade; the price is the cheapest.
+  const grades = r.match_status === 'MATCH' ? qualityOptionsFromMarket(r.draft_all_options) : [];
+  if (grades.length) return { publishPrice: grades[0].price, publishOptions: grades, publishReason: 'your rule, per quality grade' };
   if (d.draftPrice && r.match_status === 'MATCH' && !d.flag) {
     if (optionPrices(r.draft_all_options).size === 1) return { publishPrice: d.draftPrice, publishReason: 'your rule, one clear market price' };
     return { publishPrice: null, publishReason: 'several market prices/quality options — ask on WhatsApp' };
@@ -426,8 +431,11 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
     const optionCount = optionsText.split(' | ').filter(Boolean).length;
     const grades = qualityGrades(e.options);
     const draft = num(e.row.draft_price_bdt);
-    // Shown only with one clear price (one quality option, no flag) — see CLAUDE.md.
-    const publish = Boolean(draft) && !e.row.flag && optionCount === 1;
+    // Shown with one clear price (one quality option, no flag), or — when the
+    // market sells it in several grades — with the owner's rule price of
+    // each grade (owner, 11 Oct 2026; see CLAUDE.md).
+    const gradePrices = qualityOptionsFromMarket(e.optionTexts);
+    const publish = gradePrices.length > 0 || (Boolean(draft) && !e.row.flag && optionCount === 1);
     products.push({
       name,
       slug,
@@ -442,7 +450,8 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
       referencePrice: num(e.row.etel_price_bdt),
       priceNote: newProductPriceNote(e.row, optionsText, optionCount),
       priceStatus: publish ? 'published' : 'draft',
-      price: publish ? draft : null,
+      price: publish ? (gradePrices[0]?.price ?? draft) : null,
+      qualityOptions: gradePrices,
       flag: e.row.flag || '',
       grades,
       warranty: '7 Days Testing Warranty',

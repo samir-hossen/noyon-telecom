@@ -7,6 +7,7 @@
 // and the owner's value is kept.
 import { modelSlugsFor } from '../../utils/modelSlugs.js';
 import { findDisabledCategory } from '../../config/catalog.js';
+import { normalizeQualityOptions, hasQualityOptions } from '../../utils/qualityOptions.js';
 
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 const priceOrNull = (x) => (Number(x) > 0 ? Number(x) : null);
@@ -42,6 +43,7 @@ export function planExisting(dbProducts, { drafts = [], fixes = [], descriptions
       } else if (publish && d.publishPrice) {
         data.price = d.publishPrice;
         data.priceStatus = 'published';
+        if (d.publishOptions?.length) data.qualityOptions = normalizeQualityOptions(d.publishOptions);
       } else {
         data.priceStatus = 'draft';
       }
@@ -102,6 +104,7 @@ export function toCreateData(n, { publish = true } = {}) {
     img: n.img || '',
     price: shown ? n.price : 0,
     priceStatus: shown ? 'published' : 'draft',
+    qualityOptions: shown ? normalizeQualityOptions(n.qualityOptions) : [],
     draftPrice: n.draftPrice,
     referencePrice: n.referencePrice,
     priceNote: n.priceNote,
@@ -116,6 +119,22 @@ export function toCreateData(n, { publish = true } = {}) {
     published: n.published !== false,
     bulkPricing: [],
   };
+}
+
+// New products created by an earlier run, before they had grade prices, and
+// still exactly as that run left them (price hidden, no grades, no price
+// typed by the owner): they get their grades now.
+export function planGradeUpdates(newProducts, dbProducts, { publish = true } = {}) {
+  if (!publish) return [];
+  const bySku = new Map(dbProducts.filter((p) => p.sku).map((p) => [p.sku, p]));
+  const out = [];
+  for (const n of newProducts) {
+    const grades = normalizeQualityOptions(n.qualityOptions);
+    const p = bySku.get(n.sku);
+    if (!grades.length || !p || p.priceStatus === 'published' || hasQualityOptions(p) || p.price > 0) continue;
+    out.push({ id: p.id, name: p.name, data: { qualityOptions: grades, price: grades[0].price, priceStatus: 'published' } });
+  }
+  return out;
 }
 
 // Products added in admin after 11 Oct (not in the import files) that were

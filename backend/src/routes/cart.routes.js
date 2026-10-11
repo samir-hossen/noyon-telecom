@@ -3,6 +3,7 @@ import prisma from '../prismaClient.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, withViewerPricing, isPricePublished } from '../utils/serialize.js';
+import { hasQualityOptions, QUALITY_ORDER_MESSAGE } from '../utils/qualityOptions.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -44,6 +45,9 @@ router.post('/add', requireCsrf, async (req, res, next) => {
     // price, or no price at all) can't be bought online — the storefront
     // shows WhatsApp + "কোটেশন চান" for it instead of add-to-cart.
     if (!isPricePublished(product)) return res.status(400).json({ error: "This product doesn't have a price yet — please ask us on WhatsApp for a quote." });
+    // Several grades with different prices: ordered on WhatsApp with the
+    // chosen grade, so the cart can never charge the cheapest grade's price.
+    if (hasQualityOptions(product)) return res.status(400).json({ error: QUALITY_ORDER_MESSAGE });
 
     // Serializable so two near-simultaneous adds of the same product
     // (double-click, two open tabs) can't both read the same pre-add qty

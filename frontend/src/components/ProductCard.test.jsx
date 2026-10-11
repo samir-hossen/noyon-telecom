@@ -51,3 +51,15 @@ describe('ProductCard — hidden draft price', () => {
     expect(screen.queryByRole('link', { name: 'কোটেশন চান' })).toBeNull();
   });
 });
+
+describe('ProductCard — several grades with their own price', () => {
+  it('shows the price range and opens the product page to pick a grade (no add-to-cart)', () => {
+    const { container } = renderCard({
+      ...base, price: 999, retailPrice: 999, stock: 5,
+      qualityOptions: [{ label: 'High Quality', price: 999 }, { label: 'Original', price: 1699 }],
+    });
+    expect(container.textContent).toContain('৳999 – ৳1,699');
+    expect(screen.getByRole('link', { name: 'কোয়ালিটি ও দাম দেখুন' })).toHaveAttribute('href', '/product/vivo-y21-display');
+    expect(screen.queryByRole('button', { name: 'কার্টে যোগ করুন' })).toBeNull();
+  });
+});

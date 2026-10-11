@@ -6,6 +6,7 @@
 // almost verbatim; this also removes that duplication.
 
 import { notInDisabledCategories, DISABLED_CATEGORIES_LOWER, isDisabledCategory } from '../config/catalog.js';
+import { normalizeQualityOptions, hasQualityOptions } from './qualityOptions.js';
 
 const MAX_LIMIT = 200;
 
@@ -108,6 +109,21 @@ export function resolvePriceUpdate({ price, priceStatus } = {}, currentPrice = 0
     out.priceStatus = 'published';
   }
   return out;
+}
+
+// Quality options in an admin save (`qualityOptions` sent only when the
+// owner edited the grades): grades typed and saved go live like a typed
+// price (publish-on-edit), and the price becomes the cheapest grade.
+// Removing every grade without typing a single price hides the price — it
+// was the cheapest grade's, not a real single price. null = not sent.
+export function resolveQualityOptionsUpdate({ qualityOptions, price, priceStatus } = {}, existing = null) {
+  if (!Array.isArray(qualityOptions)) return null;
+  const options = normalizeQualityOptions(qualityOptions);
+  if (options.length) {
+    return { qualityOptions: options, price: options[0].price, priceStatus: priceStatus === 'draft' ? 'draft' : 'published' };
+  }
+  const typedPrice = price !== undefined && price !== null && price !== '';
+  return { qualityOptions: [], ...(hasQualityOptions(existing) && !typedPrice ? { priceStatus: 'draft' } : {}) };
 }
 
 // Optional admin-only number field (draftPrice/referencePrice): '' or null

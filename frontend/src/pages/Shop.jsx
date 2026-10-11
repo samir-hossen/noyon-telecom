@@ -298,7 +298,6 @@ export default function Shop() {
             </>
           )}
         </h1>
-        {introText && <p style={{ color: '#6b5f59', maxWidth: 760, marginTop: 10, lineHeight: 1.7 }}>{introText}</p>}
       </div>
 
       <div className="cat-strip" style={{ marginBottom: 12 }}>
@@ -462,6 +461,14 @@ export default function Shop() {
             </>
           )}
         </div>
+      )}
+
+      {/* The page's English intro (what Google reads) sits under the products,
+          so a visitor sees the parts first (owner: fresh, less text). */}
+      {introText && (
+        <section className="shop-seo-text">
+          <p>{introText}</p>
+        </section>
       )}
 
       {faqItems && (

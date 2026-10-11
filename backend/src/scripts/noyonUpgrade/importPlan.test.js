@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { editedSince, planExisting, planNew, planOldAdminPrices, toCreateData } from './importPlan.js';
+import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, toCreateData } from './importPlan.js';
 
 // One product as it was on 11 Oct, with its rows from the import files.
 const before = {
@@ -134,4 +134,36 @@ test('a product added and priced in the old admin gets its price shown again; on
   assert.deepEqual(planOldAdminPrices([{ ...added, published: false }], opts), []); // hidden test product
   assert.deepEqual(planOldAdminPrices([added], { ...opts, deployedAt: null }), []);
   assert.deepEqual(planOldAdminPrices([added], { ...opts, publish: false }), []);
+});
+
+test('grades: an existing product priced per grade gets its grades', () => {
+  const graded = { ...draft, currentPrice: null, publishPrice: 999, publishOptions: [{ label: 'Original', price: 1699 }, { label: 'High Quality', price: 999 }] };
+  const x = planExisting([{ ...before, price: 0 }], { ...files, drafts: [graded] })[0];
+  assert.equal(x.data.price, 999);
+  assert.equal(x.data.priceStatus, 'published');
+  assert.deepEqual(x.data.qualityOptions, [{ label: 'High Quality', price: 999 }, { label: 'Original', price: 1699 }]);
+});
+
+test('grades: new products are created with them only when the price is shown', () => {
+  const n = { slug: 's', name: 'iPhone 6 Display', sku: 'k', compatibleModels: ['iPhone 6'], priceStatus: 'published', price: 1149,
+    qualityOptions: [{ label: 'Original', price: 1999 }, { label: 'High Quality', price: 1149 }] };
+  assert.deepEqual(toCreateData(n).qualityOptions, [{ label: 'High Quality', price: 1149 }, { label: 'Original', price: 1999 }]);
+  assert.deepEqual(toCreateData(n, { publish: false }).qualityOptions, []);
+});
+
+test('grades: products an earlier run created get them only if still untouched', () => {
+  const grades = [{ label: 'High Quality', price: 1149 }, { label: 'Original', price: 1999 }];
+  const newProducts = [{ sku: 'A', qualityOptions: grades }, { sku: 'B', qualityOptions: grades }, { sku: 'C', qualityOptions: grades },
+    { sku: 'D', qualityOptions: grades }, { sku: 'E', qualityOptions: [] }];
+  const db = [
+    { id: 'a', sku: 'A', name: 'a', price: 0, priceStatus: 'draft', qualityOptions: [] }, // untouched -> graded
+    { id: 'b', sku: 'B', name: 'b', price: 1300, priceStatus: 'published', qualityOptions: [] }, // owner priced it
+    { id: 'c', sku: 'C', name: 'c', price: 1300, priceStatus: 'draft', qualityOptions: [] }, // owner typed then hid it
+    { id: 'd', sku: 'D', name: 'd', price: 1149, priceStatus: 'published', qualityOptions: grades }, // already done
+    { id: 'e', sku: 'E', name: 'e', price: 0, priceStatus: 'draft', qualityOptions: [] }, // no grades to add
+  ];
+  const plan = planGradeUpdates(newProducts, db);
+  assert.deepEqual(plan.map((g) => g.id), ['a']);
+  assert.deepEqual(plan[0].data, { qualityOptions: grades, price: 1149, priceStatus: 'published' });
+  assert.deepEqual(planGradeUpdates(newProducts, db, { publish: false }), []);
 });

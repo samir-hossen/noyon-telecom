@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProductWhere, buildProductOrderBy, parsePagination, MAX_LIMIT, computeReadyToSell, resolvePriceUpdate, parseOptionalPrice } from './productQuery.js';
+import { buildProductWhere, buildProductOrderBy, parsePagination, MAX_LIMIT, computeReadyToSell, resolvePriceUpdate, resolveQualityOptionsUpdate, parseOptionalPrice } from './productQuery.js';
 
 test('buildProductWhere', async (t) => {
   await t.test('defaults to published-only when status is not provided (storefront case)', () => {
@@ -212,5 +212,31 @@ test('parsePagination', async (t) => {
   await t.test('admin default limit (50) differs from storefront default (12) when unspecified', () => {
     assert.equal(parsePagination({}, { defaultLimit: 50 }).limit, 50);
     assert.equal(parsePagination({}, { defaultLimit: 12 }).limit, 12);
+  });
+});
+
+test('resolveQualityOptionsUpdate (grades in an admin save)', async (t) => {
+  const grades = [{ label: 'Original', price: 1699 }, { label: 'High Quality', price: 999 }];
+  await t.test('not sent: grades untouched', () => {
+    assert.equal(resolveQualityOptionsUpdate({ price: 500 }), null);
+  });
+  await t.test('grades saved go live, priced at the cheapest grade', () => {
+    assert.deepEqual(resolveQualityOptionsUpdate({ qualityOptions: grades }), {
+      qualityOptions: [{ label: 'High Quality', price: 999 }, { label: 'Original', price: 1699 }],
+      price: 999,
+      priceStatus: 'published',
+    });
+  });
+  await t.test('an explicit draft keeps them hidden', () => {
+    assert.equal(resolveQualityOptionsUpdate({ qualityOptions: grades, priceStatus: 'draft' }).priceStatus, 'draft');
+  });
+  await t.test('removing every grade without typing a price hides the price', () => {
+    assert.deepEqual(resolveQualityOptionsUpdate({ qualityOptions: [] }, { qualityOptions: grades }), { qualityOptions: [], priceStatus: 'draft' });
+  });
+  await t.test('removing the grades and typing one price: the typed price decides', () => {
+    assert.deepEqual(resolveQualityOptionsUpdate({ qualityOptions: [], price: '1200' }, { qualityOptions: grades }), { qualityOptions: [] });
+  });
+  await t.test('empty rows only (no real grade) on a product without grades changes nothing else', () => {
+    assert.deepEqual(resolveQualityOptionsUpdate({ qualityOptions: [{ label: '', price: '' }] }, { qualityOptions: [] }), { qualityOptions: [] });
   });
 });

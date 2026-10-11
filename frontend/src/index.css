@@ -2880,3 +2880,47 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 /* Server-rendered catalog pages (before the app takes over). */
 .ssr-product-list, .ssr-link-list { list-style: none; padding: 0; margin: 18px 0; display: grid; gap: 8px; }
 .ssr-link-list { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+
+/* ---------- Product page buy box: price/range, grades, quality picker ----------
+   Owner (11 Oct 2026): a clean buy box like the market leaders — the price,
+   each grade's price, a quality picker and the order buttons; the
+   description sits below it. */
+.pd-grid { padding-bottom: 40px; }
+.pd-buybox-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-buybox .pd-cat { margin-bottom: 0; }
+.pd-buybox .pd-title { font-size: 2rem; line-height: 1.2; margin: 8px 0 12px; letter-spacing: -0.01em; }
+.pd-grade-list { list-style: none; margin: 6px 0 16px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+.pd-grade-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 14px; font-size: 0.95rem; }
+.pd-grade-list li + li { border-top: 1px solid var(--line); }
+.pd-grade-list strong { font-family: var(--font-price); font-weight: 700; color: var(--ink); white-space: nowrap; }
+.pd-trust { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 6px; font-size: 0.88rem; color: #3f444b; }
+.pd-trust li { display: flex; align-items: center; gap: 8px; }
+.pd-trust li::before { content: '✓'; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #e7f6ed; color: var(--success); font-size: 0.7rem; font-weight: 700; flex: none; }
+.pd-quality { margin: 10px 0 16px; }
+.pd-quality-label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #7a7d82; margin-bottom: 8px; }
+.pd-quality-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.pd-quality-option { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; min-width: 120px; border: 1.5px solid var(--line); border-radius: var(--radius-md); background: #fff; color: var(--ink); text-align: left; cursor: pointer; transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease); }
+.pd-quality-option span { font-size: 0.85rem; font-weight: 600; }
+.pd-quality-option strong { font-family: var(--font-price); font-size: 0.95rem; color: var(--berry-text); }
+.pd-quality-option.active { border-color: var(--berry); box-shadow: 0 0 0 3px var(--berry-tint); }
+@media (hover: hover) { .pd-quality-option:hover { border-color: var(--berry); } }
+.pd-meta-line { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 22px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 0.82rem; }
+.pd-meta-line div { display: flex; gap: 6px; min-width: 0; }
+.pd-meta-line dt { color: #7a7d82; }
+.pd-meta-line dd { margin: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.pd-details { border-top: 1px solid var(--line); padding: 32px 0 8px; max-width: 820px; }
+.pd-details-title { font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 14px; }
+.pd-details .pd-desc { margin-bottom: 20px; }
+a.card-cta { display: block; text-align: center; text-decoration: none; }
+@media (max-width: 600px) {
+  .pd-buybox .pd-title { font-size: 1.45rem; }
+  .pd-quality-option { flex: 1 1 calc(50% - 8px); min-width: 0; }
+  .pd-grid { gap: 22px; }
+}
+/* Admin: grades with their own price */
+.admin-quality-row { display: grid; grid-template-columns: 1fr 120px auto; gap: 8px; margin-bottom: 8px; }
+.admin-quality .btn-sm { justify-self: start; }
+.admin-quality-note { display: block; margin-top: 6px; font-size: 0.74rem; color: #6b5f59; }
+/* Category/brand intro text, under the product grid */
+.shop-seo-text { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 24px; max-width: 860px; }
+.shop-seo-text p { color: #6b5f59; line-height: 1.75; font-size: 0.95rem; }

@@ -214,3 +214,25 @@ describe('hidden draft price (owner policy, Oct 2026)', () => {
     assert.equal(priceForViewer(draft(), { role: 'dealer', dealerStatus: 'approved' }), null);
   });
 });
+
+describe('quality options (grades with their own price)', () => {
+  const row = {
+    id: 'p', name: 'Vivo Y21 Display', desc: 'd', categories: ['Display'], category: 'Display', images: [], img: '',
+    price: 999, priceStatus: 'published', stock: 0, rating: 0, reviewCount: 0,
+    qualityOptions: [{ label: 'Original', price: 1699 }, { label: 'High Quality', price: 999 }, { label: 'x', price: 0 }],
+  };
+  test('served cheapest first, unpriced rows dropped', () => {
+    assert.deepEqual(withViewerPricing(serializeProduct(row), null).qualityOptions, [
+      { label: 'High Quality', price: 999 },
+      { label: 'Original', price: 1699 },
+    ]);
+  });
+  test('hidden together with the price', () => {
+    const hidden = withViewerPricing(serializeProduct({ ...row, priceStatus: 'draft' }), null);
+    assert.equal(hidden.price, null);
+    assert.deepEqual(hidden.qualityOptions, []);
+  });
+  test('a row without the column serializes to no grades', () => {
+    assert.deepEqual(serializeProduct({ ...row, qualityOptions: undefined }).qualityOptions, []);
+  });
+});

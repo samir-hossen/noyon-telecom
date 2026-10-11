@@ -77,7 +77,6 @@ export default function ModelHub() {
       )}
       <div className="page-header">
         <h1 className="page-title">{page?.h1 || data?.model.name || '…'}</h1>
-        {page?.intro && <p style={{ color: '#6b5f59', maxWidth: 760, marginTop: 10, lineHeight: 1.7 }}>{page.intro}</p>}
       </div>
 
       {!data ? (
@@ -88,6 +87,12 @@ export default function ModelHub() {
             <ProductCard key={p.id} product={p} onAdd={handleAdd} />
           ))}
         </div>
+      )}
+
+      {page?.intro && (
+        <section className="shop-seo-text">
+          <p>{page.intro}</p>
+        </section>
       )}
 
       {page?.faq?.length > 0 && (

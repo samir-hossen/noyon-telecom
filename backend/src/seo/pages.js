@@ -8,7 +8,8 @@ import { ALL_CATEGORIES, ALL_BRANDS, isDisabledCategory, findDisabledCategory, D
 import { slugify, productPath } from '../utils/slug.js';
 import { buildProductWhere, buildProductOrderBy, storefrontWhere } from '../utils/productQuery.js';
 import { isPricePublished } from '../utils/serialize.js';
-import { buildProductTitle, buildProductMetaDescription, PART_TYPES } from '../utils/productContent.js';
+import { buildProductTitle, buildProductMetaDescription, buildProductH1, PART_TYPES } from '../utils/productContent.js';
+import { normalizeQualityOptions } from '../utils/qualityOptions.js';
 import { modelSlugsFor } from '../utils/modelSlugs.js';
 import { getOrSet } from '../utils/cache.js';
 import * as content from './content.js';
@@ -42,7 +43,12 @@ function firstParagraph(text) {
 // product (GET /api/products/:id), so the page head matches either way.
 export function productSeo(p) {
   const publicPrice = isPricePublished(p) ? p.price : null;
-  return { title: buildProductTitle(p.name), description: buildProductMetaDescription(p.name, publicPrice) };
+  const grades = publicPrice ? normalizeQualityOptions(p.qualityOptions) : [];
+  return {
+    title: buildProductTitle(p.name),
+    description: buildProductMetaDescription(p.name, grades[0]?.price ?? publicPrice, { from: grades.length > 1 }),
+    h1: buildProductH1(p.name),
+  };
 }
 
 function partLabelOf(p) {
@@ -133,9 +139,10 @@ async function productPage(slug) {
   if (!row.published || findDisabledCategory(row.categories)) return notFound();
   if (row.slug && slug !== row.slug) return { status: 301, location: productPath(row) };
 
-  const seo = productSeo(row);
+  const { h1, ...seo } = productSeo(row);
   const path = productPath(row);
   const published = isPricePublished(row);
+  const grades = published ? normalizeQualityOptions(row.qualityOptions) : [];
   const modelSlug = (row.modelSlugs || [])[0] || null;
   const modelName = modelSlug ? (row.compatibleModels || []).find((m) => modelSlugsFor([m])[0] === modelSlug) || null : null;
   const relatedRows = modelSlug
@@ -164,13 +171,15 @@ async function productPage(slug) {
     category: `Mobile Phone Parts > ${row.category}`,
     ...(images.length ? { image: images } : {}),
     // Only a price the owner has published — never a draft, never ৳0.
+    // Several grades: one AggregateOffer from the cheapest to the dearest.
     ...(published
       ? {
         offers: {
-          '@type': 'Offer',
+          ...(grades.length > 1
+            ? { '@type': 'AggregateOffer', lowPrice: grades[0].price, highPrice: grades[grades.length - 1].price, offerCount: grades.length }
+            : { '@type': 'Offer', price: grades[0]?.price ?? row.price }),
           url: absoluteUrl(path),
           priceCurrency: 'BDT',
-          price: row.price,
           availability: row.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
           eligibleQuantity: { '@type': 'QuantitativeValue', minValue: row.moq || 1 },
@@ -184,7 +193,7 @@ async function productPage(slug) {
     status: 200,
     kind: 'product',
     head: { ...seo, canonical: path, ogType: 'product', image: images[0] || null },
-    h1: row.name,
+    h1,
     breadcrumb: crumbs,
     product: {
       id: row.id,
@@ -201,6 +210,7 @@ async function productPage(slug) {
       warranty: row.warranty,
       compatibleModels: row.compatibleModels || [],
       price: published ? row.price : null,
+      qualityOptions: grades,
     },
     model: modelSlug && modelName ? { slug: modelSlug, name: modelName, path: `/model/${modelSlug}` } : null,
     related: relatedRows.map(listItem),

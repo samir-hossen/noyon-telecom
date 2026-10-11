@@ -30,9 +30,16 @@ export function buildProductTitle(name) {
 
 // `publicPrice` is the price customers can see — null while the owner
 // hasn't published one, so a hidden draft price can never end up here.
-export function buildProductMetaDescription(name, publicPrice) {
+// The page heading — the phrase people search for ("vivo y21 display price
+// in bangladesh"); the <title> above carries the "Wholesale" variant.
+export function buildProductH1(name) {
+  return `${name} Price in Bangladesh`;
+}
+
+// `from`: the product comes in several grades and publicPrice is the cheapest.
+export function buildProductMetaDescription(name, publicPrice, { from = false } = {}) {
   if (publicPrice > 0) {
-    return `Wholesale ${name} for repair shops and dealers in Bangladesh at ${formatTaka(publicPrice)}. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh. Order online or on WhatsApp.`;
+    return `Wholesale ${name} for repair shops and dealers in Bangladesh ${from ? 'from' : 'at'} ${formatTaka(publicPrice)}. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh. Order online or on WhatsApp.`;
   }
   return `Wholesale ${name} for repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty, fast delivery across Bangladesh. Ask price on WhatsApp.`;
 }

@@ -11,6 +11,9 @@ const emptyForm = {
   sku: '', brand: '', compatibleModels: '', moq: '1', dealerPrice: '', warranty: '', published: true,
   // Read-only hidden-price info shown as hints while editing (never sent back).
   priceStatus: 'draft', draftPrice: null, referencePrice: null, priceNote: '', hiddenPrice: null,
+  // Grades with their own price ({ label, price } as typed); sent only when
+  // edited, like a typed price.
+  qualityOptions: [], optionsDirty: false,
 };
 const emptyCoupon = { code: '', type: 'percent', value: '', minSubtotal: '', usageLimit: '', usageLimitPerCustomer: '', expiresAt: '' };
 const ORDER_STATUSES = ['processing', 'paid', 'shipped', 'delivered', 'cancelled'];
@@ -41,6 +44,8 @@ export default function Admin() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [form, setForm] = useState(emptyForm);
+  // Typed grades (label + price): the single price is then the cheapest grade's.
+  const formHasGrades = form.qualityOptions.some((g) => String(g.label).trim() && Number(g.price) > 0);
   const [editingId, setEditingId] = useState(null);
 
   // noindex: staff-only dashboard, must never appear in search results.
@@ -203,6 +208,8 @@ export default function Admin() {
         price: p.priceStatus === 'published' ? p.price : '',
         priceStatus: p.priceStatus,
         hiddenPrice: p.priceStatus !== 'published' && p.price > 0 ? p.price : null,
+        qualityOptions: (p.qualityOptions || []).map((g) => ({ label: g.label, price: String(g.price) })),
+        optionsDirty: false,
       }));
       showToast(p.priceStatus === 'published' ? `দাম পাবলিশ হয়েছে: ${formatPrice(p.price)}` : 'দাম লুকানো হয়েছে', 'success');
       loadProducts();
@@ -590,6 +597,8 @@ export default function Admin() {
       referencePrice: p.referencePrice ?? null,
       priceNote: p.priceNote || '',
       hiddenPrice: p.priceStatus !== 'published' && p.price > 0 ? p.price : null,
+      qualityOptions: (p.qualityOptions || []).map((g) => ({ label: g.label, price: String(g.price) })),
+      optionsDirty: false,
       compareAt: p.compareAt || '',
       stock: p.stock,
       images: Array.isArray(p.images) && p.images.length ? p.images : [p.img],
@@ -661,6 +670,16 @@ export default function Admin() {
     setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
   }
 
+  function setGrade(i, patch) {
+    setForm((f) => ({ ...f, optionsDirty: true, qualityOptions: f.qualityOptions.map((g, idx) => (idx === i ? { ...g, ...patch } : g)) }));
+  }
+  function addGrade() {
+    setForm((f) => ({ ...f, optionsDirty: true, qualityOptions: [...f.qualityOptions, { label: '', price: '' }] }));
+  }
+  function removeGrade(i) {
+    setForm((f) => ({ ...f, optionsDirty: true, qualityOptions: f.qualityOptions.filter((_, idx) => idx !== i) }));
+  }
+
   function toggleCategory(cat) {
     setForm((f) => {
       const has = f.categories.includes(cat);
@@ -687,6 +706,10 @@ export default function Admin() {
       // Empty = leave the price as it is (hidden stays hidden); a typed
       // price is published as soon as this is saved.
       ...(String(form.price).trim() !== '' ? { price: parseFloat(form.price) } : {}),
+      // Grades, only when edited: saved grades go live (price = the cheapest).
+      ...(form.optionsDirty
+        ? { qualityOptions: form.qualityOptions.map((g) => ({ label: g.label.trim(), price: parseFloat(g.price) })).filter((g) => g.label && g.price > 0) }
+        : {}),
       compareAt: form.compareAt ? parseFloat(form.compareAt) : null,
       stock: parseInt(form.stock, 10),
       sku: form.sku.trim() || null,
@@ -1117,7 +1140,8 @@ export default function Admin() {
                     step="0.01"
                     min="0"
                     value={form.price}
-                    placeholder={form.draftPrice ? `সাজেস্টেড: ${form.draftPrice}` : 'খালি রাখলে দাম লুকানো থাকবে'}
+                    disabled={formHasGrades}
+                    placeholder={formHasGrades ? 'কোয়ালিটির দাম দেওয়া আছে (নিচে)' : form.draftPrice ? `সাজেস্টেড: ${form.draftPrice}` : 'খালি রাখলে দাম লুকানো থাকবে'}
                     onChange={(e) => setForm({ ...form, price: e.target.value })}
                   />
                   <div className="admin-price-hint">
@@ -1138,7 +1162,7 @@ export default function Admin() {
                       <button
                         type="button"
                         className="btn btn-outline btn-sm"
-                        disabled={!form.draftPrice || priceActionBusy}
+                        disabled={(!form.draftPrice && !formHasGrades) || priceActionBusy}
                         onClick={() => singlePriceAction(editingId, 'publish-suggested')}
                       >
                         সাজেস্টেড দাম পাবলিশ করো
@@ -1151,6 +1175,20 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
+                <div className="field admin-quality">
+                  <label>কোয়ালিটি ও দাম (ঐচ্ছিক) — যেমন Original, High Quality, IPS</label>
+                  {form.qualityOptions.map((g, i) => (
+                    <div className="admin-quality-row" key={i}>
+                      <input placeholder="কোয়ালিটি (যেমন Original)" value={g.label} onChange={(e) => setGrade(i, { label: e.target.value })} />
+                      <input type="number" min="0" step="1" placeholder="দাম ৳" value={g.price} onChange={(e) => setGrade(i, { price: e.target.value })} />
+                      <button type="button" className="btn btn-outline btn-sm" onClick={() => removeGrade(i)} aria-label="এই কোয়ালিটি মুছুন">✕</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn btn-outline btn-sm" onClick={addGrade}>+ কোয়ালিটি যোগ করুন</button>
+                  <span className="admin-quality-note">কোয়ালিটি দিলে সাইটে প্রতিটার দাম দেখাবে, কাস্টমার কোয়ালিটি বাছাই করে WhatsApp-এ অর্ডার করবে। Save করলেই দাম সাইটে যাবে।</span>
+                </div>
+              </div>
+              <div className="field-row">
                 <div className="field">
                   <label>Compare-at price (optional)</label>
                   <input type="number" step="0.01" value={form.compareAt} onChange={(e) => setForm({ ...form, compareAt: e.target.value })} />
@@ -1346,7 +1384,10 @@ export default function Admin() {
                       <td data-label="Price">
                         {p.priceStatus === 'published' && p.price > 0 ? (
                           <>
-                            {formatPrice(p.price)} <span className="admin-price-badge live">Live</span>
+                            {p.qualityOptions?.length > 1
+                              ? `${formatPrice(p.qualityOptions[0].price)} – ${formatPrice(p.qualityOptions[p.qualityOptions.length - 1].price)}`
+                              : formatPrice(p.price)}{' '}
+                            <span className="admin-price-badge live">Live</span>
                           </>
                         ) : (
                           <>

@@ -3,6 +3,7 @@ import prisma from '../prismaClient.js';
 import { optionalAuth, requireAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeOrder, priceForViewer, isPricePublished } from '../utils/serialize.js';
+import { hasQualityOptions, QUALITY_ORDER_MESSAGE } from '../utils/qualityOptions.js';
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
 import { sendWhatsApp, buildOrderWhatsAppMessage } from '../utils/whatsapp.js';
@@ -84,6 +85,9 @@ router.post('/checkout', optionalAuth, requireCsrf, async (req, res, next) => {
         if (!isPricePublished(product) || !(unitPrice > 0)) {
           throw new HttpError(400, `"${product.name}" doesn't have a price yet — please remove it from your cart and ask us on WhatsApp for a quote.`);
         }
+        // Several grades with different prices (guest carts never pass the
+        // /cart/add check): the order goes through WhatsApp with the grade.
+        if (hasQualityOptions(product)) throw new HttpError(400, `"${product.name}": ${QUALITY_ORDER_MESSAGE}`);
         subtotal += unitPrice * line.qty;
         orderItemsData.push({ productId: product.id, name: product.name, img: product.img, price: unitPrice, qty: line.qty });
       }

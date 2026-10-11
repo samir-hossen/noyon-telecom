@@ -14,7 +14,8 @@ import { trackViewItem, trackRequestQuote, trackWhatsappClick } from '../ecommer
 import { getPostForCategory } from '../content/blogPosts';
 import { productUrl } from '../utils/slug';
 import { categoryUrl } from '../utils/taxonomy';
-import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath, whatsappLink } from '../utils/whatsapp';
+import { hasPublicPrice, priceRequestLink, stockRequestLink, orderRequestLink, quoteRequestPath, whatsappLink } from '../utils/whatsapp';
+import { qualityOptions, priceRange } from '../utils/quality';
 
 const RECENTLY_VIEWED_KEY = 'nt-recently-viewed';
 const RECENTLY_VIEWED_MAX = 8;
@@ -92,6 +93,8 @@ export default function ProductDetail() {
     return () => io.disconnect();
   }, [product]);
   const [activeImg, setActiveImg] = useState(0);
+  // The grade picked in the quality picker (null = the cheapest).
+  const [gradeLabel, setGradeLabel] = useState(null);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   // Other parts for the same phone model (links to the /model/<slug> hub).
   const [modelParts, setModelParts] = useState({ model: null, products: [] });
@@ -109,6 +112,7 @@ export default function ProductDetail() {
     setLoadError('');
     setQty(1);
     setActiveImg(0);
+    setGradeLabel(null);
     window.scrollTo(0, 0);
     // Previously had no .catch — a failed fetch (dropped connection, product
     // just deleted, backend hiccup) left the page stuck on the skeleton
@@ -218,9 +222,12 @@ export default function ProductDetail() {
               ...(product.price > 0
                 ? {
                     offers: {
-                      '@type': 'Offer',
+                      // Same as the server-rendered page: several grades = one
+                      // AggregateOffer from the cheapest to the dearest.
+                      ...(priceRange(product)
+                        ? { '@type': 'AggregateOffer', lowPrice: priceRange(product).min, highPrice: priceRange(product).max, offerCount: qualityOptions(product).length }
+                        : { '@type': 'Offer', price: product.price }),
                       priceCurrency: 'BDT',
-                      price: product.price,
                       availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
                       url: `${window.location.origin}${productUrl(product)}`,
                     },
@@ -298,6 +305,11 @@ export default function ProductDetail() {
   // No published price yet: no "৳0", no cart — "দাম জানতে WhatsApp করুন" +
   // "কোটেশন চান" instead (owner's hidden-draft-price policy).
   const priceUnavailable = !hasPublicPrice(product);
+  // Several grades with their own price: picked here, ordered on WhatsApp.
+  const grades = priceUnavailable ? [] : qualityOptions(product);
+  const graded = grades.length > 0;
+  const range = graded ? priceRange(product) : null;
+  const selectedGrade = grades.find((g) => g.label === gradeLabel) || grades[0] || null;
 
   async function handleAdd() {
     try {
@@ -438,16 +450,15 @@ export default function ProductDetail() {
             </div>
           )}
         </div>
-        <div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {categories.map((c) => (
-              <Link key={c} to={categoryUrl(c)} className="pd-cat" style={{ textDecoration: 'none' }}>
-                {c}
-              </Link>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-            <h1 className="pd-title">{product.name}</h1>
+        <div className="pd-buybox">
+          <div className="pd-buybox-top">
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {categories.map((c) => (
+                <Link key={c} to={categoryUrl(c)} className="pd-cat" style={{ textDecoration: 'none' }}>
+                  {c}
+                </Link>
+              ))}
+            </div>
             <button
               className={`wishlist-heart-lg ${saved ? 'active' : ''}`}
               onClick={handleWishlist}
@@ -456,6 +467,9 @@ export default function ProductDetail() {
               {saved ? '♥' : '♡'}
             </button>
           </div>
+          {/* The searched phrase ("… Price in Bangladesh") — same as the
+              server-rendered page; the short name stays in cards and cart. */}
+          <h1 className="pd-title">{product.seo?.h1 || `${product.name} Price in Bangladesh`}</h1>
           {product.reviewCount > 0 && (
             <div className="pd-rating-summary">
               ★ {product.rating} <span>· {t(product.reviewCount !== 1 ? 'pd.reviewCountPlural' : 'pd.reviewCount', null, { count: product.reviewCount })}</span>
@@ -473,164 +487,204 @@ export default function ProductDetail() {
               >
                 {t('card.askPrice')}
               </a>
+            ) : range ? (
+              <span className="now">{formatPrice(range.min)} – {formatPrice(range.max)}</span>
             ) : (
               <span className="now">{formatPrice(product.price)}</span>
             )}
-            {!priceUnavailable && (onSale || (product.retailPrice && product.retailPrice > product.price)) && (
+            {!priceUnavailable && !graded && (onSale || (product.retailPrice && product.retailPrice > product.price)) && (
               <span className="was">{formatPrice(product.retailPrice || product.compareAt)}</span>
             )}
-            {user?.role === 'dealer' && user?.dealerStatus === 'approved' && (
+            {!graded && user?.role === 'dealer' && user?.dealerStatus === 'approved' && (
               <span className="pd-dealer-badge">{t('product.dealerPrice')}</span>
             )}
           </div>
-          {user?.role !== 'dealer' && !priceUnavailable && (
-            <p className="pd-dealer-hint">
-              <Link to="/register">{t('nav.becomeDealer')}</Link> {t('pd.dealerHintPost')}
-            </p>
-          )}
 
-          <div className="pd-specs">
-            {product.sku && <div><span>{t('product.sku')}</span><strong>{product.sku}</strong></div>}
-            {product.brand && <div><span>{t('pd.brand')}</span><strong>{product.brand}</strong></div>}
-            <div><span>{t('product.moq')}</span><strong>{product.moq || 1} {(product.moq || 1) !== 1 ? t('pd.units') : t('pd.unit')}</strong></div>
-            {product.warranty && <div><span>{t('product.warranty')}</span><strong>{product.warranty}</strong></div>}
-          </div>
-
-          {product.compatibleModels?.length > 0 && (
-            <div className="pd-compat">
-              <span className="pd-compat-label">{t('product.compatibility')}</span>
-              <div className="pd-compat-tags">
-                {product.compatibleModels.map((m) => (
-                  <span key={m} className="pd-compat-tag">{m}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {product.bulkPricing?.length > 0 && (
-            <div className="pd-bulk-pricing">
-              <span className="pd-compat-label">{t('product.bulkPricing')}</span>
-              <table>
-                <thead>
-                  <tr><th>{t('pd.quantityHeader')}</th><th>{t('pd.pricePerUnitHeader')}</th></tr>
-                </thead>
-                <tbody>
-                  <tr><td>{product.moq || 1}+</td><td>{formatPrice(product.price)}</td></tr>
-                  {product.bulkPricing.map((tier) => (
-                    <tr key={tier.minQty}><td>{tier.minQty}+</td><td>{formatPrice(tier.price)}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="pd-desc">
-            {String(product.desc || '').split(/\n\s*\n/).filter((para) => para.trim()).map((para, i) => (
-              <p key={i}>{para.trim()}</p>
-            ))}
-          </div>
-
-          {(() => {
-            const guide = getPostForCategory(product.category);
-            return guide ? (
-              <p style={{ fontSize: '0.85rem', marginBottom: 14 }}>
-                📘 <Link to={`/blog/${guide.slug}`}>{guide.title}</Link>
-              </p>
-            ) : null;
-          })()}
-
-          {!priceUnavailable && product.stock === 0 && (
-            <p className="pd-stock">
-              <a href={stockRequestLink(product)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('product_detail_stock')}>
-                {t('card.askStock')}
-              </a>
-            </p>
-          )}
-          {!priceUnavailable && product.stock > 0 && (
-          <>
-          <div className="pd-qty">
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('pd.quantityLabel', null, { moq: product.moq || 1 })}</span>
-            <div className="qty-control">
-              <button onClick={() => setQty((q) => Math.max(product.moq || 1, q - 1))}>−</button>
-              <input
-                type="number"
-                min={product.moq || 1}
-                max={product.stock}
-                inputMode="numeric"
-                value={qtyText}
-                onChange={(e) => setQtyText(e.target.value)}
-                onBlur={() => {
-                  const n = parseInt(qtyText, 10);
-                  const min = product.moq || 1;
-                  const max = product.stock;
-                  if (Number.isFinite(n)) setQty(Math.min(max, Math.max(min, n)));
-                  else setQty(min);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.target.blur();
-                }}
-              />
-              <button onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>+</button>
-            </div>
-          </div>
-
-          <p className="pd-stock">{product.stock > 0 ? t('pd.inStockNote', null, { stock: product.stock }) : t('product.outOfStock')}</p>
-
-          <button ref={mainAddRef} className="btn btn-berry btn-block" disabled={product.stock === 0} onClick={handleAdd}>
-            {added ? t('pd.addedToCart') : t('product.addToCart')}
-          </button>
-          {added && (
-            <p style={{ marginTop: 14, fontSize: '0.88rem' }}>
-              <Link to="/cart" style={{ fontWeight: 600, color: 'var(--berry)' }}>{t('pd.viewCart')}</Link>
-            </p>
-          )}
-          </>
-          )}
-          {priceUnavailable && (
+          {graded ? (
             <>
-              <p className="pd-stock">
-                {product.stock > 0 ? (
-                  t('pd.inStockNote', null, { stock: product.stock })
-                ) : (
+              <div className="pd-quality">
+                <span className="pd-quality-label">{t('pd.quality')}</span>
+                <div className="pd-quality-options" role="radiogroup" aria-label={t('pd.quality')}>
+                  {grades.map((g) => (
+                    <button
+                      key={g.label}
+                      type="button"
+                      role="radio"
+                      aria-checked={selectedGrade?.label === g.label}
+                      className={`pd-quality-option ${selectedGrade?.label === g.label ? 'active' : ''}`}
+                      onClick={() => setGradeLabel(g.label)}
+                    >
+                      <span>{g.label}</span>
+                      <strong>{formatPrice(g.price)}</strong>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="pd-action-row">
+                <a
+                  className="btn pd-whatsapp-btn pd-whatsapp-primary"
+                  href={orderRequestLink(product, selectedGrade)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => {
+                    trackRequestQuote(product);
+                    trackWhatsappClick('product_detail_grade');
+                  }}
+                >
+                  💬 {t('pd.orderOnWhatsapp')}{selectedGrade ? ` — ${selectedGrade.label}` : ''}
+                </a>
+                <Link className="btn btn-outline" to={quoteRequestPath(product)}>
+                  📋 {t('product.requestQuote')}
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              {user?.role !== 'dealer' && !priceUnavailable && (
+                <p className="pd-dealer-hint">
+                  <Link to="/register">{t('nav.becomeDealer')}</Link> {t('pd.dealerHintPost')}
+                </p>
+              )}
+
+              {!priceUnavailable && product.stock === 0 && (
+                <p className="pd-stock">
                   <a href={stockRequestLink(product)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('product_detail_stock')}>
                     {t('card.askStock')}
                   </a>
-                )}
-              </p>
-              <p className="pd-stock" style={{ color: 'var(--muted)' }}>{t('pd.priceOnRequestNote')}</p>
+                </p>
+              )}
+              {!priceUnavailable && product.stock > 0 && (
+              <>
+              <div className="pd-qty">
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t('pd.quantityLabel', null, { moq: product.moq || 1 })}</span>
+                <div className="qty-control">
+                  <button onClick={() => setQty((q) => Math.max(product.moq || 1, q - 1))}>−</button>
+                  <input
+                    type="number"
+                    min={product.moq || 1}
+                    max={product.stock}
+                    inputMode="numeric"
+                    value={qtyText}
+                    onChange={(e) => setQtyText(e.target.value)}
+                    onBlur={() => {
+                      const n = parseInt(qtyText, 10);
+                      const min = product.moq || 1;
+                      const max = product.stock;
+                      if (Number.isFinite(n)) setQty(Math.min(max, Math.max(min, n)));
+                      else setQty(min);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.target.blur();
+                    }}
+                  />
+                  <button onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>+</button>
+                </div>
+              </div>
+
+              <p className="pd-stock">{product.stock > 0 ? t('pd.inStockNote', null, { stock: product.stock }) : t('product.outOfStock')}</p>
+
+              <button ref={mainAddRef} className="btn btn-berry btn-block" disabled={product.stock === 0} onClick={handleAdd}>
+                {added ? t('pd.addedToCart') : t('product.addToCart')}
+              </button>
+              {added && (
+                <p style={{ marginTop: 14, fontSize: '0.88rem' }}>
+                  <Link to="/cart" style={{ fontWeight: 600, color: 'var(--berry)' }}>{t('pd.viewCart')}</Link>
+                </p>
+              )}
+              </>
+              )}
+              {priceUnavailable && product.stock > 0 && (
+                <p className="pd-stock">{t('pd.inStockNote', null, { stock: product.stock })}</p>
+              )}
+
+              <div className="pd-action-row">
+                <a
+                  className={`btn pd-whatsapp-btn ${priceUnavailable ? 'pd-whatsapp-primary' : 'btn-outline'}`}
+                  href={priceUnavailable
+                    ? priceRequestLink(product)
+                    : whatsappLink(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => {
+                    trackRequestQuote(product);
+                    trackWhatsappClick('product_detail');
+                  }}
+                >
+                  💬 {priceUnavailable ? t('card.askPrice') : t('product.whatsappOrder')}
+                </a>
+                <Link
+                  className="btn btn-outline"
+                  to={quoteRequestPath(product)}
+                >
+                  📋 {t('product.requestQuote')}
+                </Link>
+              </div>
             </>
           )}
 
-          <div className="pd-action-row">
-            <a
-              className={`btn pd-whatsapp-btn ${priceUnavailable ? 'pd-whatsapp-primary' : 'btn-outline'}`}
-              href={priceUnavailable
-                ? priceRequestLink(product)
-                : whatsappLink(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => {
-                trackRequestQuote(product);
-                trackWhatsappClick('product_detail');
-              }}
-            >
-              💬 {priceUnavailable ? t('card.askPrice') : t('product.whatsappOrder')}
-            </a>
-            <Link
-              className="btn btn-outline"
-              to={quoteRequestPath(product)}
-            >
-              📋 {t('product.requestQuote')}
-            </Link>
-          </div>
+          <ul className="pd-trust">
+            <li>{t('pd.trustWarranty')}</li>
+            <li>{t('pd.trustDelivery')}</li>
+            <li>{t('pd.trustWholesale')}</li>
+          </ul>
 
-          <div className="pd-meta">
-            <div>{t('pd.wholesaleAvailable')}</div>
-            <div>{product.warranty || t('pd.warrantyVaries')}</div>
-            <div>{t('pd.bulkOrderNote')}</div>
-          </div>
+          <dl className="pd-meta-line">
+            {product.sku && <div><dt>{t('product.sku')}</dt><dd>{product.sku}</dd></div>}
+            {product.brand && <div><dt>{t('pd.brand')}</dt><dd>{product.brand}</dd></div>}
+            <div><dt>{t('product.moq')}</dt><dd>{product.moq || 1} {(product.moq || 1) !== 1 ? t('pd.units') : t('pd.unit')}</dd></div>
+            {product.warranty && <div><dt>{t('product.warranty')}</dt><dd>{product.warranty}</dd></div>}
+          </dl>
         </div>
       </div>
+
+      {/* Details below the buy box: the text Google reads, out of the way of
+          the price and the order buttons (owner: "less writing next to the
+          product"). */}
+      <section className="pd-details">
+        <h2 className="pd-details-title">{t('pd.description')}</h2>
+        <div className="pd-desc">
+          {String(product.desc || '').split(/\n\s*\n/).filter((para) => para.trim()).map((para, i) => (
+            <p key={i}>{para.trim()}</p>
+          ))}
+        </div>
+
+        {product.compatibleModels?.length > 0 && (
+          <div className="pd-compat">
+            <span className="pd-compat-label">{t('product.compatibility')}</span>
+            <div className="pd-compat-tags">
+              {product.compatibleModels.map((m) => (
+                <span key={m} className="pd-compat-tag">{m}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!graded && product.bulkPricing?.length > 0 && (
+          <div className="pd-bulk-pricing">
+            <span className="pd-compat-label">{t('product.bulkPricing')}</span>
+            <table>
+              <thead>
+                <tr><th>{t('pd.quantityHeader')}</th><th>{t('pd.pricePerUnitHeader')}</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>{product.moq || 1}+</td><td>{formatPrice(product.price)}</td></tr>
+                {product.bulkPricing.map((tier) => (
+                  <tr key={tier.minQty}><td>{tier.minQty}+</td><td>{formatPrice(tier.price)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {(() => {
+          const guide = getPostForCategory(product.category);
+          return guide ? (
+            <p style={{ fontSize: '0.85rem' }}>
+              📘 <Link to={`/blog/${guide.slug}`}>{guide.title}</Link>
+            </p>
+          ) : null;
+        })()}
+      </section>
 
       <section className="section" style={{ borderTop: '1px solid var(--line)', maxWidth: 700 }}>
         <h2 className="section-title" style={{ marginBottom: 24 }}>

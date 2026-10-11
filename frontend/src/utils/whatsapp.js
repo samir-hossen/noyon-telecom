@@ -25,6 +25,12 @@ export function priceRequestLink(product) {
   return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটার পাইকারি দাম জানতে চাই: ${productLine(product)}`);
 }
 
+// Order with the chosen grade, e.g. "… — কোয়ালিটি: Original (৳1,699)".
+export function orderRequestLink(product, grade) {
+  const quality = grade ? ` — কোয়ালিটি: ${grade.label} (৳${Number(grade.price).toLocaleString('en-US')})` : '';
+  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটা অর্ডার করতে চাই: ${product.name}${quality}${product.sku ? ` (SKU: ${product.sku})` : ''} — ${productAbsoluteUrl(product)}`);
+}
+
 export function stockRequestLink(product) {
   return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটার স্টক জানতে চাই: ${productLine(product)}`);
 }

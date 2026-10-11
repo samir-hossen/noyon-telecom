@@ -4,7 +4,8 @@ import prisma from '../prismaClient.js';
 import { requireAuth, requireAdmin, requirePermanentAdmin } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeOrder } from '../utils/serialize.js';
-import { buildProductWhere, parsePagination, computeReadyToSell, resolvePriceUpdate, parseOptionalPrice } from '../utils/productQuery.js';
+import { buildProductWhere, parsePagination, computeReadyToSell, resolvePriceUpdate, resolveQualityOptionsUpdate, parseOptionalPrice } from '../utils/productQuery.js';
+import { hasQualityOptions, normalizeQualityOptions } from '../utils/qualityOptions.js';
 import { backfillReadyToSell } from '../backfillReadyToSell.js';
 import { findDisabledCategory, disabledCategoryError } from '../config/catalog.js';
 import { modelSlugsFor } from '../utils/modelSlugs.js';
@@ -140,7 +141,8 @@ router.post('/products', requireCsrf, async (req, res, next) => {
     // Switched-off categories (Battery) can't get new products.
     const offCategory = findDisabledCategory([...(p.categories || []), p.category].filter(Boolean));
     if (offCategory) return res.status(400).json({ error: disabledCategoryError(offCategory) });
-    const priceChange = resolvePriceUpdate(p, 0);
+    const optionChange = resolveQualityOptionsUpdate(p, null);
+    const priceChange = optionChange?.qualityOptions.length ? optionChange : resolvePriceUpdate(p, 0);
     if (priceChange.error) return res.status(400).json({ error: priceChange.error });
     const price = priceChange.price ?? 0;
     const priceStatus = priceChange.priceStatus ?? 'draft';
@@ -159,6 +161,7 @@ router.post('/products', requireCsrf, async (req, res, next) => {
         img: p.img || p.images[0],
         price,
         priceStatus,
+        qualityOptions: optionChange?.qualityOptions ?? [],
         draftPrice: parseOptionalPrice(p.draftPrice) ?? null,
         referencePrice: parseOptionalPrice(p.referencePrice) ?? null,
         priceNote: p.priceNote ? String(p.priceNote) : null,
@@ -209,8 +212,12 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
     // Publish-on-edit: a price typed and saved here goes live; an edit that
     // doesn't send a price leaves a hidden price hidden (see
     // resolvePriceUpdate in utils/productQuery.js).
-    const priceChange = resolvePriceUpdate(p, existing.price);
-    if (priceChange.error) return res.status(400).json({ error: priceChange.error });
+    const optionChange = resolveQualityOptionsUpdate(p, existing);
+    const typedPriceChange = resolvePriceUpdate(p, existing.price);
+    if (typedPriceChange.error) return res.status(400).json({ error: typedPriceChange.error });
+    const priceChange = optionChange?.qualityOptions.length
+      ? optionChange
+      : { ...typedPriceChange, ...(optionChange?.priceStatus ? { priceStatus: optionChange.priceStatus } : {}) };
     // Only fills in a missing slug (a pre-backfill row, or one whose backfill
     // hasn't run yet) — a product that already has one keeps it forever, even
     // across a name change, so an already-shared/indexed URL never breaks.
@@ -235,6 +242,7 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
         img: p.img || p.images?.[0],
         price: priceChange.price,
         priceStatus: priceChange.priceStatus,
+        qualityOptions: optionChange ? optionChange.qualityOptions : undefined,
         draftPrice: parseOptionalPrice(p.draftPrice),
         referencePrice: parseOptionalPrice(p.referencePrice),
         priceNote: p.priceNote !== undefined ? (p.priceNote ? String(p.priceNote) : null) : undefined,
@@ -285,13 +293,17 @@ async function applyPriceAction(ids, action) {
   const done = [];
   const skipped = [];
   for (const product of products) {
-    if (action === 'publish-suggested' && !(product.draftPrice > 0)) {
+    const grades = normalizeQualityOptions(product.qualityOptions);
+    if (action === 'publish-suggested' && !(product.draftPrice > 0) && !grades.length) {
       skipped.push({ id: product.id, name: product.name, reason: 'No suggested price' });
       continue;
     }
-    const data = action === 'publish-suggested'
-      ? { price: product.draftPrice, priceStatus: 'published' }
-      : { priceStatus: 'draft' };
+    // A product with grades publishes them (its price = the cheapest grade).
+    const data = action !== 'publish-suggested'
+      ? { priceStatus: 'draft' }
+      : hasQualityOptions({ qualityOptions: grades })
+        ? { price: grades[0].price, priceStatus: 'published' }
+        : { price: product.draftPrice, priceStatus: 'published' };
     data.readyToSell = computeReadyToSell(product.stock, data.price ?? product.price, data.priceStatus);
     done.push(await prisma.product.update({ where: { id: product.id }, data }));
   }

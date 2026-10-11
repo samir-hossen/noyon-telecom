@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { productUrl } from '../utils/slug';
 import { trackWhatsappClick } from '../ecommerce.js';
 import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath } from '../utils/whatsapp';
+import { hasQualityOptions, priceRange } from '../utils/quality';
 
 export default function ProductCard({ product, onAdd }) {
   const { user } = useAuth();
@@ -26,6 +27,10 @@ export default function ProductCard({ product, onAdd }) {
   // no add-to-cart: it offers "দাম জানতে WhatsApp করুন" + "কোটেশন চান".
   const priceUnavailable = !hasPublicPrice(product);
   const unorderable = outOfStock || priceUnavailable;
+  // Sold in several grades (High Quality / Original …): the card shows the
+  // range and opens the product page to pick one.
+  const graded = !priceUnavailable && hasQualityOptions(product);
+  const range = graded ? priceRange(product) : null;
   const { ids, toggle } = useWishlist();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -82,12 +87,20 @@ export default function ProductCard({ product, onAdd }) {
         )}
         {!priceUnavailable && (
           <div className="card-price">
-            <span className="now">{formatPrice(product.price)}</span>
-            {onSale && <span className="was">{formatPrice(product.compareAt)}</span>}
-            {dealerSaving && <span className="was">{formatPrice(product.retailPrice)}</span>}
+            {range ? (
+              <span className="now">{formatPrice(range.min)} – {formatPrice(range.max)}</span>
+            ) : (
+              <>
+                <span className="now">{formatPrice(product.price)}</span>
+                {onSale && <span className="was">{formatPrice(product.compareAt)}</span>}
+                {dealerSaving && <span className="was">{formatPrice(product.retailPrice)}</span>}
+              </>
+            )}
           </div>
         )}
-        {unorderable ? (
+        {graded ? (
+          <Link className="card-cta" to={productUrl(product)}>{t('card.viewQualities')}</Link>
+        ) : unorderable ? (
           <a
             className={`card-cta card-cta-whatsapp${priceUnavailable ? ' card-cta-push' : ''}`}
             href={whatsappHref}

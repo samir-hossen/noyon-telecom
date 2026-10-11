@@ -36,12 +36,12 @@ enum CouponType {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  passwordHash  String
-  role          Role     @default(customer)
-  emailVerified Boolean  @default(false)
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  passwordHash   String
+  role           Role      @default(customer)
+  emailVerified  Boolean   @default(false)
   // Set only for temporary admins (Admin > Security > Add admin with a time
   // limit). Once it passes the account is treated as a customer — see
   // utils/adminAccess.js. Null = permanent admin (or not an admin at all).
@@ -54,19 +54,19 @@ model User {
   dealerStatus          DealerStatus?
   // Extra discount applied on top of dealerPrice for this specific account
   // (e.g. long-term dealer negotiated a better rate). 0 = standard dealer pricing.
-  dealerDiscountPercent Float          @default(0)
+  dealerDiscountPercent Float         @default(0)
   // Optional trade license / shop registration document, uploaded at signup
   // for admin verification before approval. Not required to register, but
   // speeds up approval and is shown to the reviewing admin.
   tradeLicenseUrl       String?
   dealerVerifiedAt      DateTime?
 
-  twoFAEnabled  Boolean  @default(false)
-  twoFASecret   String?
+  twoFAEnabled       Boolean  @default(false)
+  twoFASecret        String?
   // Holds the freshly generated secret between "/2fa/setup" and the user
   // confirming a valid code in "/2fa/enable" — never activated until then.
   twoFASecretPending String?
-  createdAt     DateTime @default(now())
+  createdAt          DateTime @default(now())
 
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
@@ -83,7 +83,7 @@ model User {
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id                String   @id @default(cuid())
   // Human-readable URL slug (e.g. "y03t-oled-display"), assigned once at
   // creation and never changed on a later rename — a stable slug is what
   // keeps an already-indexed/shared product URL from silently breaking.
@@ -91,29 +91,29 @@ model Product {
   // backfillProductSlugs.js, run at boot the same way fixBrokenPlaceholderImages
   // is); Postgres treats every NULL as distinct under a unique index, so
   // multiple not-yet-backfilled rows can coexist without a constraint error.
-  slug        String?  @unique
-  name        String
-  desc        String
-  categories  Json
-  category    String
-  images      Json
-  img         String
-  price       Float
-  compareAt   Float?
-  stock       Int      @default(0)
+  slug              String?  @unique
+  name              String
+  desc              String
+  categories        Json
+  category          String
+  images            Json
+  img               String
+  price             Float
+  compareAt         Float?
+  stock             Int      @default(0)
   // Denormalized `stock > 0 && price > 0` — kept in sync by the app (create/
   // update/import/restore) rather than a Postgres generated column, so it
   // stays plain application logic instead of a DB-level quirk write paths
   // have to specially avoid. Lets the default shop sort put sellable
   // products first without a raw-SQL CASE expression in every query — see
   // utils/productQuery.js's buildProductOrderBy.
-  readyToSell Boolean  @default(false)
-  rating      Float    @default(0)
-  reviewCount Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  readyToSell       Boolean  @default(false)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   // Admin gets a low-stock alert once `stock` falls at or below this.
-  lowStockThreshold Int @default(5)
+  lowStockThreshold Int      @default(5)
   // False = draft/not-yet-priced — hidden from every customer-facing route
   // (listing, search, home sections, product detail, sitemap, product
   // feed) but still fully visible/editable in the Admin dashboard. Added
@@ -121,22 +121,22 @@ model Product {
   // final prices yet) can land in the catalog immediately without ever
   // showing a customer a ৳0 product. Defaults to true so every
   // already-existing product stays visible with no migration side effects.
-  published   Boolean  @default(true)
+  published         Boolean  @default(true)
 
   // ---- Wholesale spare-parts fields ----
-  sku    String? @unique
+  sku              String? @unique
   // Phone brand this part is for/compatible with (Apple, Samsung, Xiaomi, ...).
-  brand  String?
+  brand            String?
   // Specific phone models this part fits, e.g. ["iPhone 13", "iPhone 13 Pro"].
   compatibleModels Json?
   // Minimum order quantity for wholesale purchase.
-  moq        Int    @default(1)
+  moq              Int     @default(1)
   // Standard wholesale/dealer unit price (retail `price` above stays as the
   // reference/MRP shown to non-dealers). Falls back to `price` when unset.
-  dealerPrice Float?
+  dealerPrice      Float?
   // Tiered bulk pricing, e.g. [{ "minQty": 10, "price": 450 }, { "minQty": 50, "price": 420 }].
-  bulkPricing Json?
-  warranty    String?
+  bulkPricing      Json?
+  warranty         String?
 
   // ---- Hidden draft price (owner's policy, Oct 2026) ----
   // Customers see a price only while priceStatus = published, which the
@@ -149,6 +149,10 @@ model Product {
   referencePrice Float?
   priceNote      String?
   priceStatus    PriceStatus @default(draft)
+  // Several grades with their own price, e.g. High Quality / Original
+  // ([{ label, price }], cheapest first; see utils/qualityOptions.js).
+  // `price` is the cheapest one.
+  qualityOptions Json        @default("[]")
 
   // URL slugs of the phone models this part fits ("vivo-y21"), derived from
   // compatibleModels — powers the /model/<slug> hub pages ("all parts for
@@ -209,8 +213,8 @@ model Review {
   images    Json     @default("[]")
   createdAt DateTime @default(now())
 
-  @@index([productId])
   @@unique([productId, userId])
+  @@index([productId])
 }
 
 model CartItem {
@@ -390,22 +394,22 @@ enum QuoteStatus {
 // on a list of items+quantities, distinct from a placed Order — pricing is
 // negotiated before checkout, common for large or custom bulk requests.
 model Quote {
-  id          String      @id @default(cuid())
-  userId      String?
-  user        User?       @relation(fields: [userId], references: [id])
-  name        String
-  email       String
-  phone       String
+  id           String      @id @default(cuid())
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id])
+  name         String
+  email        String
+  phone        String
   businessName String?
   // Snapshot of requested items: [{ productId, name, sku, qty }], kept as JSON
   // so the quote still makes sense even if a product is edited/removed later.
-  items       Json
-  message     String?
-  status      QuoteStatus @default(pending)
-  adminNote   String?
-  quotedTotal Float?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  items        Json
+  message      String?
+  status       QuoteStatus @default(pending)
+  adminNote    String?
+  quotedTotal  Float?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([status])
   @@index([userId])

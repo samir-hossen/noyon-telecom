@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderPage, escapeHtml } from './html.js';
 import { pageTitle, categoryHead, modelHead } from './content.js';
-import { buildProductTitle, buildProductMetaDescription } from '../utils/productContent.js';
+import { buildProductTitle, buildProductMetaDescription, buildProductH1 } from '../utils/productContent.js';
 
 const SHELL = `<!doctype html>
 <html lang="en">
@@ -31,7 +31,7 @@ function productModel(overrides = {}) {
     status: 200,
     kind: 'product',
     head: { title: buildProductTitle(name), description: buildProductMetaDescription(name, null), canonical: '/product/vivo-y21-display', ogType: 'product' },
-    h1: name,
+    h1: buildProductH1(name),
     breadcrumb: [{ name: 'Home', path: '/' }, { name: 'Shop', path: '/shop' }, { name: 'Display', path: '/category/display' }, { name, path: '/product/vivo-y21-display' }],
     product: {
       id: 'p1', name, slug: 'vivo-y21-display', sku: 'NT-DIS-VIVO-Y21', brand: 'Vivo', category: 'Display',
@@ -59,7 +59,7 @@ test('server-rendered product page', async (t) => {
 
   await t.test('H1, description and the "other parts" links are in the HTML, inside #root', () => {
     assert.match(html, /<div id="root"><div class="container">/);
-    assert.match(html, /<h1 class="pd-title">Vivo Y21 Display<\/h1>/);
+    assert.match(html, /<h1 class="pd-title">Vivo Y21 Display Price in Bangladesh<\/h1>/);
     assert.match(html, /<p>Second paragraph\.<\/p>/);
     assert.match(html, /<a href="\/product\/vivo-y21-back-glass">Vivo Y21 Back Glass<\/a>/);
     assert.match(html, /<a href="\/model\/vivo-y21">All Vivo Y21 parts →<\/a>/);
@@ -86,6 +86,16 @@ test('published price shows on the page', () => {
   model.product.price = 1150;
   const html = renderPage(SHELL, model);
   assert.match(html, /<span class="now">৳1,150<\/span>/);
+});
+
+test('several grades: the price range and each grade with its price', () => {
+  const model = productModel();
+  model.product.price = 999;
+  model.product.qualityOptions = [{ label: 'High Quality', price: 999 }, { label: 'Original', price: 1699 }];
+  const html = renderPage(SHELL, model);
+  assert.match(html, /<span class="now">৳999 – ৳1,699<\/span>/);
+  assert.match(html, /<li><span>High Quality<\/span> <strong>৳999<\/strong><\/li><li><span>Original<\/span> <strong>৳1,699<\/strong><\/li>/);
+  assert.equal(buildProductMetaDescription('Vivo Y21 Display', 999, { from: true }).includes('in Bangladesh from ৳999.'), true);
 });
 
 test('text is escaped and JSON-LD cannot close its <script>', () => {

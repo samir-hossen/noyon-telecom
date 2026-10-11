@@ -125,6 +125,16 @@ function productBody(model) {
     `<div><span>MOQ</span><strong>${p.moq} ${p.moq === 1 ? 'unit' : 'units'}</strong></div>`,
     p.warranty && `<div><span>Warranty</span><strong>${escapeHtml(p.warranty)}</strong></div>`,
   ].filter(Boolean).join('');
+  // Several grades (High Quality / Original …): the range, then each grade's price.
+  const grades = p.qualityOptions || [];
+  const priceHtml = grades.length > 1
+    ? `<span class="now">${formatTaka(grades[0].price)} – ${formatTaka(grades[grades.length - 1].price)}</span>`
+    : p.price
+      ? `<span class="now">${formatTaka(p.price)}</span>`
+      : `<a class="now pd-price-request pd-price-ask" href="${escapeHtml(wa)}">Ask price on WhatsApp</a>`;
+  const gradeList = grades.length
+    ? `<ul class="pd-grade-list">${grades.map((g) => `<li><span>${escapeHtml(g.label)}</span> <strong>${formatTaka(g.price)}</strong></li>`).join('')}</ul>`
+    : '';
   const related = model.related?.length
     ? `<section class="section"><h2>Other parts for ${escapeHtml(model.model?.name || 'this model')}</h2>${productListHtml(model.related)}${model.model ? `<p><a href="${escapeHtml(model.model.path)}">All ${escapeHtml(model.model.name)} parts →</a></p>` : ''}</section>`
     : '';
@@ -134,14 +144,17 @@ ${breadcrumbHtml(model.breadcrumb)}
 <div><div class="pd-img"><img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" width="600" height="600" /></div></div>
 <div>
 <p class="pd-cat"><a href="/category/${escapeHtml(p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}">${escapeHtml(p.category)}</a></p>
-<h1 class="pd-title">${escapeHtml(p.name)}</h1>
-<div class="pd-price">${p.price ? `<span class="now">${formatTaka(p.price)}</span>` : `<a class="now pd-price-request pd-price-ask" href="${escapeHtml(wa)}">Ask price on WhatsApp</a>`}</div>
-<div class="pd-specs">${specs}</div>
-${p.compatibleModels.length ? `<div class="pd-compat"><span class="pd-compat-label">Compatibility</span> ${escapeHtml(p.compatibleModels.join(', '))}</div>` : ''}
-<div class="pd-desc">${paragraphs(p.desc)}</div>
+<h1 class="pd-title">${escapeHtml(model.h1 || p.name)}</h1>
+<div class="pd-price">${priceHtml}</div>
+${gradeList}
 <div class="pd-action-row"><a class="btn pd-whatsapp-btn" href="${escapeHtml(wa)}">💬 WhatsApp</a> <a class="btn btn-outline" href="/request-quote?productId=${encodeURIComponent(p.id)}&amp;name=${encodeURIComponent(p.name)}">📋 Request Quote</a></div>
+<div class="pd-specs">${specs}</div>
 </div>
 </div>
+<section class="pd-details"><h2>Description</h2>
+<div class="pd-desc">${paragraphs(p.desc)}</div>
+${p.compatibleModels.length ? `<div class="pd-compat"><span class="pd-compat-label">Compatibility</span> ${escapeHtml(p.compatibleModels.join(', '))}</div>` : ''}
+</section>
 ${related}
 </div>`;
 }

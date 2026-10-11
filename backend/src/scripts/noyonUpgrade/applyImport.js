@@ -28,7 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import prisma from '../../prismaClient.js';
 import { isLocalDatabase, databaseHost } from './dbGuard.js';
-import { planExisting, planNew, planOldAdminPrices, toCreateData } from './importPlan.js';
+import { planExisting, planNew, planOldAdminPrices, planGradeUpdates, toCreateData } from './importPlan.js';
 import { backfillReadyToSell } from '../../backfillReadyToSell.js';
 import { indexProducts } from '../../utils/search.js';
 
@@ -106,6 +106,7 @@ async function main() {
   const dbProducts = await prisma.product.findMany();
   const existingPlan = planExisting(dbProducts, { drafts, fixes, descriptions, snapshot, publish: PUBLISH });
   const { create, alreadyThere } = planNew(newProducts, dbProducts);
+  const gradeUpdates = planGradeUpdates(newProducts, dbProducts, { publish: PUBLISH });
   const oldAdminPrices = planOldAdminPrices(dbProducts, { drafts, newProducts, deployedAt: await hiddenPriceDeployedAt(), publish: PUBLISH });
 
   const summary = {
@@ -132,6 +133,8 @@ async function main() {
       alreadyInDatabase: alreadyThere,
       withDraft: create.filter((n) => n.draftPrice).length,
       priceShown: PUBLISH ? create.filter((n) => n.priceStatus === 'published').length : 0,
+      withGrades: PUBLISH ? create.filter((n) => n.qualityOptions?.length).length : 0,
+      alreadyInDatabaseGetGrades: gradeUpdates.length,
       setManually: create.filter((n) => String(n.flag || '').startsWith('SET MANUALLY')).length,
       byCategory: tally(create, 'category'),
       byBrand: tally(create, 'brand'),
@@ -184,16 +187,25 @@ async function main() {
     console.log(`new: ${created}/${create.length}`);
   }
 
+  let graded = 0;
+  for (const batch of chunks(gradeUpdates, BATCH)) {
+    await prisma.$transaction(async (tx) => {
+      for (const g of batch) await tx.product.update({ where: { id: g.id }, data: g.data });
+    }, { maxWait: 60_000, timeout: 300_000 });
+    graded += batch.length;
+    console.log(`grade prices: ${graded}/${gradeUpdates.length}`);
+  }
+
   if (oldAdminPrices.length) {
     await prisma.product.updateMany({ where: { id: { in: oldAdminPrices.map((p) => p.id) } }, data: { priceStatus: 'published' } });
     console.log(`prices typed in admin after 11 Oct shown again: ${oldAdminPrices.length}`);
   }
 
   const fixedReady = await backfillReadyToSell();
-  const touchedIds = [...existingPlan.map((x) => x.id), ...oldAdminPrices.map((p) => p.id)];
+  const touchedIds = [...existingPlan.map((x) => x.id), ...oldAdminPrices.map((p) => p.id), ...gradeUpdates.map((g) => g.id)];
   const touched = await prisma.product.findMany({ where: { OR: [{ id: { in: touchedIds } }, { sku: { in: create.map((n) => n.sku) } }] } });
   await indexProducts(touched).catch((err) => console.error('Search index update failed (non-fatal):', err.message));
-  console.log(JSON.stringify({ ...summary, applied: { existingUpdated: done, newCreated: created, oldAdminPricesShown: oldAdminPrices.length, readyToSellFixed: fixedReady } }, null, 2));
+  console.log(JSON.stringify({ ...summary, applied: { existingUpdated: done, newCreated: created, gradePricesAdded: graded, oldAdminPricesShown: oldAdminPrices.length, readyToSellFixed: fixedReady } }, null, 2));
   console.log('\nDone. Restart the API (or wait 5 minutes) so its in-memory caches show the new catalog.');
 }
 
