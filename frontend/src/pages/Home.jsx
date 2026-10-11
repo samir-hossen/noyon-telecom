@@ -14,8 +14,6 @@ import CategoryGrid from '../components/CategoryGrid.jsx';
 import BrandStrip from '../components/BrandStrip.jsx';
 import FlashSale from '../components/FlashSale.jsx';
 import FeatureStrip from '../components/FeatureStrip.jsx';
-import HomeTrustBar from '../components/HomeTrustBar.jsx';
-import Testimonials from '../components/Testimonials.jsx';
 import FAQAccordion, { FAQS } from '../components/FAQAccordion.jsx';
 
 export default function Home() {
@@ -100,7 +98,7 @@ export default function Home() {
     }
   }
 
-  const { featured, newArrivals, bestSellers, latestImports, deals } = sections;
+  const { featured, newArrivals, bestSellers, deals } = sections;
 
   return (
     <div>
@@ -127,13 +125,10 @@ export default function Home() {
       <section className="section container">
         <div className="section-head">
           <h2 className="section-title">{t('home.brands')}</h2>
+          <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
         </div>
-        <BrandStrip />
+        <BrandStrip limit={12} />
       </section>
-
-      <div className="container" style={{ marginBottom: 64 }}>
-        <HomeTrustBar />
-      </div>
 
       <div className="container">
         <div className="promo-banner">
@@ -199,21 +194,9 @@ export default function Home() {
         </section>
       )}
 
-      {!loading && latestImports.length > 0 && (
-        <section className="section container">
-          <div className="section-head">
-            <h2 className="section-title">{t('home.latestImports')}</h2>
-            <Link to="/shop?sort=newest" className="section-link">{t('home.viewAll')} →</Link>
-          </div>
-          <div className="grid">
-            {latestImports.map((p) => (
-              <ProductCard key={p.id} product={p} onAdd={handleAdd} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Testimonials />
+      {/* One clean page: no second trust bar (FeatureStrip above says it),
+          no "Latest Imported" rail (same products as New Arrivals), and no
+          testimonials until the owner sends real dealer reviews. */}
       <FAQAccordion />
     </div>
   );
