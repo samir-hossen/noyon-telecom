@@ -6,6 +6,7 @@ import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeOrder } from '../utils/serialize.js';
 import { buildProductWhere, parsePagination, computeReadyToSell, resolvePriceUpdate, parseOptionalPrice } from '../utils/productQuery.js';
 import { backfillReadyToSell } from '../backfillReadyToSell.js';
+import { findDisabledCategory, disabledCategoryError } from '../config/catalog.js';
 import { logAdminAction } from '../utils/audit.js';
 import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js';
 import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '../utils/totp.js';
@@ -135,6 +136,9 @@ router.post('/products', requireCsrf, async (req, res, next) => {
     if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || (!p.category && !p.categories?.length)) {
       return res.status(400).json({ error: 'Missing required product fields' });
     }
+    // Switched-off categories (Battery) can't get new products.
+    const offCategory = findDisabledCategory([...(p.categories || []), p.category].filter(Boolean));
+    if (offCategory) return res.status(400).json({ error: disabledCategoryError(offCategory) });
     const priceChange = resolvePriceUpdate(p, 0);
     if (priceChange.error) return res.status(400).json({ error: priceChange.error });
     const price = priceChange.price ?? 0;
@@ -195,6 +199,11 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
     const p = req.body;
     const existing = await prisma.product.findUnique({ where: { id: req.params.id } });
     if (!existing) return res.status(404).json({ error: 'Product not found' });
+    // A product in a switched-off category (Battery) can't be edited or moved
+    // into one — the only allowed change is hiding it (published: false).
+    const finalCategories = p.categories?.length ? p.categories : p.category ? [p.category] : existing.categories;
+    const offCategory = findDisabledCategory(finalCategories);
+    if (offCategory && p.published !== false) return res.status(400).json({ error: disabledCategoryError(offCategory) });
     // Publish-on-edit: a price typed and saved here goes live; an edit that
     // doesn't send a price leaves a hidden price hidden (see
     // resolvePriceUpdate in utils/productQuery.js).
@@ -461,6 +470,11 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
     async function importRow(r, rowNumber) {
       if (!r.name || !r.category) {
         errors.push({ row: rowNumber, error: 'Missing required field (name, category)' });
+        return;
+      }
+      const offCategory = findDisabledCategory(String(r.categories || r.category).split(',').map((c) => c.trim()));
+      if (offCategory) {
+        errors.push({ row: rowNumber, error: disabledCategoryError(offCategory) });
         return;
       }
       const existingId = r.sku ? existingBySku.get(String(r.sku).trim()) : null;
@@ -1212,6 +1226,9 @@ router.post('/backup/restore', requireCsrf, async (req, res, next) => {
           // readyToSell/priceStatus at all.
           delete rest.readyToSell;
           delete rest.retailPrice;
+          // A backup can predate the battery section being switched off —
+          // such products come back hidden.
+          if (findDisabledCategory(rest.categories || rest.category)) rest.published = false;
           return prisma.product.upsert({ where: { id }, create: { id, ...rest }, update: rest });
         })
       );

@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { getPostBySlug, getAllPosts } from '../content/blogPosts';
 import { usePageMeta } from '../hooks/usePageTitle';
-import { categoryUrl } from '../utils/taxonomy';
+import { categoryUrl, isDisabledCategory } from '../utils/taxonomy';
 
 function ContentBlock({ block, i }) {
   if (block.type === 'h2') return <h2 key={i} style={{ marginTop: 28, marginBottom: 10, fontSize: '1.2rem' }}>{block.text}</h2>;
@@ -84,11 +84,11 @@ export default function BlogPost() {
       <div className="form-panel wide" style={{ maxWidth: 760 }}>
         {post.content.map((block, i) => <ContentBlock key={i} block={block} i={i} />)}
 
-        {post.relatedCategories?.length > 0 && (
+        {post.relatedCategories?.some((cat) => !isDisabledCategory(cat)) && (
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
             <strong style={{ fontSize: '0.9rem' }}>সংশ্লিষ্ট ক্যাটাগরি:</strong>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10 }}>
-              {post.relatedCategories.map((cat) => (
+              {post.relatedCategories.filter((cat) => !isDisabledCategory(cat)).map((cat) => (
                 <Link key={cat} to={categoryUrl(cat)} className="btn btn-outline btn-sm">
                   {cat}
                 </Link>

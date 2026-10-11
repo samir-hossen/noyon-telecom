@@ -19,3 +19,14 @@ describe('categoryFromSlug / brandFromSlug', () => {
     expect(brandFromSlug('not-a-real-brand')).toBe(null);
   });
 });
+
+describe('switched-off categories (battery section is OFF)', () => {
+  it('Battery is off, still resolvable from its old URL (so it can redirect), and not active', async () => {
+    const { isDisabledCategory, ACTIVE_CATEGORIES, DISABLED_CATEGORIES } = await import('./taxonomy.js');
+    expect(DISABLED_CATEGORIES).toEqual(['Battery']);
+    expect(isDisabledCategory('battery')).toBe(true);
+    expect(isDisabledCategory('Display')).toBe(false);
+    expect(categoryFromSlug('battery')).toBe('Battery');
+    expect(ACTIVE_CATEGORIES).not.toContain('Battery');
+  });
+});

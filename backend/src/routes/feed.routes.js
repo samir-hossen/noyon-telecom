@@ -3,6 +3,7 @@ import prisma from '../prismaClient.js';
 import { escapeXml, SITE_URL } from './sitemap.routes.js';
 import { getOrSet } from '../utils/cache.js';
 import { productPath } from '../utils/slug.js';
+import { storefrontWhere } from '../utils/productQuery.js';
 
 const router = Router();
 
@@ -77,7 +78,7 @@ router.get('/google-merchant.xml', async (req, res, next) => {
     const xml = await getOrSet('feed:google-merchant-xml', 300, async () => {
       // Merchant Center needs a real price, so only products whose price the
       // owner has published go in — never a hidden draft or ৳0.
-      const products = await prisma.product.findMany({ where: { published: true, priceStatus: 'published', price: { gt: 0 } } });
+      const products = await prisma.product.findMany({ where: storefrontWhere({ priceStatus: 'published', price: { gt: 0 } }) });
       return buildMerchantFeedXml({ products, siteUrl: SITE_URL });
     });
 

@@ -4,26 +4,17 @@ import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeReview, withViewerPricing } from '../utils/serialize.js';
 import { upload, storeUploadedFile } from '../utils/upload.js';
-import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCategories, getActiveBrands } from '../utils/productQuery.js';
+import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCategories, getActiveBrands, storefrontWhere } from '../utils/productQuery.js';
+import { ALL_CATEGORIES, ALL_BRANDS, DISABLED_CATEGORIES_LOWER, findDisabledCategory } from '../config/catalog.js';
 import { setProductCacheControl } from '../utils/cacheControl.js';
 import { getOrSet, invalidateProductCache } from '../utils/cache.js';
 import { searchProductIds, isSearchEngineEnabled } from '../utils/search.js';
 
 const router = Router();
 
-// Wholesale mobile phone spare-parts taxonomy. Kept as a flat list here;
-// the storefront mega-menu (Phase 2) groups these visually.
-export const ALL_CATEGORIES = [
-  'Display', 'OLED', 'LCD', 'Touch', 'Battery', 'Back Glass', 'Housing', 'Frame',
-  'Camera', 'Charging Port', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
-  'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
-  'Repair Tools', 'Accessories',
-];
-
-export const ALL_BRANDS = [
-  'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
-  'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
-];
+// The taxonomy lives in config/catalog.js now (with the switched-off
+// categories); re-exported here for existing importers.
+export { ALL_CATEGORIES, ALL_BRANDS };
 
 // Powers the homepage's five product rails in ONE round trip, with each
 // section computed in the database instead of the frontend fetching the
@@ -51,9 +42,9 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
         Promise.all([
           // Sellable (in stock + published price) first; never ordered by a
           // hidden draft price.
-          prisma.product.findMany({ where: { stock: { gt: 0 }, published: true }, orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take: 4 }),
-          prisma.product.findMany({ where: { published: true }, orderBy: { createdAt: 'desc' }, take }),
-          prisma.product.findMany({ where: { reviewCount: { gt: 0 }, published: true }, orderBy: { rating: 'desc' }, take: 4 }),
+          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take: 4 }),
+          prisma.product.findMany({ where: storefrontWhere(), orderBy: { createdAt: 'desc' }, take }),
+          prisma.product.findMany({ where: storefrontWhere({ reviewCount: { gt: 0 } }), orderBy: { rating: 'desc' }, take: 4 }),
           // compareAt > price can't be expressed as a plain Prisma `where` filter
           // (it compares two columns on the same row), so this one query stays
           // raw SQL — same pattern already used for the admin analytics
@@ -63,6 +54,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           prisma.$queryRaw`
         SELECT * FROM "Product"
         WHERE "compareAt" IS NOT NULL AND "compareAt" > price AND stock > 0 AND published = true AND "priceStatus" = 'published'
+          AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
         ORDER BY ("compareAt" - price) / "compareAt" DESC
         LIMIT 6
       `,
@@ -114,7 +106,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
         // `.filter(Boolean)` drops any id that's been deleted from Postgres
         // but not yet removed from the search index (a brief window right
         // after a delete, not a correctness risk to what's shown).
-        const rows = ids.map((id) => rowsById.get(id)).filter(Boolean);
+        const rows = ids.map((id) => rowsById.get(id)).filter((p) => p && !findDisabledCategory(p.categories));
         return res.json({
           products: rows.map((p) => withViewerPricing(serializeProduct(p), req.user)),
           categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
@@ -130,6 +122,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       brand: req.query.brand,
       search: searchTerm,
       status: 'published', // storefront only ever shows published products
+      storefront: true, // ...and never a switched-off category (Battery)
     });
     const orderBy = buildProductOrderBy(sort);
 
@@ -170,7 +163,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
     // A draft (not-yet-priced) product is invisible to everyone except an
     // admin previewing it — same 404 as a nonexistent product, so a direct
     // link to a draft doesn't leak that it exists or reveal a placeholder price.
-    if (!product.published && req.user?.role !== 'admin') {
+    if ((!product.published || findDisabledCategory(product.categories)) && req.user?.role !== 'admin') {
       return res.status(404).json({ error: 'Product not found' });
     }
     res.json({ product: withViewerPricing(serializeProduct(product), req.user) });

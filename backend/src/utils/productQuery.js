@@ -5,13 +5,17 @@
 // spinning up a database. Both routes previously duplicated this logic
 // almost verbatim; this also removes that duplication.
 
+import { notInDisabledCategories, DISABLED_CATEGORIES_LOWER, isDisabledCategory } from '../config/catalog.js';
+
 const MAX_LIMIT = 200;
 
 // Builds a Prisma `where` clause for the Product model from raw query-string
 // values. `status` and `priceStatus` are admin-only (the public route always
-// implies published: true and passes neither).
-export function buildProductWhere({ category, brand, search, status, priceStatus } = {}) {
+// implies published: true and passes neither). `storefront: true` also keeps
+// switched-off categories (Battery) out — see config/catalog.js.
+export function buildProductWhere({ category, brand, search, status, priceStatus, storefront = false } = {}) {
   const where = {};
+  const and = storefront ? notInDisabledCategories() : [];
 
   if (status === 'published') where.published = true;
   else if (status === 'draft') where.published = false;
@@ -43,17 +47,24 @@ export function buildProductWhere({ category, brand, search, status, priceStatus
     // each word's `contains`, so this stays index-backed and fast even as
     // the catalog grows.
     const words = q.split(/\s+/).filter(Boolean);
-    where.AND = words.map((w) => ({
+    and.unshift(...words.map((w) => ({
       OR: [
         { name: { contains: w, mode: 'insensitive' } },
         { desc: { contains: w, mode: 'insensitive' } },
         { sku: { contains: w, mode: 'insensitive' } },
         { brand: { contains: w, mode: 'insensitive' } },
       ],
-    }));
+    })));
   }
 
+  if (and.length) where.AND = and;
   return where;
+}
+
+// The base `where` for every customer-facing product query outside the
+// paginated listing (home rails, sitemap, feed, brand lists).
+export function storefrontWhere(extra = {}) {
+  return { published: true, AND: notInDisabledCategories(), ...extra };
 }
 
 // A product is actually sellable right now when it has real stock AND a
@@ -149,14 +160,14 @@ export async function getActiveCategories(prisma, allCategories) {
     WHERE published = true
   `;
   const active = new Set(rows.map((r) => r.cat));
-  return allCategories.filter((c) => active.has(c));
+  return allCategories.filter((c) => active.has(c) && !isDisabledCategory(c));
 }
 
 // Same idea as getActiveCategories, for the Brand pill row — only brands
 // with at least one published product show as a filter option.
 export async function getActiveBrands(prisma, allBrands) {
   const rows = await prisma.product.findMany({
-    where: { published: true, brand: { not: null } },
+    where: storefrontWhere({ brand: { not: null } }),
     distinct: ['brand'],
     select: { brand: true },
   });
@@ -174,6 +185,7 @@ export async function getActiveBrandCategoryPairs(prisma) {
     SELECT DISTINCT brand, jsonb_array_elements_text(categories) AS category
     FROM "Product"
     WHERE published = true AND brand IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
   `;
   return rows.map((r) => ({ brand: r.brand, category: r.category }));
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import { api } from '../api';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -9,7 +9,7 @@ import { trackSearch } from '../ecommerce.js';
 import { buildPageWindow } from '../utils/pagination.js';
 import { useLanguage } from '../context/LanguageContext';
 import { productUrl } from '../utils/slug';
-import { categoryFromSlug, brandFromSlug, categoryUrl, brandUrl, brandCategoryUrl } from '../utils/taxonomy';
+import { categoryFromSlug, brandFromSlug, categoryUrl, brandUrl, brandCategoryUrl, isDisabledCategory } from '../utils/taxonomy';
 import { CATEGORY_INTRO, buildCategoryFaq, buildBrandIntro } from '../content/categoryContent.js';
 import NotFound from './NotFound.jsx';
 
@@ -21,11 +21,6 @@ const CATEGORY_SEO = {
     title: 'Mobile Display Wholesale in Bangladesh',
     h1: 'Mobile Display Wholesale in Bangladesh',
     desc: 'Wholesale importer of original smartphone LCD and OLED displays in Bangladesh. Best wholesale rates for repair shops in Gulistan, Dhaka.',
-  },
-  battery: {
-    title: 'Original Phone Battery Wholesale in Dhaka BD',
-    h1: 'Original Phone Battery Wholesale in Dhaka',
-    desc: 'High quality original mobile phone batteries at wholesale prices in Bangladesh for dealers, repair shops and technicians.',
   },
   'charging port': {
     title: 'Mobile Charging Port & Flex Ribbon Wholesale BD',
@@ -375,6 +370,9 @@ export default function Shop() {
   }
 
   if (invalidSlug) return <NotFound />;
+  // A switched-off category (battery section is OFF) has no page: send the
+  // visitor on, same as the server's 301 for a direct visit.
+  if (isDisabledCategory(category)) return <Navigate to={brand !== 'All' ? brandUrl(brand) : '/shop'} replace />;
 
   return (
     <div className="container">

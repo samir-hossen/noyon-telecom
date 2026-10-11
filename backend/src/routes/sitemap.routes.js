@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import { getOrSet } from '../utils/cache.js';
-import { getActiveCategories, getActiveBrands, getActiveBrandCategoryPairs } from '../utils/productQuery.js';
+import { getActiveCategories, getActiveBrands, getActiveBrandCategoryPairs, storefrontWhere } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS } from './products.routes.js';
 import { productPath, slugify } from '../utils/slug.js';
+import { isDisabledCategory } from '../config/catalog.js';
 
 const router = Router();
 // Set SITE_URL in the backend .env to your real storefront domain in production.
@@ -70,15 +71,19 @@ router.get('/sitemap-index.xml', (req, res) => {
 // between them), and this list only changes when a new guide is published,
 // which is rare enough that a manual mirror here is simpler than wiring up
 // a build-time sync for it.
+// The battery guide ('original-vs-copy-battery-chenar-upay') is left out on
+// purpose while the battery section is OFF — no battery URLs in the sitemap.
 const BLOG_SLUGS = [
   'oled-vs-lcd-display-kena-guide',
-  'original-vs-copy-battery-chenar-upay',
   'charging-port-noshto-hoyar-karon',
   'mobile-servicing-business-suru-korte-parts-stock',
   'paikari-mobile-parts-kenar-age-7-bishoy',
 ];
 
-export function buildPagesSitemapXml({ siteUrl, categories, brands, brandCategoryPairs = [] }) {
+export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brands, brandCategoryPairs: allPairs = [] }) {
+  // Switched-off categories (Battery) never go in, whatever the caller passes.
+  const categories = allCategories.filter((c) => !isDisabledCategory(c));
+  const brandCategoryPairs = allPairs.filter((p) => !isDisabledCategory(p.category));
   const entries = [
     { loc: `${siteUrl}/`, priority: '1.0', changefreq: 'daily' },
     { loc: `${siteUrl}/shop`, priority: '0.9', changefreq: 'daily' },
@@ -152,7 +157,7 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
     // so a newly-added product's URL doesn't wait out the TTL to appear.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('sitemap:products-xml', 300, async () => {
-      const products = await prisma.product.findMany({ where: { published: true }, select: { id: true, slug: true, name: true, updatedAt: true, createdAt: true } });
+      const products = await prisma.product.findMany({ where: storefrontWhere(), select: { id: true, slug: true, name: true, updatedAt: true, createdAt: true } });
       const urls = products
         .map(
           (p) => `  <url>

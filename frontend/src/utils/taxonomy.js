@@ -18,6 +18,18 @@ export const ALL_BRANDS = [
   'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
 ];
 
+// Mirrors backend/src/config/catalog.js: categories switched off store-wide
+// (owner's decision, Oct 2026: the battery section is OFF). They're left out
+// of every menu, list and filter, and /category/<slug> redirects to /shop.
+// Remove a name here (and in the backend) to switch it back on.
+export const DISABLED_CATEGORIES = ['Battery'];
+
+export function isDisabledCategory(name) {
+  return DISABLED_CATEGORIES.some((c) => c.toLowerCase() === String(name || '').trim().toLowerCase());
+}
+
+export const ACTIVE_CATEGORIES = ALL_CATEGORIES.filter((c) => !isDisabledCategory(c));
+
 export function categoryUrl(name) {
   return `/category/${slugify(name)}`;
 }

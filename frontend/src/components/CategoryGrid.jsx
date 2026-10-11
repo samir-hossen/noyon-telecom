@@ -21,8 +21,8 @@ const CATEGORIES = [
     icon: <Icon><rect x="6" y="2.5" width="12" height="19" rx="2.2" /><path d="M10 19.2h4" /></Icon>,
   },
   {
-    name: 'Battery', labelKey: 'nav.battery', bg: '#e4f6ea', color: '#16a34a',
-    icon: <Icon><rect x="2.5" y="8" width="16.5" height="9" rx="1.8" /><path d="M19 11v3" /><path d="M6 11v3M9.5 11v3" /></Icon>,
+    name: 'SIM Tray', labelKey: 'nav.simTray', bg: '#e4f6ea', color: '#16a34a',
+    icon: <Icon><path d="M4 7.5 7.5 4H20v16H4V7.5Z" /><rect x="8" y="9" width="8" height="7" rx="1" /><path d="M11 9v7M8 12.5h8" /></Icon>,
   },
   {
     name: 'Charging Port', labelKey: 'nav.chargingPort', bg: '#e6edfd', color: '#2563eb',

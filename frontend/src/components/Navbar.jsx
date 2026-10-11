@@ -6,7 +6,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api, resolveImg } from '../api';
 import { productUrl } from '../utils/slug';
-import { categoryUrl, brandUrl } from '../utils/taxonomy';
+import { categoryUrl, brandUrl, isDisabledCategory } from '../utils/taxonomy';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { hasPublicPrice } from '../utils/whatsapp';
@@ -16,7 +16,7 @@ import { trackPhoneClick } from '../ecommerce.js';
 // list from products.routes.js organized into scannable columns.
 const MEGA_MENU_GROUPS = [
   { titleKey: 'nav.megaGroup.screenDisplay', categories: ['Display', 'OLED', 'LCD', 'Touch'] },
-  { titleKey: 'nav.megaGroup.powerCharging', categories: ['Battery', 'Charging Port', 'IC'] },
+  { titleKey: 'nav.megaGroup.powerCharging', categories: ['Battery', 'Charging Port', 'IC'] }, // Battery is filtered out while switched off
   { titleKey: 'nav.megaGroup.bodyHousing', categories: ['Back Glass', 'Housing', 'Frame', 'Buttons'] },
   { titleKey: 'nav.megaGroup.cameraAudio', categories: ['Camera', 'Speaker', 'Microphone'] },
   { titleKey: 'nav.megaGroup.logicSecurity', categories: ['Flex', 'Logic Board', 'Motherboard', 'CPU', 'Fingerprint', 'Face ID'] },
@@ -245,7 +245,7 @@ export default function Navbar() {
               {MEGA_MENU_GROUPS.map((group) => (
                 <div className="mega-menu-col" key={group.titleKey} role="group" aria-label={t(group.titleKey)}>
                   <h4>{t(group.titleKey)}</h4>
-                  {group.categories.map((c) => (
+                  {group.categories.filter((c) => !isDisabledCategory(c)).map((c) => (
                     <Link key={c} to={categoryUrl(c)} onClick={() => setMegaOpen(false)} role="menuitem">
                       {c}
                     </Link>
@@ -267,8 +267,8 @@ export default function Navbar() {
           <Link to="/">{t('nav.home')}</Link>
           <Link to="/shop">{t('nav.allParts')}</Link>
           <Link to={categoryUrl('Display')}>{t('nav.display')}</Link>
-          <Link to={categoryUrl('Battery')}>{t('nav.battery')}</Link>
           <Link to={categoryUrl('Charging Port')}>{t('nav.chargingPort')}</Link>
+          <Link to={categoryUrl('SIM Tray')}>{t('nav.simTray')}</Link>
           <Link to={categoryUrl('Back Glass')}>{t('nav.backGlass')}</Link>
           <Link to={categoryUrl('Camera')}>{t('nav.camera')}</Link>
           <Link to="/register" className="nav-catbar-dealer">{t('nav.becomeDealer')}</Link>
@@ -289,8 +289,8 @@ export default function Navbar() {
             <Link to="/" onClick={closeMenu}>{t('nav.home')}</Link>
             <Link to="/shop" onClick={closeMenu}>{t('nav.allParts')}</Link>
             <Link to={categoryUrl('Display')} onClick={closeMenu}>{t('nav.display')}</Link>
-            <Link to={categoryUrl('Battery')} onClick={closeMenu}>{t('nav.battery')}</Link>
             <Link to={categoryUrl('Charging Port')} onClick={closeMenu}>{t('nav.chargingPort')}</Link>
+            <Link to={categoryUrl('SIM Tray')} onClick={closeMenu}>{t('nav.simTray')}</Link>
             <Link to={categoryUrl('Back Glass')} onClick={closeMenu}>{t('nav.backGlass')}</Link>
             <Link to={categoryUrl('Camera')} onClick={closeMenu}>{t('nav.camera')}</Link>
             <Link to="/wishlist" onClick={closeMenu}>♡ {t('nav.wishlist')}</Link>

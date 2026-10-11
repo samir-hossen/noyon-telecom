@@ -97,8 +97,8 @@ export default function Footer() {
           <div>
             <h4>{t('footer.shopByCategory')}</h4>
             <p><Link to={categoryUrl('Display')}>{t('nav.display')}</Link></p>
-            <p><Link to={categoryUrl('Battery')}>{t('nav.battery')}</Link></p>
             <p><Link to={categoryUrl('Charging Port')}>{t('nav.chargingPort')}</Link></p>
+            <p><Link to={categoryUrl('SIM Tray')}>{t('nav.simTray')}</Link></p>
             <p><Link to={categoryUrl('Back Glass')}>{t('nav.backGlass')}</Link></p>
             <p><Link to="/shop">{t('footer.allPartsArrow')}</Link></p>
           </div>

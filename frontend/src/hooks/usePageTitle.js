@@ -4,7 +4,7 @@ import { trackPageview } from '../analytics.js';
 const SITE_NAME = 'Noyon Telecom';
 const DEFAULT_TITLE = SITE_NAME + ' — Wholesale Mobile Phone Spare Parts';
 const DEFAULT_DESCRIPTION =
-  "Bangladesh's trusted wholesale importer & distributor of mobile phone spare parts — displays, batteries, back glass and more, for dealers, shops and service centers.";
+  "Bangladesh's trusted wholesale importer & distributor of mobile phone spare parts — displays, back glass, charging ports and more, for dealers, shops and service centers.";
 
 // Pins canonical/og:url to one real production domain, same idea as the
 // backend's required SITE_URL (see sitemap.routes.js) — set VITE_SITE_URL

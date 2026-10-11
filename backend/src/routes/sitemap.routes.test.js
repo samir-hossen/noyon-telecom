@@ -23,10 +23,10 @@ test('buildPagesSitemapXml', async (t) => {
   await t.test('adds one clean-path URL per active category and brand, DB-driven rather than hardcoded', () => {
     const xml = buildPagesSitemapXml({
       siteUrl: 'https://example.com',
-      categories: ['Battery', 'Back Glass'],
+      categories: ['Display', 'Back Glass'],
       brands: ['Apple'],
     });
-    assert.match(xml, /<loc>https:\/\/example\.com\/category\/battery<\/loc>/);
+    assert.match(xml, /<loc>https:\/\/example\.com\/category\/display<\/loc>/);
     // A multi-word category name becomes a single hyphenated slug, not a
     // percent-encoded query-string value.
     assert.match(xml, /<loc>https:\/\/example\.com\/category\/back-glass<\/loc>/);
@@ -34,9 +34,20 @@ test('buildPagesSitemapXml', async (t) => {
   });
 
   await t.test('produces well-formed, parseable XML', () => {
-    const xml = buildPagesSitemapXml({ siteUrl: 'https://example.com', categories: ['Battery'], brands: ['Apple'] });
+    const xml = buildPagesSitemapXml({ siteUrl: 'https://example.com', categories: ['Display'], brands: ['Apple'] });
     assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
     assert.equal((xml.match(/<url>/g) || []).length, (xml.match(/<\/url>/g) || []).length);
+  });
+
+  await t.test('never lists a switched-off category (battery section is OFF), even if one is passed in', () => {
+    const xml = buildPagesSitemapXml({
+      siteUrl: 'https://example.com',
+      categories: ['Battery', 'Display'],
+      brands: ['Samsung'],
+      brandCategoryPairs: [{ brand: 'Samsung', category: 'Battery' }, { brand: 'Samsung', category: 'Display' }],
+    });
+    assert.doesNotMatch(xml, /battery/i);
+    assert.match(xml, /\/brand\/samsung\/display</);
   });
 
   await t.test('never lists /register — robots.txt disallows it, so listing it here would tell Google to index a URL it also can’t crawl', () => {

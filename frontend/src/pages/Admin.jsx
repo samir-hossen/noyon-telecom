@@ -4,6 +4,7 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
+import { isDisabledCategory } from '../utils/taxonomy';
 
 const ALL_CATEGORIES = [
   'Display', 'OLED', 'LCD', 'Touch', 'Battery', 'Back Glass', 'Housing', 'Frame',
@@ -1108,7 +1109,7 @@ export default function Admin() {
                 <div className="field">
                   <label>Categories</label>
                   <div className="admin-cat-picker">
-                    {ALL_CATEGORIES.map((c) => (
+                    {ALL_CATEGORIES.filter((c) => !isDisabledCategory(c)).map((c) => (
                       <label key={c} className={form.categories.includes(c) ? 'checked' : ''}>
                         <input type="checkbox" checked={form.categories.includes(c)} onChange={() => toggleCategory(c)} />
                         {c}
