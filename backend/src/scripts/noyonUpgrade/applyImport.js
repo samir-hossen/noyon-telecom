@@ -10,6 +10,10 @@
 // Oct 2026 — see CLAUDE.md), hidden otherwise. --no-publish hides every price
 // instead (all drafts).
 //
+// The files were built from the 11 Oct catalog (--snapshot, default the kit's
+// data/noyon_products.json). Prices, names, brands and descriptions the owner
+// changed in admin since then are kept, and listed in the summary.
+//
 // --apply first writes a full JSON backup of the Product and
 // ProductSlugRedirect tables to --backup-dir, then writes in batches of 100.
 // Re-running is safe: new products are matched by SKU and slug, so nothing is
@@ -24,8 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import prisma from '../../prismaClient.js';
 import { isLocalDatabase, databaseHost } from './dbGuard.js';
-import { modelSlugsFor } from '../../utils/modelSlugs.js';
-import { findDisabledCategory } from '../../config/catalog.js';
+import { planExisting, planNew, planOldAdminPrices, toCreateData } from './importPlan.js';
 import { backfillReadyToSell } from '../../backfillReadyToSell.js';
 import { indexProducts } from '../../utils/search.js';
 
@@ -41,6 +44,7 @@ const IMPORT_DIR = path.resolve(arg('import', '../../import'));
 const APPLY = has('apply');
 const BACKUP_DIR = path.resolve(arg('backup-dir', '../../backups'));
 const PUBLISH = !has('no-publish');
+const SNAPSHOT_FILE = path.resolve(arg('snapshot', '../../noyon-telecom-kit/data/noyon_products.json'));
 
 function readJson(name, fallback = null) {
   const file = path.join(IMPORT_DIR, name);
@@ -62,89 +66,19 @@ async function backup() {
   return { file, products: products.length };
 }
 
-// What changes for each existing product (plan only — no writes).
-function planExisting(dbProducts, drafts, fixes, descriptions) {
-  const draftById = new Map(drafts.map((d) => [d.id, d]));
-  const fixById = new Map(fixes.map((f) => [f.id, f]));
-  const descById = new Map((descriptions || []).map((d) => [d.id, d.desc]));
-  const plans = [];
-  for (const p of dbProducts) {
-    const d = draftById.get(p.id);
-    const f = fixById.get(p.id);
-    if (!d && !f) continue;
-    const data = {};
-    if (d) {
-      data.draftPrice = d.draftPrice;
-      data.referencePrice = d.referencePrice;
-      data.priceNote = d.priceNote;
-      if (PUBLISH && d.publishPrice) {
-        data.price = d.publishPrice;
-        data.priceStatus = 'published';
-      } else {
-        data.priceStatus = 'draft';
-      }
-    }
-    let redirectFrom = null;
-    if (f && f.status === 'auto-fix') {
-      if (f.new_name !== p.name) data.name = f.new_name;
-      if ((f.brand || null) !== (p.brand || null)) data.brand = f.brand || null;
-      data.compatibleModels = f.compatibleModels;
-      if (f.new_slug && f.new_slug !== p.slug) {
-        data.slug = f.new_slug;
-        redirectFrom = p.slug;
-      }
-    }
-    const compat = data.compatibleModels || p.compatibleModels || [];
-    data.modelSlugs = modelSlugsFor(compat);
-    if (descById.has(p.id)) data.desc = descById.get(p.id);
-    const unpublish = (f && f.status === 'unpublish') || Boolean(findDisabledCategory(p.categories || p.category));
-    if (unpublish && p.published) data.published = false;
-    plans.push({ id: p.id, before: p, data, redirectFrom, unpublish: unpublish && p.published });
-  }
-  return plans;
+function readSnapshot() {
+  if (!fs.existsSync(SNAPSHOT_FILE)) return null;
+  return new Map(JSON.parse(fs.readFileSync(SNAPSHOT_FILE, 'utf8')).map((p) => [p.id, p]));
 }
 
-function planNew(newProducts, dbProducts) {
-  const skus = new Set(dbProducts.map((p) => p.sku).filter(Boolean));
-  const slugs = new Set(dbProducts.map((p) => p.slug).filter(Boolean));
-  const create = [];
-  let alreadyThere = 0;
-  for (const n of newProducts) {
-    if (skus.has(n.sku) || slugs.has(n.slug)) {
-      alreadyThere++;
-      continue;
-    }
-    create.push(n);
+// When the hidden-price migration ran (= when this upgrade was deployed).
+async function hiddenPriceDeployedAt() {
+  try {
+    const rows = await prisma.$queryRaw`SELECT finished_at FROM "_prisma_migrations" WHERE migration_name = '20261011074217_hidden_draft_price' AND finished_at IS NOT NULL`;
+    return rows[0]?.finished_at || null;
+  } catch {
+    return null; // no migrations table: nothing to compare against, so nothing is re-shown
   }
-  return { create, alreadyThere };
-}
-
-function toCreateData(n) {
-  const shown = PUBLISH && n.priceStatus === 'published' && n.price > 0;
-  return {
-    slug: n.slug,
-    name: n.name,
-    desc: n.desc || n.name,
-    categories: n.categories,
-    category: n.category,
-    images: n.images || [],
-    img: n.img || '',
-    price: shown ? n.price : 0,
-    priceStatus: shown ? 'published' : 'draft',
-    draftPrice: n.draftPrice,
-    referencePrice: n.referencePrice,
-    priceNote: n.priceNote,
-    stock: n.stock || 0,
-    readyToSell: false,
-    sku: n.sku,
-    brand: n.brand,
-    compatibleModels: n.compatibleModels,
-    modelSlugs: n.modelSlugs?.length ? n.modelSlugs : modelSlugsFor(n.compatibleModels),
-    moq: n.moq || 1,
-    warranty: n.warranty || '7 Days Testing Warranty',
-    published: n.published !== false,
-    bulkPricing: [],
-  };
 }
 
 function tally(list, key) {
@@ -166,9 +100,13 @@ async function main() {
     console.log('NOTE: some new products have no description yet (build with --descriptions after the owner OKs the templates).');
   }
 
+  const snapshot = readSnapshot();
+  if (!snapshot) console.log(`NOTE: no snapshot at ${SNAPSHOT_FILE} — descriptions edited in admin since 11 Oct can't be told apart and would be replaced.`);
+
   const dbProducts = await prisma.product.findMany();
-  const existingPlan = planExisting(dbProducts, drafts, fixes, descriptions);
+  const existingPlan = planExisting(dbProducts, { drafts, fixes, descriptions, snapshot, publish: PUBLISH });
   const { create, alreadyThere } = planNew(newProducts, dbProducts);
+  const oldAdminPrices = planOldAdminPrices(dbProducts, { drafts, newProducts, deployedAt: await hiddenPriceDeployedAt(), publish: PUBLISH });
 
   const summary = {
     database: databaseHost(),
@@ -185,6 +123,7 @@ async function main() {
       brandSet: existingPlan.filter((x) => 'brand' in x.data).length,
       newDescriptions: existingPlan.filter((x) => x.data.desc).length,
       unpublish: existingPlan.filter((x) => x.unpublish).map((x) => x.before.name),
+      keptYourEdits: existingPlan.filter((x) => x.kept.length).map((x) => `${x.before.name}: ${x.kept.join(', ')}`),
       pricedNow: dbProducts.filter((p) => p.price > 0).length, // their prices stay hidden until the owner publishes them
       pricesShownNow: dbProducts.filter((p) => p.priceStatus === 'published').length,
     },
@@ -197,6 +136,7 @@ async function main() {
       byCategory: tally(create, 'category'),
       byBrand: tally(create, 'brand'),
     },
+    addedInAdminSince11Oct: { priceShownAgain: oldAdminPrices.map((p) => `${p.name} (৳${p.price})`) },
     productsAfter: dbProducts.length + create.length,
   };
 
@@ -237,15 +177,21 @@ async function main() {
 
   let created = 0;
   for (const batch of chunks(create, BATCH)) {
-    const result = await prisma.product.createMany({ data: batch.map(toCreateData), skipDuplicates: true });
+    const result = await prisma.product.createMany({ data: batch.map((n) => toCreateData(n, { publish: PUBLISH })), skipDuplicates: true });
     created += result.count;
     console.log(`new: ${created}/${create.length}`);
   }
 
+  if (oldAdminPrices.length) {
+    await prisma.product.updateMany({ where: { id: { in: oldAdminPrices.map((p) => p.id) } }, data: { priceStatus: 'published' } });
+    console.log(`prices typed in admin after 11 Oct shown again: ${oldAdminPrices.length}`);
+  }
+
   const fixedReady = await backfillReadyToSell();
-  const touched = await prisma.product.findMany({ where: { OR: [{ id: { in: existingPlan.map((x) => x.id) } }, { sku: { in: create.map((n) => n.sku) } }] } });
+  const touchedIds = [...existingPlan.map((x) => x.id), ...oldAdminPrices.map((p) => p.id)];
+  const touched = await prisma.product.findMany({ where: { OR: [{ id: { in: touchedIds } }, { sku: { in: create.map((n) => n.sku) } }] } });
   await indexProducts(touched).catch((err) => console.error('Search index update failed (non-fatal):', err.message));
-  console.log(JSON.stringify({ ...summary, applied: { existingUpdated: done, newCreated: created, readyToSellFixed: fixedReady } }, null, 2));
+  console.log(JSON.stringify({ ...summary, applied: { existingUpdated: done, newCreated: created, oldAdminPricesShown: oldAdminPrices.length, readyToSellFixed: fixedReady } }, null, 2));
   console.log('\nDone. Restart the API (or wait 5 minutes) so its in-memory caches show the new catalog.');
 }
 
