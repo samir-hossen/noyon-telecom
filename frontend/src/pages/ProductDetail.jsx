@@ -115,7 +115,16 @@ export default function ProductDetail() {
     // through two related products quickly) from overwriting the page with
     // stale data if it resolves after the latest request already has.
     api.get(`/products/${id}`)
-      .then((d) => { if (current) setProduct(d.product); })
+      .then((d) => {
+        if (!current) return;
+        // An old URL (renamed product) or a bare id: move to the product's
+        // current clean URL without adding a history entry.
+        if (d.product.slug && id !== d.product.slug) {
+          navigate(productUrl(d.product), { replace: true });
+          return;
+        }
+        setProduct(d.product);
+      })
       .catch((err) => { if (current) setLoadError(err.message); });
     return () => { current = false; };
   }, [id]);

@@ -158,7 +158,14 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
     // awaiting its slug backfill) or the human-readable slug (the clean
     // /product/<slug> URL everything now links to) — findFirst+OR rather
     // than two separate queries, since one or the other will usually miss.
-    const product = await prisma.product.findFirst({ where: { OR: [{ id: req.params.id }, { slug: req.params.id }] } });
+    let product = await prisma.product.findFirst({ where: { OR: [{ id: req.params.id }, { slug: req.params.id }] } });
+    if (!product) {
+      // An old slug from before a rename: answer with the product (the
+      // storefront then switches the URL to `product.slug`; the server-
+      // rendered page sends a real 301).
+      const redirect = await prisma.productSlugRedirect.findUnique({ where: { slug: req.params.id }, include: { product: true } });
+      product = redirect?.product || null;
+    }
     if (!product) return res.status(404).json({ error: 'Product not found' });
     // A draft (not-yet-priced) product is invisible to everyone except an
     // admin previewing it — same 404 as a nonexistent product, so a direct

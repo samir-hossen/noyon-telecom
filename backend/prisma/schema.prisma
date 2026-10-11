@@ -154,6 +154,7 @@ model Product {
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   orderItems    OrderItem[]
+  slugRedirects ProductSlugRedirect[]
 
   @@index([category])
   @@index([brand])
@@ -167,6 +168,19 @@ model Product {
 enum PriceStatus {
   draft
   published
+}
+
+// Old product URLs keep working after a product's slug changes (the
+// noyonUpgrade name clean-up gives ~340 products cleaner slugs):
+// /product/<old slug> answers with a 301 to the product's current slug —
+// see routes/products.routes.js and the server-rendered SEO pages.
+model ProductSlugRedirect {
+  slug      String   @id
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 model Review {

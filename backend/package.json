@@ -19,7 +19,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:generate": "prisma generate",
-    "test": "node --test src/**/*.test.js",
+    "test": "node --test src/**/*.test.js src/scripts/*/*.test.js",
     "lint": "eslint ."
   },
   "dependencies": {
