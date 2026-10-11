@@ -17,12 +17,12 @@ export const ALL_BRANDS = [
   'Itel', 'HTC', 'Asus', 'BlackBerry', 'LG',
 ];
 
-// Categories switched off store-wide (owner's decision, Oct 2026: the
-// battery section is OFF). Products in them are hidden from every
+// Categories switched off store-wide (owner's decisions: the battery section
+// is OFF, Oct 2026; "we don't sell glass" — Upper Glass OFF, 12 Oct 2026). Products in them are hidden from every
 // customer-facing page, list, feed and sitemap, can't be created or edited
 // into them, and /category/<slug> redirects to /shop. Remove a name here
 // (and in the frontend mirror) to switch a category back on.
-export const DISABLED_CATEGORIES = ['Battery'];
+export const DISABLED_CATEGORIES = ['Battery', 'Upper Glass'];
 
 const disabledLower = new Set(DISABLED_CATEGORIES.map((c) => c.toLowerCase()));
 
@@ -43,7 +43,7 @@ export function notInDisabledCategories() {
   return DISABLED_CATEGORIES.map((c) => ({ NOT: { categories: { array_contains: c } } }));
 }
 
-const BANGLA_NAMES = { Battery: 'ব্যাটারি' };
+const BANGLA_NAMES = { Battery: 'ব্যাটারি', 'Upper Glass': 'আপার গ্লাস' };
 
 // Bangla admin error (the admin panel shows it as-is).
 export function disabledCategoryError(name) {
@@ -53,3 +53,13 @@ export function disabledCategoryError(name) {
 
 // Lower-cased list for raw SQL (`lower(c) = ANY(...)`).
 export const DISABLED_CATEGORIES_LOWER = [...disabledLower];
+
+// Part types the shop doesn't sell inside a category it does sell (owner,
+// 12 Oct 2026: "we don't sell glass" — camera glass, under Camera). The
+// import doesn't add them and switches existing ones off.
+export const DISABLED_PART_LABELS = ['Camera Glass'];
+
+export function isDisabledPartName(name) {
+  const n = String(name || '').trim().toLowerCase();
+  return DISABLED_PART_LABELS.some((l) => n.endsWith(` ${l.toLowerCase()}`));
+}

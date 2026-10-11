@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { categoryUrl } from '../utils/taxonomy';
+import { categoryUrl, isDisabledCategory } from '../utils/taxonomy';
 
 function Icon({ children }) {
   return (
@@ -37,8 +37,8 @@ const CATEGORIES = [
     icon: <Icon><rect x="2.5" y="7" width="19" height="13" rx="2" /><circle cx="12" cy="13.5" r="3.6" /><path d="M8 7l1.4-2.5h5.2L16 7" /></Icon>,
   },
   {
-    name: 'Upper Glass', labelKey: 'nav.upperGlass', bg: '#fff3e0', color: '#c2740c',
-    icon: <Icon><rect x="6" y="2.5" width="12" height="19" rx="2.2" /><path d="M8.5 7.5l3-3M8.5 12l7-7M11 16.5l5-5" /></Icon>,
+    name: 'Logic Board', labelKey: 'nav.logicBoard', bg: '#fff3e0', color: '#c2740c',
+    icon: <Icon><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" rx="1" /><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" /></Icon>,
   },
   {
     name: 'Speaker', labelKey: 'nav.speaker', bg: '#fde8ea', color: '#c4001f',
@@ -51,7 +51,7 @@ export default function CategoryGrid() {
   // First row-and-a-half of real categories, then a "View All Categories"
   // tile as the 8th slot — matches the 4x2 category grid in the reference
   // design. The full list is still reachable from here and from /shop.
-  const shown = CATEGORIES;
+  const shown = CATEGORIES.filter((c) => !isDisabledCategory(c.name));
   return (
     <div className="category-grid">
       {shown.map((c) => (

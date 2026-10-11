@@ -385,6 +385,11 @@ function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, des
       skipped.unknownPart++;
       continue;
     }
+    // Owner, 12 Oct 2026: "we don't sell glass" (camera glass; Upper Glass is a switched-off category).
+    if (partKey === 'cameraGlass') {
+      skipped.notSold = (skipped.notSold || 0) + 1;
+      continue;
+    }
     const cleaned = cleanEtelModel(row, partKey);
     if (!cleaned) {
       skipped.garbled++;

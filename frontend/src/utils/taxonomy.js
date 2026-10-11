@@ -30,7 +30,7 @@ export const MENU_BRANDS = [
 // (owner's decision, Oct 2026: the battery section is OFF). They're left out
 // of every menu, list and filter, and /category/<slug> redirects to /shop.
 // Remove a name here (and in the backend) to switch it back on.
-export const DISABLED_CATEGORIES = ['Battery'];
+export const DISABLED_CATEGORIES = ['Battery', 'Upper Glass']; // owner: no batteries, no glass (12 Oct 2026)
 
 export function isDisabledCategory(name) {
   return DISABLED_CATEGORIES.some((c) => c.toLowerCase() === String(name || '').trim().toLowerCase());

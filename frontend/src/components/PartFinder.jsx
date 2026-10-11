@@ -25,7 +25,7 @@ const MODELS_BY_BRAND = {
   Motorola: ['Moto G84', 'Moto Edge 40', 'Moto G54'],
 };
 
-const CATEGORIES = ['Display', 'Upper Glass', 'Back Glass', 'Charging Port', 'SIM Tray', 'Camera', 'Speaker', 'Frame'];
+const CATEGORIES = ['Display', 'Back Glass', 'Charging Port', 'SIM Tray', 'Camera', 'Speaker', 'Frame', 'Logic Board'];
 
 export default function PartFinder() {
   const { t } = useLanguage();

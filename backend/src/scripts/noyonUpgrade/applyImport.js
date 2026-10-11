@@ -28,7 +28,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import prisma from '../../prismaClient.js';
 import { isLocalDatabase, databaseHost } from './dbGuard.js';
-import { planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, toCreateData } from './importPlan.js';
+import { planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, planSwitchedOff, toCreateData } from './importPlan.js';
 import { backfillReadyToSell } from '../../backfillReadyToSell.js';
 import { indexProducts } from '../../utils/search.js';
 
@@ -108,6 +108,7 @@ async function main() {
   const { create, alreadyThere } = planNew(newProducts, dbProducts);
   const gradeUpdates = planGradeUpdates(newProducts, dbProducts, { publish: PUBLISH });
   const corrections = planCorrections(readJson('corrections.json', []), dbProducts);
+  const switchedOff = planSwitchedOff(dbProducts);
   const oldAdminPrices = planOldAdminPrices(dbProducts, { drafts, newProducts, deployedAt: await hiddenPriceDeployedAt(), publish: PUBLISH });
 
   const summary = {
@@ -142,6 +143,7 @@ async function main() {
     },
     addedInAdminSince11Oct: { priceShownAgain: oldAdminPrices.map((p) => `${p.name} (৳${p.price})`) },
     corrections: corrections.map((c) => `${c.name}: ${c.data.published === false ? 'unpublish' : 'hide price'} — ${c.reason}`),
+    notSoldHidden: switchedOff.length,
     productsAfter: dbProducts.length + create.length,
   };
 
@@ -198,6 +200,10 @@ async function main() {
     console.log(`grade prices: ${graded}/${gradeUpdates.length}`);
   }
 
+  if (switchedOff.length) {
+    await prisma.product.updateMany({ where: { id: { in: switchedOff.map((p) => p.id) } }, data: { published: false } });
+    console.log(`not sold (glass etc.), hidden: ${switchedOff.length}`);
+  }
   for (const c of corrections) await prisma.product.update({ where: { id: c.id }, data: c.data });
   if (corrections.length) console.log(`corrections: ${corrections.length}`);
 

@@ -2938,17 +2938,21 @@ a.card-cta { display: block; text-align: center; text-decoration: none; }
   background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #f3f4f7 55%, #e9ebef 100%);
 }
 .part-tile::after { content: ''; position: absolute; left: 50%; bottom: 16px; width: 28px; height: 3px; border-radius: 3px; background: var(--berry); transform: translateX(-50%); opacity: 0.85; }
-.part-tile-icon { width: 50%; aspect-ratio: 1; background: center / contain no-repeat; margin-bottom: 8px; transition: transform 0.5s var(--ease); filter: drop-shadow(0 10px 14px rgba(20, 20, 26, 0.12)); }
+.part-tile-icon { width: 64%; aspect-ratio: 1; background: center / contain no-repeat; margin-bottom: 6px; transition: transform 0.5s var(--ease); }
 .card:hover .part-tile-icon { transform: scale(1.06); }
 .part-tile-brand { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #8a8e97; }
 .part-tile-model { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1.2; color: var(--ink); max-width: 92%; overflow-wrap: anywhere; }
 .part-tile-part { font-size: 0.76rem; color: #6b7078; margin-top: 2px; }
-.part-tile-lg .part-tile-icon { width: 46%; margin-bottom: 16px; }
+.part-tile-lg .part-tile-icon { width: 58%; margin-bottom: 14px; }
 .part-tile-lg .part-tile-brand { font-size: 0.8rem; }
 .part-tile-lg .part-tile-model { font-size: 2rem; }
 .part-tile-lg .part-tile-part { font-size: 1rem; margin-top: 6px; }
 .part-tile-lg::after { bottom: 26px; width: 40px; }
 @media (max-width: 600px) {
+  .part-tile { padding: 8px 6px 10px; gap: 0; }
+  .part-tile::after { display: none; }
+  .part-tile-icon { width: 54%; margin-bottom: 4px; }
+  .part-tile-lg .part-tile-icon { width: 56%; }
   .part-tile-model { font-size: 0.9rem; }
   .part-tile-brand { font-size: 0.6rem; }
   .part-tile-part { font-size: 0.68rem; }

@@ -6,7 +6,7 @@
 // or description that is neither the 11 Oct value nor ours was changed there,
 // and the owner's value is kept.
 import { modelSlugsFor } from '../../utils/modelSlugs.js';
-import { findDisabledCategory } from '../../config/catalog.js';
+import { findDisabledCategory, isDisabledPartName } from '../../config/catalog.js';
 import { normalizeQualityOptions, hasQualityOptions } from '../../utils/qualityOptions.js';
 
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -170,4 +170,13 @@ export function planCorrections(corrections, dbProducts) {
     }
   }
   return out;
+}
+
+// Products the shop doesn't sell (switched-off categories such as Upper
+// Glass, or parts such as Camera Glass) that are still published: hidden
+// (published: false — reversible, nothing is deleted).
+export function planSwitchedOff(dbProducts) {
+  return dbProducts
+    .filter((p) => p.published && (findDisabledCategory(p.categories || p.category) || isDisabledPartName(p.name)))
+    .map((p) => ({ id: p.id, name: p.name, data: { published: false } }));
 }

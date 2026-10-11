@@ -74,8 +74,8 @@ function formatTaka(n) {
 
 function placeholderFor(category) {
   const slug = String(category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  const known = ['display', 'upper-glass', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board'];
-  return `/images/parts/${known.includes(slug) ? slug : 'default'}.svg`;
+  const known = ['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board'];
+  return `/images/parts/${known.includes(slug) ? slug : 'default'}.webp`;
 }
 
 function breadcrumbHtml(crumbs) {

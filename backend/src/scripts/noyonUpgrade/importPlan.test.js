@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, toCreateData } from './importPlan.js';
+import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, planSwitchedOff, toCreateData } from './importPlan.js';
 
 // One product as it was on 11 Oct, with its rows from the import files.
 const before = {
@@ -186,4 +186,15 @@ test('corrections apply only while the product is still as imported', () => {
     { ...db[1], price: 18500 },
   ]), []);
   assert.deepEqual(planCorrections(corrections, [{ ...db[0], published: false }]), []);
+});
+
+test('products the shop does not sell are switched off (Upper Glass, Camera Glass, Battery)', () => {
+  const db = [
+    { id: 'u', name: 'Vivo Y21 Display Upper Glass', categories: ['Upper Glass'], published: true },
+    { id: 'c', name: 'Vivo Y21 Camera Glass', categories: ['Camera'], published: true },
+    { id: 'b', name: 'Vivo Y21 Back Glass', categories: ['Back Glass'], published: true },
+    { id: 'k', name: 'Vivo Y21 Back Camera', categories: ['Camera'], published: true },
+    { id: 'x', name: 'Old Camera Glass', categories: ['Camera'], published: false },
+  ];
+  assert.deepEqual(planSwitchedOff(db).map((p) => p.id), ['u', 'c']);
 });
