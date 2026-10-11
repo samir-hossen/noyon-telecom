@@ -13,15 +13,16 @@ function ga4Item(p, qty = 1) {
     item_name: p.name,
     item_brand: p.brand || undefined,
     item_category: p.category,
-    price: p.price,
+    price: Number(p.price) || 0,
     quantity: qty,
   };
 }
 
 export function trackViewItem(product) {
-  trackEvent('view_item', { currency: CURRENCY, value: product.price, items: [ga4Item(product)] });
-  fbqTrack('ViewContent', { content_ids: [product.sku || product.id], content_name: product.name, content_type: 'product', value: product.price, currency: CURRENCY });
-  ttqTrack('ViewContent', { content_id: product.sku || product.id, content_name: product.name, price: product.price, currency: CURRENCY });
+  const price = Number(product.price) || 0;
+  trackEvent('view_item', { currency: CURRENCY, value: price, items: [ga4Item(product)] });
+  fbqTrack('ViewContent', { content_ids: [product.sku || product.id], content_name: product.name, content_type: 'product', value: price, currency: CURRENCY });
+  ttqTrack('ViewContent', { content_id: product.sku || product.id, content_name: product.name, price, currency: CURRENCY });
 }
 
 export function trackAddToCart(product, qty = 1) {
@@ -32,8 +33,9 @@ export function trackAddToCart(product, qty = 1) {
 }
 
 export function trackAddToWishlist(product) {
-  trackEvent('add_to_wishlist', { currency: CURRENCY, value: product.price, items: [ga4Item(product)] });
-  fbqTrack('AddToWishlist', { content_ids: [product.sku || product.id], content_name: product.name, value: product.price, currency: CURRENCY });
+  const price = Number(product.price) || 0;
+  trackEvent('add_to_wishlist', { currency: CURRENCY, value: price, items: [ga4Item(product)] });
+  fbqTrack('AddToWishlist', { content_ids: [product.sku || product.id], content_name: product.name, value: price, currency: CURRENCY });
 }
 
 export function trackSearch(term) {

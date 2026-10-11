@@ -9,6 +9,7 @@ import { productUrl } from '../utils/slug';
 import { categoryUrl, brandUrl } from '../utils/taxonomy';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
+import { hasPublicPrice } from '../utils/whatsapp';
 import { trackPhoneClick } from '../ecommerce.js';
 
 // Mega menu grouping of the full parts taxonomy — keeps the flat category
@@ -157,7 +158,7 @@ export default function Navbar() {
                     <img src={resolveImg(p.img, 100)} alt="" loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
                     <div>
                       <span className="nav-suggest-name">{p.name}</span>
-                      <span className="nav-suggest-meta">{p.sku ? `SKU: ${p.sku} · ` : ''}{formatPrice(p.price)}</span>
+                      <span className="nav-suggest-meta">{[p.sku ? `SKU: ${p.sku}` : '', hasPublicPrice(p) ? formatPrice(p.price) : ''].filter(Boolean).join(' · ')}</span>
                     </div>
                   </Link>
                 ))}

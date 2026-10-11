@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildProductWhere, buildProductOrderBy, parsePagination, MAX_LIMIT, computeReadyToSell } from './productQuery.js';
+import { buildProductWhere, buildProductOrderBy, parsePagination, MAX_LIMIT, computeReadyToSell, resolvePriceUpdate, parseOptionalPrice } from './productQuery.js';
 
 test('buildProductWhere', async (t) => {
   await t.test('defaults to published-only when status is not provided (storefront case)', () => {
@@ -88,24 +88,85 @@ test('buildProductOrderBy', async (t) => {
     assert.deepEqual(buildProductOrderBy('not-a-real-sort'), expected);
   });
 
-  await t.test('recognizes price-asc, price-desc, and rating', () => {
-    assert.deepEqual(buildProductOrderBy('price-asc'), { price: 'asc' });
-    assert.deepEqual(buildProductOrderBy('price-desc'), { price: 'desc' });
+  await t.test('recognizes price-asc, price-desc, and rating — price sorts put published prices first', () => {
+    assert.deepEqual(buildProductOrderBy('price-asc'), [{ priceStatus: 'desc' }, { price: 'asc' }, { createdAt: 'desc' }]);
+    assert.deepEqual(buildProductOrderBy('price-desc'), [{ priceStatus: 'desc' }, { price: 'desc' }, { createdAt: 'desc' }]);
     assert.deepEqual(buildProductOrderBy('rating'), { rating: 'desc' });
   });
 });
 
+test('buildProductWhere priceStatus filter (admin only)', async (t) => {
+  await t.test('filters by price shown/hidden when asked', () => {
+    assert.equal(buildProductWhere({ status: 'all', priceStatus: 'draft' }).priceStatus, 'draft');
+    assert.equal(buildProductWhere({ status: 'all', priceStatus: 'published' }).priceStatus, 'published');
+  });
+  await t.test('"all" or nothing adds no filter', () => {
+    assert.equal('priceStatus' in buildProductWhere({ status: 'all', priceStatus: 'all' }), false);
+    assert.equal('priceStatus' in buildProductWhere({}), false);
+  });
+});
+
 test('computeReadyToSell', async (t) => {
-  await t.test('true only when both stock and price are positive', () => {
-    assert.equal(computeReadyToSell(5, 100), true);
-    assert.equal(computeReadyToSell(0, 100), false);
-    assert.equal(computeReadyToSell(5, 0), false);
-    assert.equal(computeReadyToSell(0, 0), false);
+  await t.test('true only when stock and price are positive AND the price is published', () => {
+    assert.equal(computeReadyToSell(5, 100, 'published'), true);
+    assert.equal(computeReadyToSell(0, 100, 'published'), false);
+    assert.equal(computeReadyToSell(5, 0, 'published'), false);
+    assert.equal(computeReadyToSell(0, 0, 'published'), false);
+  });
+
+  await t.test('a hidden (draft) price is never sellable', () => {
+    assert.equal(computeReadyToSell(5, 100, 'draft'), false);
+    assert.equal(computeReadyToSell(5, 100), false);
   });
 
   await t.test('coerces string inputs (e.g. straight from req.body/CSV parsing)', () => {
-    assert.equal(computeReadyToSell('5', '100'), true);
-    assert.equal(computeReadyToSell('0', '100'), false);
+    assert.equal(computeReadyToSell('5', '100', 'published'), true);
+    assert.equal(computeReadyToSell('0', '100', 'published'), false);
+  });
+});
+
+test('resolvePriceUpdate (publish-on-edit)', async (t) => {
+  await t.test('typing a price > 0 publishes it', () => {
+    assert.deepEqual(resolvePriceUpdate({ price: '1150' }, 0), { price: 1150, priceStatus: 'published' });
+    assert.deepEqual(resolvePriceUpdate({ price: 990 }, 880), { price: 990, priceStatus: 'published' });
+  });
+
+  await t.test('no price and no status changes nothing — an edit to name/photo never publishes a hidden price', () => {
+    assert.deepEqual(resolvePriceUpdate({}, 880), {});
+    assert.deepEqual(resolvePriceUpdate({ price: '' }, 880), {});
+    assert.deepEqual(resolvePriceUpdate({ price: null }, 880), {});
+  });
+
+  await t.test('price 0 means "no price" and hides it', () => {
+    assert.deepEqual(resolvePriceUpdate({ price: 0 }, 880), { price: 0, priceStatus: 'draft' });
+  });
+
+  await t.test('priceStatus draft hides the price but keeps the value', () => {
+    assert.deepEqual(resolvePriceUpdate({ priceStatus: 'draft' }, 880), { priceStatus: 'draft' });
+    assert.deepEqual(resolvePriceUpdate({ price: 900, priceStatus: 'draft' }, 880), { price: 900, priceStatus: 'draft' });
+  });
+
+  await t.test('priceStatus published needs a real price', () => {
+    assert.deepEqual(resolvePriceUpdate({ priceStatus: 'published' }, 880), { priceStatus: 'published' });
+    assert.ok(resolvePriceUpdate({ priceStatus: 'published' }, 0).error);
+    assert.ok(resolvePriceUpdate({ price: 0, priceStatus: 'published' }, 880).error);
+  });
+
+  await t.test('rejects bad input instead of storing it', () => {
+    assert.ok(resolvePriceUpdate({ price: 'abc' }, 0).error);
+    assert.ok(resolvePriceUpdate({ price: -5 }, 0).error);
+    assert.ok(resolvePriceUpdate({ priceStatus: 'live' }, 0).error);
+  });
+});
+
+test('parseOptionalPrice', async (t) => {
+  await t.test('undefined = leave as is, empty = clear, positive numbers kept', () => {
+    assert.equal(parseOptionalPrice(undefined), undefined);
+    assert.equal(parseOptionalPrice(''), null);
+    assert.equal(parseOptionalPrice(null), null);
+    assert.equal(parseOptionalPrice('1199'), 1199);
+    assert.equal(parseOptionalPrice(0), null);
+    assert.equal(parseOptionalPrice('abc'), null);
   });
 });
 

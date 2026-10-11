@@ -21,6 +21,7 @@
 // the catalog and search volume are large enough that shoppers are
 // searching more than browsing categories.
 import { Meilisearch } from 'meilisearch';
+import { isPricePublished } from './serialize.js';
 
 const PRODUCTS_INDEX = 'products';
 
@@ -67,6 +68,12 @@ async function ensureIndexConfigured() {
   indexEnsured = true;
 }
 
+// Only a published price goes into the index (it's sortable there) — a
+// hidden draft price must not influence anything a customer can see.
+function publicPrice(product) {
+  return isPricePublished(product) ? product.price : null;
+}
+
 // Upserts one product into the search index — call after create/update.
 // Fire-and-forget at every call site (see admin.routes.js): a Meilisearch
 // hiccup must never fail the actual product write, which already succeeded
@@ -88,7 +95,7 @@ export async function indexProduct(product) {
       category: product.category,
       categories: Array.isArray(product.categories) ? product.categories : [product.category],
       compatibleModels: Array.isArray(product.compatibleModels) ? product.compatibleModels.join(' ') : '',
-      price: product.price,
+      price: publicPrice(product),
       rating: product.rating,
       stock: product.stock,
       published: product.published,
@@ -120,7 +127,7 @@ export async function indexProducts(products) {
     category: product.category,
     categories: Array.isArray(product.categories) ? product.categories : [product.category],
     compatibleModels: Array.isArray(product.compatibleModels) ? product.compatibleModels.join(' ') : '',
-    price: product.price,
+    price: publicPrice(product),
     rating: product.rating,
     stock: product.stock,
     published: product.published,

@@ -41,7 +41,7 @@ async function enrichGuestItems(rawItems) {
     })
   );
   const items = results.filter(Boolean);
-  const subtotal = items.reduce((sum, i) => sum + i.product.price * i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + (i.product.price || 0) * i.qty, 0);
   return { items, subtotal };
 }
 

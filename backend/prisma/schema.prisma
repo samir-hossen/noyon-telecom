@@ -138,6 +138,18 @@ model Product {
   bulkPricing Json?
   warranty    String?
 
+  // ---- Hidden draft price (owner's policy, Oct 2026) ----
+  // Customers see a price only while priceStatus = published, which the
+  // admin panel sets automatically when the owner saves a price. Until then
+  // the storefront shows "দাম জানতে WhatsApp করুন". draftPrice (suggested
+  // wholesale price), referencePrice (the market price it came from) and
+  // priceNote are admin-only and must never reach a public response — see
+  // withViewerPricing in utils/serialize.js.
+  draftPrice     Float?
+  referencePrice Float?
+  priceNote      String?
+  priceStatus    PriceStatus @default(draft)
+
   reviews       Review[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
@@ -149,6 +161,12 @@ model Product {
   @@index([stock])
   @@index([published])
   @@index([readyToSell])
+  @@index([priceStatus])
+}
+
+enum PriceStatus {
+  draft
+  published
 }
 
 model Review {

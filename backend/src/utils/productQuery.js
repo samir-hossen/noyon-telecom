@@ -8,14 +8,16 @@
 const MAX_LIMIT = 200;
 
 // Builds a Prisma `where` clause for the Product model from raw query-string
-// values. `status` is admin-only (the public route always implies
-// published: true and passes no status).
-export function buildProductWhere({ category, brand, search, status } = {}) {
+// values. `status` and `priceStatus` are admin-only (the public route always
+// implies published: true and passes neither).
+export function buildProductWhere({ category, brand, search, status, priceStatus } = {}) {
   const where = {};
 
   if (status === 'published') where.published = true;
   else if (status === 'draft') where.published = false;
   else if (status === undefined) where.published = true; // public storefront default
+
+  if (priceStatus === 'published' || priceStatus === 'draft') where.priceStatus = priceStatus;
 
   const cat = (category || '').toString();
   if (cat && cat !== 'All') {
@@ -55,20 +57,61 @@ export function buildProductWhere({ category, brand, search, status } = {}) {
 }
 
 // A product is actually sellable right now when it has real stock AND a
-// real price (0 is the existing "contact us for price" convention — see
-// serialize.js/ProductCard.jsx's priceUnavailable check — not a sellable
-// price). Kept in sync on every create/update/import/restore (see
-// admin.routes.js) rather than computed by the database, so `readyToSell`
-// is a plain, always-correct application value the default sort below can
-// just read.
-export function computeReadyToSell(stock, price) {
-  return Number(stock) > 0 && Number(price) > 0;
+// real price the owner has published (an unpublished/draft price is hidden
+// from customers — see isPricePublished in serialize.js). Kept in sync on
+// every create/update/import/restore (see admin.routes.js) rather than
+// computed by the database, so `readyToSell` is a plain, always-correct
+// application value the default sort below can just read.
+export function computeReadyToSell(stock, price, priceStatus) {
+  return Number(stock) > 0 && Number(price) > 0 && priceStatus === 'published';
+}
+
+// Publish-on-edit (owner's policy, Oct 2026): how an admin create/update/
+// import request changes `price`/`priceStatus`.
+//   - typing a price > 0 and saving publishes it
+//   - price 0 means "no price" -> hidden (draft)
+//   - priceStatus 'draft' hides the price (the value is kept)
+//   - priceStatus 'published' publishes the price already stored
+//   - no price and no priceStatus -> nothing changes (an edit to the name or
+//     photo never publishes a hidden price by accident)
+// `currentPrice` is the stored price (0 for a new product). Returns the
+// fields to write (either may be undefined = leave as is), or `error`.
+export function resolvePriceUpdate({ price, priceStatus } = {}, currentPrice = 0) {
+  const out = {};
+  if (priceStatus !== undefined && priceStatus !== null && priceStatus !== '' && !['draft', 'published'].includes(priceStatus)) {
+    return { error: 'priceStatus must be "draft" or "published".' };
+  }
+  if (price !== undefined && price !== null && price !== '') {
+    const n = Number(price);
+    if (!Number.isFinite(n) || n < 0) return { error: 'Price must be a number of 0 or more.' };
+    out.price = n;
+    out.priceStatus = n > 0 ? 'published' : 'draft';
+  }
+  if (priceStatus === 'draft') out.priceStatus = 'draft';
+  if (priceStatus === 'published') {
+    const finalPrice = out.price !== undefined ? out.price : Number(currentPrice) || 0;
+    if (!(finalPrice > 0)) return { error: 'দাম ছাড়া পাবলিশ করা যাবে না — আগে দাম লিখুন। (A price is needed before publishing.)' };
+    out.priceStatus = 'published';
+  }
+  return out;
+}
+
+// Optional admin-only number field (draftPrice/referencePrice): '' or null
+// clears it, anything else must be a positive number.
+export function parseOptionalPrice(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 // Builds a Prisma `orderBy` clause from a `sort` query param.
+// Price sorts put products with a published price first (the enum is
+// declared draft, published, so `desc` = published first) — a hidden price
+// must not decide where a product appears.
 export function buildProductOrderBy(sort) {
-  if (sort === 'price-asc') return { price: 'asc' };
-  if (sort === 'price-desc') return { price: 'desc' };
+  if (sort === 'price-asc') return [{ priceStatus: 'desc' }, { price: 'asc' }, { createdAt: 'desc' }];
+  if (sort === 'price-desc') return [{ priceStatus: 'desc' }, { price: 'desc' }, { createdAt: 'desc' }];
   if (sort === 'rating') return { rating: 'desc' };
   // Default ("Featured"): sellable products (in stock, real price) surface
   // first; out-of-stock/unpriced ones sink to the end instead of being

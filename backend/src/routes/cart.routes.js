@@ -2,7 +2,7 @@ import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
-import { serializeProduct, withViewerPricing } from '../utils/serialize.js';
+import { serializeProduct, withViewerPricing, isPricePublished } from '../utils/serialize.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -21,7 +21,7 @@ async function loadCart(userId, user) {
     qty: r.qty,
     product: withViewerPricing(serializeProduct(r.product), user, r.qty),
   }));
-  const subtotal = items.reduce((sum, i) => sum + i.product.price * i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + (i.product.price || 0) * i.qty, 0);
   return { items, subtotal };
 }
 
@@ -40,9 +40,10 @@ router.post('/add', requireCsrf, async (req, res, next) => {
 
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
-    // About half the catalog is "price on request" (price 0). Those used to
-    // go into the cart — and through checkout — at ৳0.
-    if (!(product.price > 0)) return res.status(400).json({ error: "This product doesn't have a price yet — please ask us on WhatsApp for a quote." });
+    // A product whose price the owner hasn't published yet (hidden draft
+    // price, or no price at all) can't be bought online — the storefront
+    // shows WhatsApp + "কোটেশন চান" for it instead of add-to-cart.
+    if (!isPricePublished(product)) return res.status(400).json({ error: "This product doesn't have a price yet — please ask us on WhatsApp for a quote." });
 
     // Serializable so two near-simultaneous adds of the same product
     // (double-click, two open tabs) can't both read the same pre-add qty

@@ -8,6 +8,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
+import { hasPublicPrice } from '../utils/whatsapp';
 
 function getMidnight() {
   const d = new Date();
@@ -19,7 +20,9 @@ function pad(n) {
   return String(n).padStart(2, '0');
 }
 
-export default function FlashSale({ products, onAdd }) {
+export default function FlashSale({ products: allProducts, onAdd }) {
+  // Only real, published prices can be a deal — never a hidden price.
+  const products = allProducts.filter((p) => hasPublicPrice(p) && p.compareAt > p.price);
   const { t } = useLanguage();
   const [remaining, setRemaining] = useState(getMidnight() - Date.now());
   const { ids, toggle } = useWishlist();

@@ -128,7 +128,7 @@ export default function Cart() {
                 <QtyInput qty={item.qty} onChange={(n) => updateQty(item.productId, n)} />
                 <button onClick={() => updateQty(item.productId, item.qty + 1)}>+</button>
               </div>
-              <div style={{ fontWeight: 700 }}>{formatPrice(item.product.price * item.qty)}</div>
+              <div style={{ fontWeight: 700 }}>{item.product.price > 0 ? formatPrice(item.product.price * item.qty) : '—'}</div>
             </div>
           ))}
         </div>

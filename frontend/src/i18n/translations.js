@@ -582,8 +582,8 @@ const translations = {
     'card.addToWishlist': 'Add to wishlist',
     'card.priceOnRequest': 'Price on request',
     'card.unavailable': 'Unavailable',
-    'card.askPrice': 'Ask price',
-    'card.askStock': 'Ask stock',
+    'card.askPrice': 'Ask price on WhatsApp',
+    'card.askStock': 'Ask stock on WhatsApp',
     'card.whatsappAskMessage': 'Hi, please let me know the price and availability of: {{name}} — {{link}}',
 
     'wishlist.pageTitle': 'Your Wishlist',
@@ -1486,8 +1486,8 @@ const translations = {
     'card.addToWishlist': 'উইশলিস্টে যোগ করুন',
     'card.priceOnRequest': 'অনুরোধে মূল্য জানানো হবে',
     'card.unavailable': 'অনুপলব্ধ',
-    'card.askPrice': 'দাম জানুন',
-    'card.askStock': 'স্টক জানুন',
+    'card.askPrice': 'দাম জানতে WhatsApp করুন',
+    'card.askStock': 'স্টক জানতে WhatsApp করুন',
     'card.whatsappAskMessage': 'হাই, এই পণ্যের দাম ও স্টক জানাবেন: {{name}} — {{link}}',
 
     'wishlist.pageTitle': 'আপনার উইশলিস্ট',

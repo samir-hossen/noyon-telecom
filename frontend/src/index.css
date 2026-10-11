@@ -940,6 +940,11 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
   text-align: center;
 }
 @media (hover: hover) { .card-cta-whatsapp:hover { background: #25d366; border-color: #25d366; color: #fff; } }
+/* No published price: the WhatsApp button sits at the bottom of the card
+   (there's no price row to push it down), with "কোটেশন চান" under it. */
+.card-cta-push { margin-top: auto; }
+.card-quote-link { display: block; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; padding: 4px 0 0; }
+@media (hover: hover) { .card-quote-link:hover { color: var(--berry); } }
 /* Long labels (e.g. Bangla) must never run under the wishlist heart. */
 .card-tag { max-width: calc(100% - 70px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -2823,6 +2828,8 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 
 /* ---------- Product page price on request + mobile sticky buy bar (product page and cart) ---------- */
 .pd-price .pd-price-request { font-size: 1.35rem; color: var(--muted); }
+.pd-price .pd-price-ask { color: #128c4b; text-decoration: underline; text-underline-offset: 4px; }
+@media (hover: hover) { .pd-price .pd-price-ask:hover { color: #0b6b38; } }
 .pd-whatsapp-primary { background: #25d366; border: 1px solid #25d366; color: #fff; flex-basis: 100% !important; }
 @media (hover: hover) { .pd-whatsapp-primary:hover { background: #1ebe5a; border-color: #1ebe5a; color: #fff; } }
 .sticky-buy-bar { display: none; }
@@ -2858,3 +2865,12 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 }
 
 .cart-row-warning { font-size: 0.74rem; color: var(--berry-text); font-weight: 600; margin-top: 4px; }
+
+/* Admin: hidden draft price hints, badges and bulk actions */
+.admin-price-hint { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 6px; font-size: 0.78rem; color: #6b5f59; }
+.admin-price-note { flex-basis: 100%; font-size: 0.72rem; color: #9a8f8a; word-break: break-word; }
+.admin-price-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+.admin-price-badge.live { background: #e3f6ea; color: #157a3d; }
+.admin-price-badge.hidden { background: #fff1e3; color: #a35a00; }
+.admin-price-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.admin-bulk-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fafafa; font-size: 0.86rem; }

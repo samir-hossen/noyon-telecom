@@ -24,9 +24,21 @@ export function serializeProduct(p) {
     warranty: p.warranty ?? null,
     lowStockThreshold: p.lowStockThreshold ?? 5,
     published: p.published ?? true,
+    // Admin-only hidden-price fields — withViewerPricing() strips them (and
+    // the price itself, until it's published) from every public response.
+    draftPrice: p.draftPrice ?? null,
+    referencePrice: p.referencePrice ?? null,
+    priceNote: p.priceNote ?? null,
+    priceStatus: p.priceStatus ?? 'draft',
     createdAt: p.createdAt,
     updatedAt: p.updatedAt ?? p.createdAt,
   };
+}
+
+// A price is visible to customers (and sellable) only after the owner has
+// published it from the admin panel — and 0 is never a real price.
+export function isPricePublished(product) {
+  return product?.priceStatus === 'published' && Number(product.price) > 0;
 }
 
 // Returns the correct unit price for a given viewer and order quantity:
@@ -41,6 +53,7 @@ export function serializeProduct(p) {
 //   discount it doesn't actually give, which is exactly the kind of thing
 //   that erodes trust and generates support disputes/refund requests.
 export function priceForViewer(product, user, qty = 1) {
+  if (!isPricePublished(product)) return null;
   const isApprovedDealer = user?.role === 'dealer' && user?.dealerStatus === 'approved';
   if (isApprovedDealer) {
     const base = product.dealerPrice ?? product.price;
@@ -68,13 +81,25 @@ export function priceForViewer(product, user, qty = 1) {
 // keep seeing their own dealerPrice back (it's legitimately theirs to see);
 // everyone else — guests, regular customers, even a pending/rejected
 // dealer application — gets it stripped entirely.
+//
+// Hidden draft price (owner's policy, Oct 2026): the admin-only fields
+// draftPrice/referencePrice/priceNote/priceStatus are always stripped here,
+// and until the owner publishes a price every price-bearing field goes out
+// empty — price/retailPrice null, no compareAt, no dealer price, no bulk
+// tiers — so nothing about an unpublished price can be read off the wire.
+const ADMIN_ONLY_FIELDS = ['dealerPrice', 'draftPrice', 'referencePrice', 'priceNote', 'priceStatus'];
+
 export function withViewerPricing(product, user, qty = 1) {
-  const price = priceForViewer(product, user, qty); // needs the *original* product.dealerPrice internally, so this runs before stripping it below
+  const publicFields = { ...product };
+  for (const field of ADMIN_ONLY_FIELDS) delete publicFields[field];
+  if (!isPricePublished(product)) {
+    return { ...publicFields, price: null, retailPrice: null, compareAt: null, bulkPricing: [] };
+  }
+  const price = priceForViewer(product, user, qty); // needs the *original* product.dealerPrice internally
   const isApprovedDealer = user?.role === 'dealer' && user?.dealerStatus === 'approved';
-  const { dealerPrice, ...publicFields } = product;
   return {
     ...publicFields,
-    ...(isApprovedDealer ? { dealerPrice } : {}),
+    ...(isApprovedDealer ? { dealerPrice: product.dealerPrice } : {}),
     retailPrice: product.price,
     price,
   };

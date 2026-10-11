@@ -18,6 +18,8 @@ const ALL_BRANDS = [
 const emptyForm = {
   name: '', categories: ['Display'], price: '', compareAt: '', stock: '', images: [], desc: '',
   sku: '', brand: '', compatibleModels: '', moq: '1', dealerPrice: '', warranty: '', published: true,
+  // Read-only hidden-price info shown as hints while editing (never sent back).
+  priceStatus: 'draft', draftPrice: null, referencePrice: null, priceNote: '', hiddenPrice: null,
 };
 const emptyCoupon = { code: '', type: 'percent', value: '', minSubtotal: '', usageLimit: '', usageLimitPerCustomer: '', expiresAt: '' };
 const ORDER_STATUSES = ['processing', 'paid', 'shipped', 'delivered', 'cancelled'];
@@ -121,6 +123,9 @@ export default function Admin() {
   const [productSearch, setProductSearch] = useState('');
   const [productSearchInput, setProductSearchInput] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('all'); // all | published | draft
+  const [priceStatusFilter, setPriceStatusFilter] = useState('all'); // all | published | draft (price shown / hidden)
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [priceActionBusy, setPriceActionBusy] = useState(false);
   const [analytics, setAnalytics] = useState({
     totalRevenue: 0, avgOrderValue: 0, pendingCount: 0, guestOrderCount: 0,
     statusCounts: {}, revenueByDay: [], topProducts: [],
@@ -142,8 +147,8 @@ export default function Admin() {
   // surfaces it as a toast — previously an unhandled rejection here (e.g.
   // session expired, network hiccup) left that tab's data silently empty
   // with no explanation, indistinguishable from "there's just nothing here".
-  function loadProducts(page = productPage, search = productSearch, status = productStatusFilter) {
-    const params = new URLSearchParams({ page, limit: 50, status });
+  function loadProducts(page = productPage, search = productSearch, status = productStatusFilter, priceStatus = priceStatusFilter) {
+    const params = new URLSearchParams({ page, limit: 50, status, priceStatus });
     if (search) params.set('search', search);
     api.get(`/admin/products?${params}`).then((d) => {
       // The backend doesn't clamp an out-of-range page — deleting the last
@@ -151,10 +156,11 @@ export default function Admin() {
       // page number and gets back 0 rows. Self-correct once by refetching
       // the new last page instead of leaving the table stuck empty.
       if (d.products.length === 0 && d.page > 1 && d.total > 0) {
-        loadProducts(d.totalPages, search, status);
+        loadProducts(d.totalPages, search, status, priceStatus);
         return;
       }
       setProducts(d.products);
+      setSelectedIds(new Set());
       setProductPage(d.page);
       setProductTotalPages(d.totalPages);
       setProductTotal(d.total);
@@ -163,6 +169,58 @@ export default function Admin() {
   function onProductStatusChange(status) {
     setProductStatusFilter(status);
     loadProducts(1, productSearch, status);
+  }
+  function onPriceStatusFilterChange(priceStatus) {
+    setPriceStatusFilter(priceStatus);
+    loadProducts(1, productSearch, productStatusFilter, priceStatus);
+  }
+
+  // ---- Hidden draft price: publish / hide (one product, or a selection) ----
+  function toggleSelected(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => (products.length > 0 && products.every((p) => prev.has(p.id)) ? new Set() : new Set(products.map((p) => p.id))));
+  }
+  async function bulkPriceAction(action) {
+    if (selectedIds.size === 0) return;
+    setPriceActionBusy(true);
+    try {
+      const d = await api.post('/admin/products/bulk-price', { ids: [...selectedIds], action });
+      const skippedNote = d.skipped?.length ? ` · ${d.skipped.length}টায় সাজেস্টেড দাম নেই (skipped)` : '';
+      showToast(`${d.updated}টা প্রোডাক্ট আপডেট হয়েছে${skippedNote}`, d.skipped?.length ? 'error' : 'success');
+      loadProducts();
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setPriceActionBusy(false);
+    }
+  }
+  async function singlePriceAction(id, action) {
+    setPriceActionBusy(true);
+    try {
+      const d = await api.post(`/admin/products/${id}/${action}`, {});
+      const p = d.product;
+      setForm((f) => ({
+        ...f,
+        price: p.priceStatus === 'published' ? p.price : '',
+        priceStatus: p.priceStatus,
+        hiddenPrice: p.priceStatus !== 'published' && p.price > 0 ? p.price : null,
+      }));
+      showToast(p.priceStatus === 'published' ? `দাম পাবলিশ হয়েছে: ${formatPrice(p.price)}` : 'দাম লুকানো হয়েছে', 'success');
+      loadProducts();
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setPriceActionBusy(false);
+    }
   }
   function onProductSearchSubmit(e) {
     e.preventDefault();
@@ -400,7 +458,13 @@ export default function Admin() {
         desc: p.desc,
         category: p.category,
         categories: (p.categories || []).join(','),
-        price: p.price,
+        // Only a published price goes in the `price` column — re-importing
+        // this file must never publish a hidden price by accident.
+        price: p.priceStatus === 'published' ? p.price : '',
+        priceStatus: p.priceStatus,
+        draftPrice: p.draftPrice || '',
+        referencePrice: p.referencePrice || '',
+        priceNote: p.priceNote || '',
         compareAt: p.compareAt || '',
         stock: p.stock,
         sku: p.sku || '',
@@ -527,7 +591,14 @@ export default function Admin() {
     setForm({
       name: p.name,
       categories: Array.isArray(p.categories) && p.categories.length ? p.categories : [p.category],
-      price: p.price,
+      // A hidden (draft) price starts empty, so saving other edits never
+      // publishes it — typing a price is what publishes.
+      price: p.priceStatus === 'published' ? p.price : '',
+      priceStatus: p.priceStatus || 'draft',
+      draftPrice: p.draftPrice ?? null,
+      referencePrice: p.referencePrice ?? null,
+      priceNote: p.priceNote || '',
+      hiddenPrice: p.priceStatus !== 'published' && p.price > 0 ? p.price : null,
       compareAt: p.compareAt || '',
       stock: p.stock,
       images: Array.isArray(p.images) && p.images.length ? p.images : [p.img],
@@ -622,7 +693,9 @@ export default function Admin() {
       category: form.categories[0],
       images,
       img: images[0],
-      price: parseFloat(form.price),
+      // Empty = leave the price as it is (hidden stays hidden); a typed
+      // price is published as soon as this is saved.
+      ...(String(form.price).trim() !== '' ? { price: parseFloat(form.price) } : {}),
       compareAt: form.compareAt ? parseFloat(form.compareAt) : null,
       stock: parseInt(form.stock, 10),
       sku: form.sku.trim() || null,
@@ -649,7 +722,8 @@ export default function Admin() {
         // would vanish immediately after the "Product created" toast,
         // contradicting the comment below's promise that it'll be visible.
         setProductStatusFilter('all');
-        loadProducts(1, '', 'all'); // new products sort first — jump to page 1 so it's visible
+        setPriceStatusFilter('all');
+        loadProducts(1, '', 'all', 'all'); // new products sort first — jump to page 1 so it's visible
         // Keep the form open for the next product instead of closing it —
         // a batch of similar parts (same category/brand/MOQ/warranty,
         // different name/photo/price) is the common case, and reopening +
@@ -997,7 +1071,30 @@ export default function Admin() {
               <option value="published">Published only</option>
               <option value="draft">Drafts only</option>
             </select>
+            <select
+              className="select"
+              value={priceStatusFilter}
+              onChange={(e) => onPriceStatusFilterChange(e.target.value)}
+              aria-label="Filter by price status"
+            >
+              <option value="all">সব দাম</option>
+              <option value="draft">দাম লুকানো</option>
+              <option value="published">দাম পাবলিশড</option>
+            </select>
           </form>
+
+          {selectedIds.size > 0 && (
+            <div className="admin-bulk-bar" role="region" aria-label="Bulk price actions">
+              <span>{selectedIds.size}টা সিলেক্টেড</span>
+              <button type="button" className="btn btn-primary btn-sm" disabled={priceActionBusy} onClick={() => bulkPriceAction('publish-suggested')}>
+                সাজেস্টেড দাম পাবলিশ করো
+              </button>
+              <button type="button" className="btn btn-outline btn-sm" disabled={priceActionBusy} onClick={() => bulkPriceAction('hide')}>
+                দাম লুকাও
+              </button>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelectedIds(new Set())}>Clear</button>
+            </div>
+          )}
 
           {showForm && (
             <form ref={productFormRef} onSubmit={onSubmit} onKeyDown={focusNextFieldOnEnter} className="form-panel wide admin-product-form" style={{ marginBottom: 30 }}>
@@ -1023,8 +1120,45 @@ export default function Admin() {
               </div>
               <div className="field-row">
                 <div className="field">
-                  <label>Price (৳)</label>
-                  <input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                  <label>দাম (৳) — লিখে Save করলে সাইটে দেখাবে</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price}
+                    placeholder={form.draftPrice ? `সাজেস্টেড: ${form.draftPrice}` : 'খালি রাখলে দাম লুকানো থাকবে'}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  />
+                  <div className="admin-price-hint">
+                    <span className={`admin-price-badge ${form.priceStatus === 'published' ? 'live' : 'hidden'}`}>
+                      {form.priceStatus === 'published' ? 'দাম সাইটে দেখাচ্ছে' : 'দাম লুকানো (WhatsApp বাটন দেখাচ্ছে)'}
+                    </span>
+                    {(form.draftPrice || form.referencePrice) && (
+                      <span>
+                        সাজেস্টেড: {form.draftPrice ? formatPrice(form.draftPrice) : '—'}
+                        {form.referencePrice ? ` · etel ${formatPrice(form.referencePrice)}` : ''}
+                      </span>
+                    )}
+                    {form.hiddenPrice && <span>লুকানো দাম: {formatPrice(form.hiddenPrice)}</span>}
+                    {form.priceNote && <span className="admin-price-note">{form.priceNote}</span>}
+                  </div>
+                  {editingId && (
+                    <div className="admin-price-actions">
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        disabled={!form.draftPrice || priceActionBusy}
+                        onClick={() => singlePriceAction(editingId, 'publish-suggested')}
+                      >
+                        সাজেস্টেড দাম পাবলিশ করো
+                      </button>
+                      {form.priceStatus === 'published' && (
+                        <button type="button" className="btn btn-outline btn-sm" disabled={priceActionBusy} onClick={() => singlePriceAction(editingId, 'hide-price')}>
+                          দাম লুকাও
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="field">
                   <label>Compare-at price (optional)</label>
@@ -1174,6 +1308,14 @@ export default function Admin() {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        aria-label="Select all products on this page"
+                        checked={products.length > 0 && products.every((p) => selectedIds.has(p.id))}
+                        onChange={toggleSelectAllOnPage}
+                      />
+                    </th>
                     <th>Product</th>
                     <th>Category</th>
                     <th>Brand</th>
@@ -1185,6 +1327,9 @@ export default function Admin() {
                 <tbody>
                   {products.map((p) => (
                     <tr key={p.id} data-product-row={p.id} className={editingId === p.id ? 'admin-row-editing' : ''}>
+                      <td data-label="Select">
+                        <input type="checkbox" aria-label={`Select ${p.name}`} checked={selectedIds.has(p.id)} onChange={() => toggleSelected(p.id)} />
+                      </td>
                       <td data-label="Product" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <img src={resolveImg(p.img)} alt={p.name} loading="lazy" decoding="async" style={{ width: 36, height: 36, objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
                         {p.name}
@@ -1207,7 +1352,20 @@ export default function Admin() {
                           </span>
                         )}
                       </td>
-                      <td data-label="Price">{formatPrice(p.price)}</td>
+                      <td data-label="Price">
+                        {p.priceStatus === 'published' && p.price > 0 ? (
+                          <>
+                            {formatPrice(p.price)} <span className="admin-price-badge live">Live</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="admin-price-badge hidden">লুকানো</span>{' '}
+                            <span style={{ color: '#9a8f8a', fontSize: '0.78rem' }}>
+                              {p.draftPrice ? `সাজেস্টেড ${formatPrice(p.draftPrice)}` : 'সাজেস্টেড নেই'}
+                            </span>
+                          </>
+                        )}
+                      </td>
                       <td data-label="Stock">{p.stock}</td>
                       <td data-label="Actions">
                         <button className="remove-link" style={{ marginRight: 12 }} onClick={() => startEdit(p)}>Edit</button>
@@ -1717,7 +1875,9 @@ export default function Admin() {
             <p style={{ fontSize: '0.86rem', color: 'var(--muted)', marginBottom: 16 }}>
               Export the full catalog to .xlsx for offline editing, or bulk-import products from a spreadsheet —
               rows are matched to existing products by SKU (matching SKU updates it, new SKU creates it).
-              Required columns: <code>name</code>, <code>price</code>, <code>category</code>.
+              Required columns: <code>name</code>, <code>category</code>. A row with a <code>price</code> publishes that
+              price; an empty <code>price</code> leaves the product's price (and whether it's shown) unchanged — new
+              products without a price are created with a hidden price.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <button className="btn btn-outline" disabled={exportBusy} onClick={exportProductsToExcel}>

@@ -49,7 +49,9 @@ function buildProduct({ models, price }) {
     img: PLACEHOLDER_IMAGE,
     price,
     stock: 50,
-    readyToSell: computeReadyToSell(50, price),
+    // New rows start with a hidden price (priceStatus defaults to draft —
+    // owner's policy, Oct 2026); the owner publishes it from the admin panel.
+    readyToSell: computeReadyToSell(50, price, 'draft'),
     sku,
     brand,
     compatibleModels: models,
@@ -81,7 +83,7 @@ async function main() {
           // Existing stock is never touched here (an admin's real count),
           // but a price change alone can flip sellability, so this still
           // needs recomputing against the *existing* row's actual stock.
-          readyToSell: computeReadyToSell(existing.stock, product.price),
+          readyToSell: computeReadyToSell(existing.stock, product.price, existing.priceStatus),
         },
       });
       updated += 1;

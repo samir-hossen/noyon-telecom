@@ -1,11 +1,12 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { priceForViewer, serializeProduct, serializeReview, withViewerPricing } from './serialize.js';
+import { priceForViewer, serializeProduct, serializeReview, withViewerPricing, isPricePublished } from './serialize.js';
 
 function baseProduct(overrides = {}) {
   return {
     id: 'p1',
     price: 1000,
+    priceStatus: 'published',
     dealerPrice: 800,
     bulkPricing: [],
     ...overrides,
@@ -120,7 +121,7 @@ describe('withViewerPricing', () => {
   // even though the frontend UI never displays that field — it was still
   // readable in DevTools' Network tab by anyone until this was fixed.
   function serialized(overrides = {}) {
-    return serializeProduct({ id: 'p1', price: 1000, dealerPrice: 800, bulkPricing: [], images: [], img: '', desc: 'x', category: 'Battery', ...overrides });
+    return serializeProduct({ id: 'p1', price: 1000, priceStatus: 'published', dealerPrice: 800, bulkPricing: [], images: [], img: '', desc: 'x', category: 'Display', ...overrides });
   }
 
   test('a guest (no user) never receives dealerPrice in the response', () => {
@@ -160,5 +161,56 @@ describe('withViewerPricing', () => {
     const out = withViewerPricing(product, null, 10);
     assert.equal(out.price, 900);
     assert.equal('dealerPrice' in out, false);
+  });
+});
+
+describe('hidden draft price (owner policy, Oct 2026)', () => {
+  function draft(overrides = {}) {
+    return serializeProduct({
+      id: 'p2', price: 880, priceStatus: 'draft', draftPrice: 1199, referencePrice: 1399,
+      priceNote: 'etel 1399 [(single option)] <2,000 -200', compareAt: 1000, dealerPrice: 800,
+      bulkPricing: [{ minQty: 10, price: 850 }], images: [], img: '', desc: 'x', category: 'Display', ...overrides,
+    });
+  }
+  const HIDDEN_FIELDS = ['draftPrice', 'referencePrice', 'priceNote', 'priceStatus', 'dealerPrice'];
+
+  test('isPricePublished: only a published price above 0 counts', () => {
+    assert.equal(isPricePublished({ priceStatus: 'published', price: 1150 }), true);
+    assert.equal(isPricePublished({ priceStatus: 'draft', price: 1150 }), false);
+    assert.equal(isPricePublished({ priceStatus: 'published', price: 0 }), false);
+    assert.equal(isPricePublished({ price: 1150 }), false);
+    assert.equal(isPricePublished(null), false);
+  });
+
+  test('admin serializer keeps the hidden-price fields', () => {
+    const out = draft();
+    assert.equal(out.draftPrice, 1199);
+    assert.equal(out.referencePrice, 1399);
+    assert.equal(out.priceStatus, 'draft');
+    assert.ok(out.priceNote.includes('1399'));
+  });
+
+  test('a draft product goes out with no price at all, to every kind of viewer', () => {
+    for (const user of [null, { role: 'customer' }, { role: 'dealer', dealerStatus: 'pending' }, { role: 'dealer', dealerStatus: 'approved' }]) {
+      const out = withViewerPricing(draft(), user, 10);
+      assert.equal(out.price, null);
+      assert.equal(out.retailPrice, null);
+      assert.equal(out.compareAt, null);
+      assert.deepEqual(out.bulkPricing, []);
+      for (const f of HIDDEN_FIELDS) assert.equal(f in out, false, `${f} leaked`);
+      const raw = JSON.stringify(out);
+      for (const n of ['1199', '1399', '880', '850']) assert.equal(raw.includes(n), false, `${n} leaked in ${raw}`);
+    }
+  });
+
+  test('a published product still never carries the draft fields', () => {
+    const out = withViewerPricing(draft({ priceStatus: 'published', price: 1150 }), null);
+    assert.equal(out.price, 1150);
+    for (const f of HIDDEN_FIELDS) assert.equal(f in out, false, `${f} leaked`);
+  });
+
+  test('priceForViewer gives no price for a draft — checkout refuses it', () => {
+    assert.equal(priceForViewer(draft(), null), null);
+    assert.equal(priceForViewer(draft(), { role: 'dealer', dealerStatus: 'approved' }), null);
   });
 });

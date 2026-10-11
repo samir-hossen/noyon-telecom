@@ -49,7 +49,9 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
       90,
       () =>
         Promise.all([
-          prisma.product.findMany({ where: { stock: { gt: 0 }, published: true }, orderBy: { price: 'desc' }, take: 4 }),
+          // Sellable (in stock + published price) first; never ordered by a
+          // hidden draft price.
+          prisma.product.findMany({ where: { stock: { gt: 0 }, published: true }, orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take: 4 }),
           prisma.product.findMany({ where: { published: true }, orderBy: { createdAt: 'desc' }, take }),
           prisma.product.findMany({ where: { reviewCount: { gt: 0 }, published: true }, orderBy: { rating: 'desc' }, take: 4 }),
           // compareAt > price can't be expressed as a plain Prisma `where` filter
@@ -60,7 +62,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           // index once the catalog grows large.
           prisma.$queryRaw`
         SELECT * FROM "Product"
-        WHERE "compareAt" IS NOT NULL AND "compareAt" > price AND stock > 0 AND published = true
+        WHERE "compareAt" IS NOT NULL AND "compareAt" > price AND stock > 0 AND published = true AND "priceStatus" = 'published'
         ORDER BY ("compareAt" - price) / "compareAt" DESC
         LIMIT 6
       `,

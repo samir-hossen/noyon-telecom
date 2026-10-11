@@ -8,6 +8,7 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
 import { productUrl } from '../utils/slug';
 import { trackWhatsappClick } from '../ecommerce.js';
+import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath } from '../utils/whatsapp';
 
 export default function ProductCard({ product, onAdd }) {
   const { user } = useAuth();
@@ -20,26 +21,19 @@ export default function ProductCard({ product, onAdd }) {
   const dealerSaving = isApprovedDealer && product.retailPrice && product.retailPrice > product.price;
   const onSale = !dealerSaving && product.compareAt && product.compareAt > product.price;
   const outOfStock = product.stock === 0;
-  // Some catalog rows come through with no price set yet (import in
-  // progress, not published for retail, etc). Rather than show a
-  // confusing "৳0" and a live "Add to cart" button, treat it like an
-  // unavailable item with a clear "contact us" affordance.
-  const priceUnavailable = !product.price || product.price <= 0;
+  // The API sends price: null until the owner publishes a price (hidden
+  // draft price policy). Such a card never shows "৳0" or "Sold out" and has
+  // no add-to-cart: it offers "দাম জানতে WhatsApp করুন" + "কোটেশন চান".
+  const priceUnavailable = !hasPublicPrice(product);
   const unorderable = outOfStock || priceUnavailable;
   const { ids, toggle } = useWishlist();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const saved = ids?.has(product.id);
-  // A card that can't be added to the cart (no price yet, or sold out) used
-  // to end in a greyed-out "Unavailable" button — a dead end. Most of the
-  // catalog is priced on request, so send those shoppers straight to a
-  // WhatsApp chat about this exact part instead.
-  const whatsappHref = unorderable
-    ? `https://wa.me/8801560047377?text=${encodeURIComponent(t('card.whatsappAskMessage', null, {
-      name: product.name,
-      link: `${window.location.origin}${productUrl(product)}`,
-    }))}`
-    : null;
+  // A card that can't be added to the cart (no price yet, or sold out)
+  // sends the shopper straight to a WhatsApp chat about this exact part,
+  // with the owner's pre-filled message.
+  const whatsappHref = priceUnavailable ? priceRequestLink(product) : outOfStock ? stockRequestLink(product) : null;
 
   async function handleWishlist(e) {
     e.preventDefault();
@@ -61,9 +55,9 @@ export default function ProductCard({ product, onAdd }) {
     <div className="card">
       <Link to={productUrl(product)}>
         <div className="card-img">
-          {outOfStock ? (
+          {priceUnavailable ? null : outOfStock ? (
             <span className="card-tag" style={{ background: 'var(--muted)' }}>{t('card.soldOut')}</span>
-          ) : priceUnavailable ? null : dealerSaving ? (
+          ) : dealerSaving ? (
             <span className="card-tag" style={{ background: 'var(--ink)' }}>{t('product.dealerPrice')}</span>
           ) : (
             onSale && <span className="card-tag">{t('card.sale')}</span>
@@ -86,20 +80,16 @@ export default function ProductCard({ product, onAdd }) {
         {product.reviewCount > 0 && (
           <div className="card-rating">★ {product.rating} <span>({product.reviewCount})</span></div>
         )}
-        <div className="card-price">
-          {priceUnavailable ? (
-            <span className="now" style={{ color: 'var(--muted)', fontSize: '0.94rem' }}>{t('card.priceOnRequest')}</span>
-          ) : (
-            <>
-              <span className="now">{formatPrice(product.price)}</span>
-              {onSale && <span className="was">{formatPrice(product.compareAt)}</span>}
-              {dealerSaving && <span className="was">{formatPrice(product.retailPrice)}</span>}
-            </>
-          )}
-        </div>
+        {!priceUnavailable && (
+          <div className="card-price">
+            <span className="now">{formatPrice(product.price)}</span>
+            {onSale && <span className="was">{formatPrice(product.compareAt)}</span>}
+            {dealerSaving && <span className="was">{formatPrice(product.retailPrice)}</span>}
+          </div>
+        )}
         {unorderable ? (
           <a
-            className="card-cta card-cta-whatsapp"
+            className={`card-cta card-cta-whatsapp${priceUnavailable ? ' card-cta-push' : ''}`}
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
@@ -113,6 +103,9 @@ export default function ProductCard({ product, onAdd }) {
           <button className="card-cta" onClick={() => onAdd(product.id)}>
             {t('product.addToCart')}
           </button>
+        )}
+        {priceUnavailable && (
+          <Link className="card-quote-link" to={quoteRequestPath(product)}>{t('product.requestQuote')}</Link>
         )}
       </div>
     </div>

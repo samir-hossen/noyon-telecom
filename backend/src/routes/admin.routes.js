@@ -4,7 +4,8 @@ import prisma from '../prismaClient.js';
 import { requireAuth, requireAdmin, requirePermanentAdmin } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { serializeProduct, serializeOrder } from '../utils/serialize.js';
-import { buildProductWhere, parsePagination, computeReadyToSell } from '../utils/productQuery.js';
+import { buildProductWhere, parsePagination, computeReadyToSell, resolvePriceUpdate, parseOptionalPrice } from '../utils/productQuery.js';
+import { backfillReadyToSell } from '../backfillReadyToSell.js';
 import { logAdminAction } from '../utils/audit.js';
 import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js';
 import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '../utils/totp.js';
@@ -124,19 +125,20 @@ router.delete('/admins/:id', requireCsrf, requirePermanentAdmin, async (req, res
 router.post('/products', requireCsrf, async (req, res, next) => {
   try {
     const p = req.body;
-    // price is required at the schema level (non-nullable Float) but 0 is a
-    // valid, intentional value — it's the existing "not yet priced / contact
-    // us" convention (see ProductCard.jsx's priceUnavailable check), not a
-    // missing field. `!p.price` would wrongly reject it, so check presence
-    // explicitly instead of truthiness.
-    const priceProvided = p.price !== undefined && p.price !== null && p.price !== '' && Number(p.price) >= 0;
+    // Price is optional: a product saved without one is a draft (customers
+    // see "দাম জানতে WhatsApp করুন"); typing a price publishes it — see
+    // resolvePriceUpdate in utils/productQuery.js.
     // `category` is a non-nullable schema column; without this check a
     // request that omits it (and has no `categories` array either) reaches
     // `prisma.product.create` with `category: undefined` and throws an
     // unhandled PrismaClientValidationError instead of this clean 400.
-    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || !priceProvided || (!p.category && !p.categories?.length)) {
+    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || (!p.category && !p.categories?.length)) {
       return res.status(400).json({ error: 'Missing required product fields' });
     }
+    const priceChange = resolvePriceUpdate(p, 0);
+    if (priceChange.error) return res.status(400).json({ error: priceChange.error });
+    const price = priceChange.price ?? 0;
+    const priceStatus = priceChange.priceStatus ?? 'draft';
     // Assigned once, up front, and never regenerated on a later rename (see
     // the update handler below) — a stable slug is what keeps an
     // already-indexed/shared product URL from silently breaking.
@@ -150,10 +152,14 @@ router.post('/products', requireCsrf, async (req, res, next) => {
         category: p.category || p.categories?.[0],
         images: p.images,
         img: p.img || p.images[0],
-        price: parseFloat(p.price),
+        price,
+        priceStatus,
+        draftPrice: parseOptionalPrice(p.draftPrice) ?? null,
+        referencePrice: parseOptionalPrice(p.referencePrice) ?? null,
+        priceNote: p.priceNote ? String(p.priceNote) : null,
         compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
         stock: parseInt(p.stock, 10) || 0,
-        readyToSell: computeReadyToSell(parseInt(p.stock, 10) || 0, parseFloat(p.price)),
+        readyToSell: computeReadyToSell(parseInt(p.stock, 10) || 0, price, priceStatus),
         sku: p.sku || null,
         // Auto-fills from a brand word already written in the name (e.g.
         // "Samsung Galaxy A12 Display" -> "Samsung") when the admin didn't
@@ -188,34 +194,47 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
   try {
     const p = req.body;
     const existing = await prisma.product.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: 'Product not found' });
+    // Publish-on-edit: a price typed and saved here goes live; an edit that
+    // doesn't send a price leaves a hidden price hidden (see
+    // resolvePriceUpdate in utils/productQuery.js).
+    const priceChange = resolvePriceUpdate(p, existing.price);
+    if (priceChange.error) return res.status(400).json({ error: priceChange.error });
     // Only fills in a missing slug (a pre-backfill row, or one whose backfill
     // hasn't run yet) — a product that already has one keeps it forever, even
     // across a name change, so an already-shared/indexed URL never breaks.
-    const slug = existing && !existing.slug ? await assignUniqueSlug(prisma, p.name || existing.name, existing.id) : undefined;
-    // Recomputed from whichever of stock/price is actually changing (falling
-    // back to the existing row's current value for whichever one isn't) so
-    // a price-only or stock-only edit still leaves readyToSell correct.
-    const finalStock = p.stock !== undefined ? parseInt(p.stock, 10) : existing?.stock;
-    const finalPrice = p.price !== undefined ? parseFloat(p.price) : existing?.price;
+    const slug = !existing.slug ? await assignUniqueSlug(prisma, p.name || existing.name, existing.id) : undefined;
+    // Recomputed from whichever of stock/price/priceStatus is actually
+    // changing (falling back to the existing row's current value for the
+    // rest) so a price-only or stock-only edit still leaves readyToSell correct.
+    const finalStock = p.stock !== undefined ? parseInt(p.stock, 10) : existing.stock;
+    const finalPrice = priceChange.price ?? existing.price;
+    const finalPriceStatus = priceChange.priceStatus ?? existing.priceStatus;
     const updated = await prisma.product.update({
       where: { id: req.params.id },
       data: {
         slug,
         name: p.name,
         desc: p.desc,
-        categories: p.categories?.length ? p.categories : [p.category],
-        category: p.category || p.categories?.[0],
+        // Only touched when the request actually sends them, so a partial
+        // update (e.g. just a price) can't wipe the categories or photos.
+        categories: p.categories?.length ? p.categories : p.category ? [p.category] : undefined,
+        category: p.category || p.categories?.[0] || undefined,
         images: p.images,
         img: p.img || p.images?.[0],
-        price: p.price !== undefined ? parseFloat(p.price) : undefined,
-        compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
+        price: priceChange.price,
+        priceStatus: priceChange.priceStatus,
+        draftPrice: parseOptionalPrice(p.draftPrice),
+        referencePrice: parseOptionalPrice(p.referencePrice),
+        priceNote: p.priceNote !== undefined ? (p.priceNote ? String(p.priceNote) : null) : undefined,
+        compareAt: p.compareAt !== undefined ? (p.compareAt ? parseFloat(p.compareAt) : null) : undefined,
         stock: p.stock !== undefined ? parseInt(p.stock, 10) : undefined,
-        readyToSell: computeReadyToSell(finalStock, finalPrice),
+        readyToSell: computeReadyToSell(finalStock, finalPrice, finalPriceStatus),
         sku: p.sku !== undefined ? (p.sku || null) : undefined,
         // Same auto-fill-from-name fallback as create — only kicks in when
         // the admin submitted an empty brand, so it can't clobber a brand
         // they deliberately picked.
-        brand: p.brand !== undefined ? (p.brand || detectBrandFromText(p.name || existing?.name) || null) : undefined,
+        brand: p.brand !== undefined ? (p.brand || detectBrandFromText(p.name || existing.name) || null) : undefined,
         compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : undefined,
         moq: p.moq !== undefined ? parseInt(p.moq, 10) || 1 : undefined,
         dealerPrice: p.dealerPrice !== undefined ? (p.dealerPrice ? parseFloat(p.dealerPrice) : null) : undefined,
@@ -230,10 +249,86 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
       const removed = existing.images.filter((img) => !p.images.includes(img));
       removed.forEach((img) => deleteStoredImage(img));
     }
-    await logAdminAction(req.user, 'product.update', { productId: updated.id, name: updated.name });
+    await logAdminAction(req.user, 'product.update', {
+      productId: updated.id,
+      name: updated.name,
+      ...(priceChange.priceStatus ? { priceStatus: updated.priceStatus, price: updated.price } : {}),
+    });
     invalidateProductCache();
     indexProduct(updated).catch((err) => console.error('Meilisearch index failed:', err.message));
     res.json({ product: serializeProduct(updated) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- Hidden draft price: publish / hide ----------
+// "সাজেস্টেড দাম পাবলিশ করো" (price = draftPrice, published) and "দাম লুকাও"
+// (hidden again, value kept), for one product or a selection from the list.
+
+const MAX_BULK_PRICE_IDS = 500;
+
+async function applyPriceAction(ids, action) {
+  const products = await prisma.product.findMany({ where: { id: { in: ids } } });
+  const done = [];
+  const skipped = [];
+  for (const product of products) {
+    if (action === 'publish-suggested' && !(product.draftPrice > 0)) {
+      skipped.push({ id: product.id, name: product.name, reason: 'No suggested price' });
+      continue;
+    }
+    const data = action === 'publish-suggested'
+      ? { price: product.draftPrice, priceStatus: 'published' }
+      : { priceStatus: 'draft' };
+    data.readyToSell = computeReadyToSell(product.stock, data.price ?? product.price, data.priceStatus);
+    done.push(await prisma.product.update({ where: { id: product.id }, data }));
+  }
+  return { done, skipped, notFound: ids.length - products.length };
+}
+
+router.post('/products/bulk-price', requireCsrf, async (req, res, next) => {
+  try {
+    const { action } = req.body;
+    const ids = Array.isArray(req.body.ids) ? [...new Set(req.body.ids.filter((id) => typeof id === 'string'))] : [];
+    if (!['publish-suggested', 'hide'].includes(action)) return res.status(400).json({ error: 'Unknown action.' });
+    if (ids.length === 0) return res.status(400).json({ error: 'Select at least one product.' });
+    if (ids.length > MAX_BULK_PRICE_IDS) return res.status(400).json({ error: `Select at most ${MAX_BULK_PRICE_IDS} products at a time.` });
+
+    const { done, skipped, notFound } = await applyPriceAction(ids, action);
+    await logAdminAction(req.user, action === 'hide' ? 'product.bulk_hide_price' : 'product.bulk_publish_price', {
+      count: done.length,
+      skipped: skipped.length,
+    });
+    invalidateProductCache();
+    indexProducts(done).catch((err) => console.error('Meilisearch bulk index failed:', err.message));
+    res.json({ updated: done.length, skipped, notFound });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/products/:id/publish-suggested', requireCsrf, async (req, res, next) => {
+  try {
+    const { done, skipped, notFound } = await applyPriceAction([req.params.id], 'publish-suggested');
+    if (notFound) return res.status(404).json({ error: 'Product not found' });
+    if (skipped.length) return res.status(400).json({ error: 'এই প্রোডাক্টে সাজেস্টেড দাম নেই — দাম লিখে Save করুন। (No suggested price for this product.)' });
+    await logAdminAction(req.user, 'product.publish_price', { productId: done[0].id, name: done[0].name, price: done[0].price });
+    invalidateProductCache();
+    indexProduct(done[0]).catch((err) => console.error('Meilisearch index failed:', err.message));
+    res.json({ product: serializeProduct(done[0]) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/products/:id/hide-price', requireCsrf, async (req, res, next) => {
+  try {
+    const { done, notFound } = await applyPriceAction([req.params.id], 'hide');
+    if (notFound) return res.status(404).json({ error: 'Product not found' });
+    await logAdminAction(req.user, 'product.hide_price', { productId: done[0].id, name: done[0].name });
+    invalidateProductCache();
+    indexProduct(done[0]).catch((err) => console.error('Meilisearch index failed:', err.message));
+    res.json({ product: serializeProduct(done[0]) });
   } catch (err) {
     next(err);
   }
@@ -295,6 +390,7 @@ router.get('/products', async (req, res, next) => {
       brand: req.query.brand,
       search: req.query.search,
       status: (req.query.status || 'all').toString(), // all | published | draft
+      priceStatus: (req.query.priceStatus || 'all').toString(), // all | published | draft (price shown / hidden)
     });
     // Deliberately NOT buildProductOrderBy()'s default — that puts sellable
     // (in-stock, priced) products first for the storefront, but an admin
@@ -351,11 +447,11 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
     // that was up to 5000 extra round trips just to find out which rows are
     // creates vs updates, on top of the create/update itself.
     const skusInFile = rows.map((r) => (r.sku ? String(r.sku).trim() : null)).filter(Boolean);
-    const existingBySku = new Map(
-      skusInFile.length
-        ? (await prisma.product.findMany({ where: { sku: { in: skusInFile } }, select: { id: true, sku: true } })).map((p) => [p.sku, p.id])
-        : []
-    );
+    const existingRows = skusInFile.length
+      ? await prisma.product.findMany({ where: { sku: { in: skusInFile } }, select: { id: true, sku: true, price: true } })
+      : [];
+    const existingBySku = new Map(existingRows.map((p) => [p.sku, p.id]));
+    const existingPriceById = new Map(existingRows.map((p) => [p.id, p.price]));
 
     // Processes one parsed spreadsheet row: validates required fields, then
     // upserts by SKU. Pulled out of the loop below so rows can run
@@ -363,11 +459,18 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
     // time — at 5000 rows, sequential awaits could take minutes and risk
     // hitting an HTTP/proxy timeout before the import ever finishes.
     async function importRow(r, rowNumber) {
-      // Same "0 is a valid, intentional price" reasoning as POST /products
-      // above — a spreadsheet row can legitimately have no price yet.
-      const priceProvided = r.price !== undefined && r.price !== null && r.price !== '' && Number(r.price) >= 0;
-      if (!r.name || !priceProvided || !r.category) {
-        errors.push({ row: rowNumber, error: 'Missing required field (name, price, category)' });
+      if (!r.name || !r.category) {
+        errors.push({ row: rowNumber, error: 'Missing required field (name, category)' });
+        return;
+      }
+      const existingId = r.sku ? existingBySku.get(String(r.sku).trim()) : null;
+      // Same publish-on-edit rule as the product form: a row with a price
+      // publishes it, an empty price leaves an existing product's price (and
+      // whether it's shown) untouched, and a new product without one is a
+      // hidden-price draft.
+      const priceChange = resolvePriceUpdate({ price: r.price, priceStatus: r.priceStatus || undefined }, existingId ? existingPriceById.get(existingId) : 0);
+      if (priceChange.error) {
+        errors.push({ row: rowNumber, error: priceChange.error });
         return;
       }
       const data = {
@@ -375,7 +478,11 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
         desc: String(r.desc || r.name).trim(),
         category: String(r.category).trim(),
         categories: String(r.categories || r.category).split(',').map((c) => c.trim()).filter(Boolean),
-        price: parseFloat(r.price),
+        ...(priceChange.price !== undefined ? { price: priceChange.price } : {}),
+        ...(priceChange.priceStatus ? { priceStatus: priceChange.priceStatus } : {}),
+        ...(r.draftPrice !== undefined ? { draftPrice: parseOptionalPrice(r.draftPrice) } : {}),
+        ...(r.referencePrice !== undefined ? { referencePrice: parseOptionalPrice(r.referencePrice) } : {}),
+        ...(r.priceNote !== undefined ? { priceNote: r.priceNote ? String(r.priceNote) : null } : {}),
         compareAt: r.compareAt ? parseFloat(r.compareAt) : null,
         stock: parseInt(r.stock, 10) || 0,
         sku: r.sku ? String(r.sku).trim() : null,
@@ -398,15 +505,18 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
         images: r.images ? String(r.images).split(',').map((s) => s.trim()).filter(Boolean) : [],
       };
       data.img = data.images[0] || '';
-      data.readyToSell = computeReadyToSell(data.stock, data.price);
 
       try {
-        const existingId = data.sku ? existingBySku.get(data.sku) : null;
         if (existingId) {
+          // readyToSell for updated rows is recomputed in one pass after the
+          // whole file (the row's current price/status may not be in it).
           const row = await prisma.product.update({ where: { id: existingId }, data });
           updated++;
           toIndex.push(row);
         } else {
+          data.price = data.price ?? 0;
+          data.priceStatus = data.priceStatus ?? 'draft';
+          data.readyToSell = computeReadyToSell(data.stock, data.price, data.priceStatus);
           const row = await prisma.product.create({ data });
           created++;
           toIndex.push(row);
@@ -427,6 +537,7 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
     // Batches run concurrently, so errors can arrive out of row order —
     // sort them back into row order for a predictable report.
     errors.sort((a, b) => a.row - b.row);
+    await backfillReadyToSell();
 
     await logAdminAction(req.user, 'product.bulk_import', { created, updated, errorCount: errors.length });
     invalidateProductCache();
@@ -1096,11 +1207,11 @@ router.post('/backup/restore', requireCsrf, async (req, res, next) => {
           const { id, ...rest } = p;
           delete rest.createdAt;
           delete rest.updatedAt;
-          // Always recomputed rather than trusted from the backup file — a
-          // backup taken before this field existed won't have it at all
-          // (Prisma would otherwise default a restored *new* row to false
-          // regardless of its actual stock/price).
-          rest.readyToSell = computeReadyToSell(rest.stock, rest.price);
+          // Recomputed (not trusted from the file) by backfillReadyToSell()
+          // once the whole restore has run — an older backup has no
+          // readyToSell/priceStatus at all.
+          delete rest.readyToSell;
+          delete rest.retailPrice;
           return prisma.product.upsert({ where: { id }, create: { id, ...rest }, update: rest });
         })
       );
@@ -1113,6 +1224,7 @@ router.post('/backup/restore', requireCsrf, async (req, res, next) => {
         }
       }
     }
+    await backfillReadyToSell();
     await logAdminAction(req.user, 'backup.restore', { restored, attempted: products.length });
     invalidateProductCache();
     indexProducts(toIndex).catch((err) => console.error('Meilisearch bulk index failed:', err.message));

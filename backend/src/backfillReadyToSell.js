@@ -1,4 +1,5 @@
-// One-off utility: recomputes `readyToSell` (stock > 0 && price > 0) for
+// One-off utility: recomputes `readyToSell` (stock > 0 && price > 0 && the
+// price is published — see isPricePublished in utils/serialize.js) for
 // every product whose stored value doesn't match what its current
 // stock/price would compute to — catches rows written before this column
 // existed, plus anything that changed stock/price through a path other than
@@ -22,8 +23,8 @@ import prisma from './prismaClient.js';
 export async function backfillReadyToSell() {
   const result = await prisma.$executeRaw`
     UPDATE "Product"
-    SET "readyToSell" = (stock > 0 AND price > 0)
-    WHERE "readyToSell" != (stock > 0 AND price > 0)
+    SET "readyToSell" = (stock > 0 AND price > 0 AND "priceStatus" = 'published')
+    WHERE "readyToSell" != (stock > 0 AND price > 0 AND "priceStatus" = 'published')
   `;
   return result;
 }

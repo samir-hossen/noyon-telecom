@@ -255,7 +255,11 @@ async function main() {
 
   const productCount = await prisma.product.count();
   if (productCount === 0) {
-    await prisma.product.createMany({ data: PRODUCTS });
+    // Sample products get a published price so local dev shows a priced
+    // catalog (real products start with a hidden draft price).
+    await prisma.product.createMany({
+      data: PRODUCTS.map((p) => ({ ...p, priceStatus: 'published', readyToSell: p.stock > 0 && p.price > 0 })),
+    });
     console.log(`Seeded ${PRODUCTS.length} sample wholesale products.`);
   } else {
     console.log(`Products table already has ${productCount} rows — skipping product seed.`);

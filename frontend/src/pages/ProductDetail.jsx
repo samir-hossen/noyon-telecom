@@ -14,6 +14,7 @@ import { trackViewItem, trackRequestQuote, trackWhatsappClick } from '../ecommer
 import { getPostForCategory } from '../content/blogPosts';
 import { productUrl } from '../utils/slug';
 import { categoryUrl } from '../utils/taxonomy';
+import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath, whatsappLink } from '../utils/whatsapp';
 
 const RECENTLY_VIEWED_KEY = 'nt-recently-viewed';
 const RECENTLY_VIEWED_MAX = 8;
@@ -51,9 +52,9 @@ function truncateAtWordBoundary(text, maxLen) {
 // desc, stock), never invented. Mirrors the "[Product] Price in Bangladesh"
 // title pattern below, a common high-intent search phrase for BD shoppers.
 function buildMetaDescription(product, t) {
-  // Same "0/missing price = not really orderable yet" rule ProductCard uses
-  // — don't state a fake "at ৳0" price for a draft-priced product.
-  const priceUnavailable = !product.price || product.price <= 0;
+  // Same rule ProductCard uses — the API sends price: null until the owner
+  // publishes a price, and a hidden price is never stated anywhere.
+  const priceUnavailable = !hasPublicPrice(product);
   const priceText = priceUnavailable ? '' : `at ${formatPrice(product.price)} `;
   const stockText = product.stock > 0 ? 'In stock.' : 'Currently out of stock.';
   const detail = product.desc ? truncateAtWordBoundary(product.desc, 90) : t('pd.metaFallback', null, { category: product.category });
@@ -271,7 +272,9 @@ export default function ProductDetail() {
   }
 
   const onSale = product.compareAt && product.compareAt > product.price;
-  const priceUnavailable = !product.price || product.price <= 0;
+  // No published price yet: no "৳0", no cart — "দাম জানতে WhatsApp করুন" +
+  // "কোটেশন চান" instead (owner's hidden-draft-price policy).
+  const priceUnavailable = !hasPublicPrice(product);
 
   async function handleAdd() {
     try {
@@ -438,7 +441,15 @@ export default function ProductDetail() {
 
           <div className="pd-price">
             {priceUnavailable ? (
-              <span className="now pd-price-request">{t('card.priceOnRequest')}</span>
+              <a
+                className="now pd-price-request pd-price-ask"
+                href={priceRequestLink(product)}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => trackWhatsappClick('product_detail_price')}
+              >
+                {t('card.askPrice')}
+              </a>
             ) : (
               <span className="now">{formatPrice(product.price)}</span>
             )}
@@ -541,12 +552,27 @@ export default function ProductDetail() {
           )}
           </>
           )}
-          {priceUnavailable && <p className="pd-stock">{t('pd.priceOnRequestNote')}</p>}
+          {priceUnavailable && (
+            <>
+              <p className="pd-stock">
+                {product.stock > 0 ? (
+                  t('pd.inStockNote', null, { stock: product.stock })
+                ) : (
+                  <a href={stockRequestLink(product)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('product_detail_stock')}>
+                    {t('card.askStock')}
+                  </a>
+                )}
+              </p>
+              <p className="pd-stock" style={{ color: 'var(--muted)' }}>{t('pd.priceOnRequestNote')}</p>
+            </>
+          )}
 
           <div className="pd-action-row">
             <a
               className={`btn pd-whatsapp-btn ${priceUnavailable ? 'pd-whatsapp-primary' : 'btn-outline'}`}
-              href={`https://wa.me/8801560047377?text=${encodeURIComponent(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}`}
+              href={priceUnavailable
+                ? priceRequestLink(product)
+                : whatsappLink(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}
               target="_blank"
               rel="noreferrer"
               onClick={() => {
@@ -554,11 +580,11 @@ export default function ProductDetail() {
                 trackWhatsappClick('product_detail');
               }}
             >
-              💬 {t('product.whatsappOrder')}
+              💬 {priceUnavailable ? t('card.askPrice') : t('product.whatsappOrder')}
             </a>
             <Link
               className="btn btn-outline"
-              to={`/request-quote?productId=${encodeURIComponent(product.id)}&name=${encodeURIComponent(product.name)}${product.sku ? `&sku=${encodeURIComponent(product.sku)}` : ''}&qty=${product.moq || 1}`}
+              to={quoteRequestPath(product)}
             >
               📋 {t('product.requestQuote')}
             </Link>

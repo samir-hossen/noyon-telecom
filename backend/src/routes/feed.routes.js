@@ -75,7 +75,9 @@ router.get('/google-merchant.xml', async (req, res, next) => {
     // invalidateProductCache() as the storefront/sitemap caches.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('feed:google-merchant-xml', 300, async () => {
-      const products = await prisma.product.findMany({ where: { published: true } });
+      // Merchant Center needs a real price, so only products whose price the
+      // owner has published go in — never a hidden draft or ৳0.
+      const products = await prisma.product.findMany({ where: { published: true, priceStatus: 'published', price: { gt: 0 } } });
       return buildMerchantFeedXml({ products, siteUrl: SITE_URL });
     });
 
