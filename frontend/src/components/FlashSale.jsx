@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { resolveImg } from '../api';
+import { productImg } from '../api';
 import { productUrl } from '../utils/slug';
 import { formatPrice } from '../utils/currency';
 import { useLanguage } from '../context/LanguageContext';
@@ -99,7 +99,7 @@ export default function FlashSale({ products: allProducts, onAdd }) {
                 <Link to={productUrl(p)} className="deal-img">
                   <span className="deal-badge">-{pct}%</span>
                   <img
-                    src={resolveImg(p.img, 300)}
+                    src={productImg(p, 300)}
                     alt={p.name}
                     loading="lazy"
                     decoding="async"

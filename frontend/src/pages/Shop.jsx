@@ -22,6 +22,11 @@ const CATEGORY_SEO = {
     h1: 'Mobile Display Wholesale in Bangladesh',
     desc: 'Wholesale importer of original smartphone LCD and OLED displays in Bangladesh. Best wholesale rates for repair shops in Gulistan, Dhaka.',
   },
+  'upper glass': {
+    title: 'Display Upper Glass Wholesale in Bangladesh',
+    h1: 'Display Upper Glass Wholesale in Bangladesh',
+    desc: 'Wholesale front (upper) glass for screen refurbishing — replace only the cracked glass when the display still works. For repair shops in Bangladesh.',
+  },
   'charging port': {
     title: 'Mobile Charging Port & Flex Ribbon Wholesale BD',
     h1: 'Mobile Charging Port Wholesale in Bangladesh',

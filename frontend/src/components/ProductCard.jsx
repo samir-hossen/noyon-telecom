@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { resolveImg } from '../api';
+import { productImg } from '../api';
 import { formatPrice } from '../utils/currency';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
@@ -69,7 +69,7 @@ export default function ProductCard({ product, onAdd }) {
           >
             {saved ? '♥' : '♡'}
           </button>
-          <img src={resolveImg(product.img, 400)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+          <img src={productImg(product, 400)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
         </div>
       </Link>
       <div className="card-body">

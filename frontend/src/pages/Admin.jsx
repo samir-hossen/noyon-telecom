@@ -4,18 +4,8 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
-import { isDisabledCategory } from '../utils/taxonomy';
+import { ALL_CATEGORIES, ALL_BRANDS, isDisabledCategory } from '../utils/taxonomy';
 
-const ALL_CATEGORIES = [
-  'Display', 'OLED', 'LCD', 'Touch', 'Battery', 'Back Glass', 'Housing', 'Frame',
-  'Camera', 'Charging Port', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
-  'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
-  'Repair Tools', 'Accessories',
-];
-const ALL_BRANDS = [
-  'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
-  'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
-];
 const emptyForm = {
   name: '', categories: ['Display'], price: '', compareAt: '', stock: '', images: [], desc: '',
   sku: '', brand: '', compatibleModels: '', moq: '1', dealerPrice: '', warranty: '', published: true,

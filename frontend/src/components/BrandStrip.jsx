@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom';
-import { brandUrl } from '../utils/taxonomy';
-
-const BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
+import { brandUrl, MENU_BRANDS as BRANDS } from '../utils/taxonomy';
 
 export default function BrandStrip() {
   return (

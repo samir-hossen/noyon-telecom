@@ -150,6 +150,11 @@ model Product {
   priceNote      String?
   priceStatus    PriceStatus @default(draft)
 
+  // URL slugs of the phone models this part fits ("vivo-y21"), derived from
+  // compatibleModels — powers the /model/<slug> hub pages ("all parts for
+  // this phone") and the "other parts for this model" links.
+  modelSlugs String[] @default([])
+
   reviews       Review[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
@@ -163,6 +168,11 @@ model Product {
   @@index([published])
   @@index([readyToSell])
   @@index([priceStatus])
+  @@index([modelSlugs], type: Gin)
+  // Default storefront sort (sellable first, newest first) and the admin
+  // list (newest first) stay index scans with ~18,000 products.
+  @@index([readyToSell, createdAt])
+  @@index([createdAt])
 }
 
 enum PriceStatus {

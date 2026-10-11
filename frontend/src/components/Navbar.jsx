@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useLanguage } from '../context/LanguageContext';
-import { api, resolveImg } from '../api';
+import { api, productImg } from '../api';
 import { productUrl } from '../utils/slug';
-import { categoryUrl, brandUrl, isDisabledCategory } from '../utils/taxonomy';
+import { categoryUrl, brandUrl, isDisabledCategory, MENU_BRANDS } from '../utils/taxonomy';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { hasPublicPrice } from '../utils/whatsapp';
@@ -15,15 +15,13 @@ import { trackPhoneClick } from '../ecommerce.js';
 // Mega menu grouping of the full parts taxonomy — keeps the flat category
 // list from products.routes.js organized into scannable columns.
 const MEGA_MENU_GROUPS = [
-  { titleKey: 'nav.megaGroup.screenDisplay', categories: ['Display', 'OLED', 'LCD', 'Touch'] },
+  { titleKey: 'nav.megaGroup.screenDisplay', categories: ['Display', 'Upper Glass', 'OLED', 'LCD', 'Touch'] },
   { titleKey: 'nav.megaGroup.powerCharging', categories: ['Battery', 'Charging Port', 'IC'] }, // Battery is filtered out while switched off
   { titleKey: 'nav.megaGroup.bodyHousing', categories: ['Back Glass', 'Housing', 'Frame', 'Buttons'] },
   { titleKey: 'nav.megaGroup.cameraAudio', categories: ['Camera', 'Speaker', 'Microphone'] },
   { titleKey: 'nav.megaGroup.logicSecurity', categories: ['Flex', 'Logic Board', 'Motherboard', 'CPU', 'Fingerprint', 'Face ID'] },
   { titleKey: 'nav.megaGroup.toolsAccessories', categories: ['SIM Tray', 'Repair Tools', 'Accessories'] },
 ];
-
-const BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -155,7 +153,7 @@ export default function Navbar() {
                     className="nav-suggest-item"
                     onClick={() => setSuggestOpen(false)}
                   >
-                    <img src={resolveImg(p.img, 100)} alt="" loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+                    <img src={productImg(p, 100)} alt="" loading="lazy" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
                     <div>
                       <span className="nav-suggest-name">{p.name}</span>
                       <span className="nav-suggest-meta">{[p.sku ? `SKU: ${p.sku}` : '', hasPublicPrice(p) ? formatPrice(p.price) : ''].filter(Boolean).join(' · ')}</span>
@@ -255,7 +253,7 @@ export default function Navbar() {
               <div className="mega-menu-col mega-menu-brands" role="group" aria-label={t('nav.brands')}>
                 <h4>{t('nav.brands')}</h4>
                 <div className="mega-menu-brand-grid">
-                  {BRANDS.map((b) => (
+                  {MENU_BRANDS.map((b) => (
                     <Link key={b} to={brandUrl(b)} onClick={() => setMegaOpen(false)} role="menuitem">
                       {b}
                     </Link>

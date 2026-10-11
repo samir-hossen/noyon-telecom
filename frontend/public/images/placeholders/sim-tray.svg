@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="SIM Tray — photo coming soon">
+  <rect width="400" height="400" fill="#f6f6f8"/>
+  <g fill="none" stroke="#c7c9cf" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"><path d="M126 128l22-22h126v108H126z"/><rect x="164" y="124" width="56" height="44" rx="6"/><path d="M184 124v44M164 146h56" stroke-width="6"/><circle cx="252" cy="160" r="6"/></g>
+  <text x="200" y="300" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#8a8e97" text-anchor="middle">SIM Tray</text>
+  <text x="200" y="332" font-family="Arial, sans-serif" font-size="20" fill="#9a9ea6" text-anchor="middle">Photo coming soon</text>
+</svg>

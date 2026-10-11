@@ -5,7 +5,7 @@
 // Wholesale mobile phone spare-parts categories. Kept as a flat list; the
 // storefront mega-menu groups these visually.
 export const ALL_CATEGORIES = [
-  'Display', 'OLED', 'LCD', 'Touch', 'Battery', 'Back Glass', 'Housing', 'Frame',
+  'Display', 'OLED', 'LCD', 'Touch', 'Upper Glass', 'Battery', 'Back Glass', 'Housing', 'Frame',
   'Camera', 'Charging Port', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
   'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
   'Repair Tools', 'Accessories',
@@ -14,6 +14,7 @@ export const ALL_CATEGORIES = [
 export const ALL_BRANDS = [
   'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
   'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
+  'Itel', 'HTC', 'Asus', 'BlackBerry', 'LG',
 ];
 
 // Categories switched off store-wide (owner's decision, Oct 2026: the

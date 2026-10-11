@@ -58,5 +58,5 @@ function csvField(value) {
 export function writeCsv(path, rows, columns) {
   const cols = columns || Object.keys(rows[0] || {});
   const lines = [cols.join(','), ...rows.map((r) => cols.map((c) => csvField(r[c])).join(','))];
-  fs.writeFileSync(path, `﻿${lines.join('\n')}\n`, 'utf8');
+  fs.writeFileSync(path, `\ufeff${lines.join('\n')}\n`, 'utf8');
 }

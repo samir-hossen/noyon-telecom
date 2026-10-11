@@ -7,7 +7,7 @@
 import { slugify } from './slug.js';
 
 export const ALL_CATEGORIES = [
-  'Display', 'OLED', 'LCD', 'Touch', 'Battery', 'Back Glass', 'Housing', 'Frame',
+  'Display', 'OLED', 'LCD', 'Touch', 'Upper Glass', 'Battery', 'Back Glass', 'Housing', 'Frame',
   'Camera', 'Charging Port', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
   'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
   'Repair Tools', 'Accessories',
@@ -16,6 +16,14 @@ export const ALL_CATEGORIES = [
 export const ALL_BRANDS = [
   'Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola',
   'Sony', 'Huawei', 'Honor', 'Nothing', 'iQOO', 'POCO', 'Infinix', 'Tecno', 'Nokia', 'Walton', 'Symphony',
+  'Itel', 'HTC', 'Asus', 'BlackBerry', 'LG',
+];
+
+// Brands shown in the menus, home strip and part finder — the ones the
+// catalog actually has products for, most-asked first.
+export const MENU_BRANDS = [
+  'Samsung', 'Xiaomi', 'Vivo', 'Oppo', 'Realme', 'Infinix', 'Tecno', 'Itel', 'Apple', 'Huawei', 'Honor',
+  'OnePlus', 'Motorola', 'Nokia', 'Google Pixel', 'Sony', 'Asus', 'HTC', 'Nothing', 'BlackBerry', 'LG',
 ];
 
 // Mirrors backend/src/config/catalog.js: categories switched off store-wide

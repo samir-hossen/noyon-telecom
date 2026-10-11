@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { api, resolveImg } from '../api';
+import { api, resolveImg, productImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
@@ -379,7 +379,7 @@ export default function ProductDetail() {
   }
 
   const saved = ids?.has(product.id);
-  const gallery = Array.isArray(product.images) && product.images.length ? product.images : [product.img];
+  const gallery = Array.isArray(product.images) && product.images.filter(Boolean).length ? product.images.filter(Boolean) : [product.img].filter(Boolean);
   const categories = Array.isArray(product.categories) && product.categories.length ? product.categories : [product.category];
 
   return (
@@ -394,7 +394,7 @@ export default function ProductDetail() {
         <div>
           <div className="pd-img">
             <img
-              src={resolveImg(gallery[activeImg] || gallery[0], 800)}
+              src={gallery.length ? resolveImg(gallery[activeImg] || gallery[0], 800) : productImg(product)}
               alt={product.name}
               loading="eager"
               decoding="async"

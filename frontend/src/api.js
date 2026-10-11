@@ -1,4 +1,4 @@
-import { FALLBACK_IMG } from './utils/fallbackImage';
+import { FALLBACK_IMG, categoryPlaceholder } from './utils/fallbackImage';
 
 // In local dev, Vite proxies "/api" to the backend (see vite.config.js).
 // In production, the frontend is usually deployed separately from the
@@ -54,6 +54,11 @@ export function resolveImg(src, width) {
   if (!src.startsWith('/uploads')) return applyCloudinaryTransform(src, width);
   const apiOrigin = BASE.replace(/\/api\/?$/, '');
   return apiOrigin ? `${apiOrigin}${src}` : src;
+}
+
+// A product's main photo, or its category placeholder while it has none.
+export function productImg(product, width) {
+  return product?.img ? resolveImg(product.img, width) : categoryPlaceholder(product?.category);
 }
 
 // Auth now lives in an httpOnly cookie (set by the backend) instead of

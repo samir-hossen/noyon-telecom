@@ -37,8 +37,8 @@ const CATEGORIES = [
     icon: <Icon><rect x="2.5" y="7" width="19" height="13" rx="2" /><circle cx="12" cy="13.5" r="3.6" /><path d="M8 7l1.4-2.5h5.2L16 7" /></Icon>,
   },
   {
-    name: 'Housing', labelKey: 'nav.housing', bg: '#fff3e0', color: '#c2740c',
-    icon: <Icon><path d="M12 2.5 21 7v10l-9 4.5L3 17V7l9-4.5Z" /><path d="M3 7l9 4.5 9-4.5M12 11.5V21" /></Icon>,
+    name: 'Upper Glass', labelKey: 'nav.upperGlass', bg: '#fff3e0', color: '#c2740c',
+    icon: <Icon><rect x="6" y="2.5" width="12" height="19" rx="2.2" /><path d="M8.5 7.5l3-3M8.5 12l7-7M11 16.5l5-5" /></Icon>,
   },
   {
     name: 'Speaker', labelKey: 'nav.speaker', bg: '#fde8ea', color: '#c4001f',

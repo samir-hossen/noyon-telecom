@@ -7,6 +7,7 @@ import { serializeProduct, serializeOrder } from '../utils/serialize.js';
 import { buildProductWhere, parsePagination, computeReadyToSell, resolvePriceUpdate, parseOptionalPrice } from '../utils/productQuery.js';
 import { backfillReadyToSell } from '../backfillReadyToSell.js';
 import { findDisabledCategory, disabledCategoryError } from '../config/catalog.js';
+import { modelSlugsFor } from '../utils/modelSlugs.js';
 import { logAdminAction } from '../utils/audit.js';
 import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js';
 import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '../utils/totp.js';
@@ -171,6 +172,7 @@ router.post('/products', requireCsrf, async (req, res, next) => {
         // like "Y20" that could belong to several brands (see utils/brand.js).
         brand: p.brand || detectBrandFromText(p.name) || null,
         compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : [],
+        modelSlugs: modelSlugsFor(p.compatibleModels),
         moq: parseInt(p.moq, 10) || 1,
         dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice) : null,
         bulkPricing: Array.isArray(p.bulkPricing) ? p.bulkPricing : [],
@@ -245,6 +247,7 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
         // they deliberately picked.
         brand: p.brand !== undefined ? (p.brand || detectBrandFromText(p.name || existing.name) || null) : undefined,
         compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : undefined,
+        modelSlugs: Array.isArray(p.compatibleModels) ? modelSlugsFor(p.compatibleModels) : undefined,
         moq: p.moq !== undefined ? parseInt(p.moq, 10) || 1 : undefined,
         dealerPrice: p.dealerPrice !== undefined ? (p.dealerPrice ? parseFloat(p.dealerPrice) : null) : undefined,
         bulkPricing: Array.isArray(p.bulkPricing) ? p.bulkPricing : undefined,
@@ -506,6 +509,7 @@ router.post('/products/import', requireCsrf, async (req, res, next) => {
         compatibleModels: r.compatibleModels
           ? String(r.compatibleModels).split(',').map((m) => m.trim()).filter(Boolean)
           : [],
+        modelSlugs: modelSlugsFor(r.compatibleModels ? String(r.compatibleModels).split(',').map((m) => m.trim()) : []),
         moq: parseInt(r.moq, 10) || 1,
         dealerPrice: r.dealerPrice ? parseFloat(r.dealerPrice) : null,
         warranty: r.warranty ? String(r.warranty).trim() : null,

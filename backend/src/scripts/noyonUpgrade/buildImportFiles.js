@@ -12,9 +12,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { readCsv, writeCsv } from './csv.js';
-import { parseExistingName, buildName, canonicalBrand, SERIES_BRAND, modelKey, fixCasing } from './names.js';
+import { parseExistingName, buildName, canonicalBrand, SERIES_BRAND, modelKey, fixCasing, BRAND_CANON, stripBrand, addSeries, fullModelName } from './names.js';
+import { PART_TYPES, partKeyFor, qualityGrades, buildProductDescription } from '../../utils/productContent.js';
 import { slugify } from '../../utils/slug.js';
 import { findDisabledCategory } from '../../config/catalog.js';
+import { modelSlugsFor } from '../../utils/modelSlugs.js';
 
 function arg(name, fallback) {
   const i = process.argv.indexOf(`--${name}`);
@@ -24,6 +26,9 @@ function arg(name, fallback) {
 const KIT = path.resolve(arg('kit', '../../noyon-telecom-kit'));
 const OUT = path.resolve(arg('out', '../../import'));
 const PHASES = new Set(arg('phases', '3,4').split(',').map((s) => s.trim()));
+// Descriptions are only written with --descriptions (after the owner OKs the
+// templates — see CLAUDE.md "Language rule").
+const WITH_DESCRIPTIONS = process.argv.includes('--descriptions');
 const DATA = path.join(KIT, 'data');
 // Price matches: the kit's file, or (better) the re-match on clean names
 // from rematchCleanNames.js.
@@ -241,6 +246,191 @@ function buildDrafts(products, refBySlug) {
   });
 }
 
+// ---------- phase 5: new products A–Z (every part type, every brand, except Battery) ----------
+const SKU_CODE = {
+  display: 'DIS', upperGlass: 'UG', backGlass: 'BG', backCamera: 'BCAM', frontCamera: 'FCAM', cameraGlass: 'CAMG',
+  chargingPort: 'CCFLEX', simTray: 'SIMTRAY', loudspeaker: 'LSPK', earSpeaker: 'ESPK', flex: 'FLEX', frame: 'FRAME',
+};
+const BRAND_KEYS = Object.keys(BRAND_CANON).filter((k) => !k.includes(' '));
+
+// The kit's model text has a few parsing leftovers: "iPhone 3G Back",
+// "Honor 300 Body", "quality Huawei Y5", "iPhone 15 Display" (upper glass).
+function cleanEtelModel(row, partKey) {
+  if (/rice in Bangladesh/i.test(row.model)) return null; // garbled source row
+  let brand = canonicalBrand(row.brand);
+  let model = row.model.trim()
+    .replace(/^quality\s+/i, '')
+    .replace(/^original\s+/i, '')
+    .replace(/\s+(Body|Back|Battery)$/i, '')
+    .replace(/^IPhone\b/, 'iPhone')
+    .replace(/\s+/g, ' ');
+  if (partKey === 'upperGlass') model = model.replace(/\s+Display$/i, '');
+  const firstWord = model.split(' ')[0].toLowerCase();
+  if (brand === 'Honor' && firstWord === 'huawei') {
+    model = model.replace(/^huawei\s+/i, ''); // "Huawei Honor 8x" -> "Honor 8x"
+  } else if (BRAND_KEYS.includes(firstWord) && BRAND_CANON[firstWord] !== brand && !['google', 'mi'].includes(firstWord)) {
+    brand = BRAND_CANON[firstWord]; // filed under the wrong brand ("Oppo R17 Pro" under Xiaomi)
+  }
+  model = stripBrand(model, brand);
+  if (brand === 'Samsung') model = addSeries(model, brand);
+  return { brand, model, fullModel: fullModelName(brand, model) };
+}
+
+function brandOfModel(fullModel, fallback) {
+  const first = String(fullModel).split(' ')[0].toLowerCase();
+  if (first === 'iphone' || first === 'ipad') return 'Apple';
+  if (first === 'google') return 'Google Pixel';
+  return BRAND_CANON[first] && !BRAND_CANON[first].includes(' ') ? BRAND_CANON[first] : fallback;
+}
+
+const EXISTING_PART_LABEL = { Display: 'Display', 'Back Glass': 'Back Glass', 'Charging Port': 'Charging Port', 'SIM Tray': 'SIM Tray' };
+
+function coverageKey(brand, fullModel, label) {
+  return `${brand}|${modelKey(fullModel)}|${label}`;
+}
+
+function optionNames(allOptions) {
+  // "IPS 1899 -> 1699 | High Quality 4899 -> 4489" -> ['IPS', 'High Quality']
+  return String(allOptions || '').split(' | ').map((o) => o.replace(/\s+[\d.]+\s+->.*$/, '').trim()).filter(Boolean);
+}
+
+function newProductPriceNote(row, optionsText, optionCount) {
+  const price = Math.round(Number(row.etel_price_bdt) || 0);
+  let note;
+  if (!row.flag) note = `etel ${price} [${row.quality_option}] ${row.rule} · ${row.rule_version}`;
+  else if (row.flag.startsWith('SET MANUALLY')) note = `market ${price} [${row.quality_option}] — SET MANUALLY: the rule gives too low a price · ${row.rule_version}`;
+  else note = `market shows no price (call for price) · ${row.rule_version}`;
+  return optionCount > 1 ? `${note} · all options: ${optionsText}` : note;
+}
+
+function buildNewProducts({ fixes, existingProducts, rows, withDescriptions, describe }) {
+  // What we already sell, per brand + model + part (phase 4 cleaned names).
+  const covered = new Set();
+  // An existing product whose brand the owner still has to confirm ("A15
+  // Display" = Samsung or Oppo?) holds back the new candidates for every
+  // possible brand, so answering can't leave a duplicate behind.
+  const waiting = new Map();
+  for (const f of fixes) {
+    const label = EXISTING_PART_LABEL[f.category];
+    if (!label) continue;
+    if (['auto-fix', 'unchanged'].includes(f.status)) {
+      for (const m of f.compatibleModels || []) covered.add(coverageKey(brandOfModel(m, f.brand), m, label));
+    } else if (f.kind === 'ambiguous-brand') {
+      for (const brand of f.options) {
+        for (const m of parseExistingName(f.old_name, null).models) {
+          // "9A" could be listed as "Xiaomi 9A" or "Xiaomi Redmi 9A", "A15" as "Samsung Galaxy A15"
+          for (const variant of new Set([m, addSeries(m, brand), brand === 'Xiaomi' ? `Redmi ${m}` : m])) {
+            waiting.set(coverageKey(brand, fullModelName(brand, variant), label), f.old_name);
+          }
+        }
+      }
+    }
+  }
+  const usedSlugs = new Set([...existingProducts.map((p) => p.slug), ...fixes.map((f) => f.new_slug)].filter(Boolean));
+  const usedSkus = new Set(existingProducts.map((p) => p.sku).filter(Boolean));
+  const skipped = { alreadyHave: 0, waitingForOwner: 0, duplicateMerged: 0, garbled: 0, battery: 0, unknownPart: 0 };
+  const heldBack = [];
+  const byKey = new Map();
+
+  for (const row of rows) {
+    if (findDisabledCategory(row.noyon_category) || row.etel_part_type === 'Battery') {
+      skipped.battery++;
+      continue;
+    }
+    const partKey = partKeyFor(row.etel_part_type);
+    if (!partKey) {
+      skipped.unknownPart++;
+      continue;
+    }
+    const cleaned = cleanEtelModel(row, partKey);
+    if (!cleaned) {
+      skipped.garbled++;
+      continue;
+    }
+    const { label, category } = PART_TYPES[partKey];
+    const key = coverageKey(cleaned.brand, cleaned.fullModel, label);
+    if (covered.has(key)) {
+      skipped.alreadyHave++;
+      continue;
+    }
+    if (waiting.has(key)) {
+      skipped.waitingForOwner++;
+      heldBack.push(`${cleaned.fullModel} ${label} (held back until you answer about "${waiting.get(key)}")`);
+      continue;
+    }
+    const price = Number(row.etel_price_bdt) || 0;
+    const prev = byKey.get(key);
+    if (prev) {
+      skipped.duplicateMerged++;
+      prev.options.push(...optionNames(row.all_options));
+      prev.optionTexts.push(row.all_options);
+      const prevPrice = Number(prev.row.etel_price_bdt) || 0;
+      if (price > 1 && (prevPrice <= 1 || price < prevPrice)) prev.row = row; // cheapest real option leads
+      continue;
+    }
+    byKey.set(key, { key, row, partKey, label, category, ...cleaned, options: optionNames(row.all_options), optionTexts: [row.all_options] });
+  }
+
+  const products = [];
+  for (const e of byKey.values()) {
+    const name = `${e.fullModel} ${e.label}`;
+    const base = slugify(name);
+    let slug = base;
+    for (let n = 2; usedSlugs.has(slug); n++) slug = `${base}-${n}`;
+    usedSlugs.add(slug);
+    const skuBase = `NT-${SKU_CODE[e.partKey]}-${slugify(e.brand).toUpperCase()}-${slugify(e.model).toUpperCase()}`;
+    let sku = skuBase;
+    for (let n = 2; usedSkus.has(sku); n++) sku = `${skuBase}-${n}`;
+    usedSkus.add(sku);
+    const optionsText = e.optionTexts.join(' | ');
+    const optionCount = optionsText.split(' | ').filter(Boolean).length;
+    const grades = qualityGrades(e.options);
+    const draft = num(e.row.draft_price_bdt);
+    products.push({
+      name,
+      slug,
+      sku,
+      brand: e.brand,
+      category: e.category,
+      categories: [e.category],
+      partKey: e.partKey,
+      compatibleModels: [e.fullModel],
+      modelSlugs: modelSlugsFor([e.fullModel]),
+      draftPrice: draft,
+      referencePrice: num(e.row.etel_price_bdt),
+      priceNote: newProductPriceNote(e.row, optionsText, optionCount),
+      priceStatus: 'draft',
+      price: null,
+      flag: e.row.flag || '',
+      grades,
+      warranty: '7 Days Testing Warranty',
+      moq: 1,
+      stock: 0,
+      published: true,
+      images: [],
+      img: '',
+      desc: withDescriptions ? describe({ name, partKey: e.partKey, modelLabel: e.fullModel, models: [e.fullModel], grades, moq: 1 }) : '',
+    });
+  }
+  products.sort((a, b) => a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name, 'en', { numeric: true }));
+  return { products, skipped, heldBack };
+}
+
+// New English descriptions for the existing products whose names are clean
+// (the ones still waiting for the owner's answer keep their current text).
+function buildExistingDescriptions(fixes, describe) {
+  const out = [];
+  for (const f of fixes) {
+    if (!['auto-fix', 'unchanged'].includes(f.status)) continue;
+    const partKey = partKeyFor(f.category);
+    if (!partKey) continue;
+    const label = PART_TYPES[partKey].label;
+    const modelLabel = f.new_name.endsWith(` ${label}`) ? f.new_name.slice(0, -(label.length + 1)) : f.new_name;
+    out.push({ id: f.id, slug: f.slug, desc: describe({ name: f.new_name, partKey, modelLabel, models: f.compatibleModels, grades: [], moq: 1 }) });
+  }
+  return out;
+}
+
 // ---------- OWNER-QUESTIONS.md generated block ----------
 function replaceGeneratedBlock(file, block) {
   const start = '<!-- GENERATED:START -->';
@@ -252,7 +442,7 @@ function replaceGeneratedBlock(file, block) {
   fs.writeFileSync(file, `${before}\n${block}\n${after}`, 'utf8');
 }
 
-function ownerQuestionsBlock({ fixes, drafts }) {
+function ownerQuestionsBlock({ fixes, drafts, heldBack = [], newSummary = null }) {
   const lines = [];
   const needs = fixes.filter((f) => f.status === 'needs-owner');
   const byKind = (k) => needs.filter((f) => f.kind === k);
@@ -277,6 +467,14 @@ function ownerQuestionsBlock({ fixes, drafts }) {
     lines.push(`<details><summary>${cat} — ${rows.length}</summary>`, '');
     for (const d of rows) lines.push(`- ${d.name} — market ৳${(d.priceNote.match(/market (\d+)/) || [])[1] || '?'}`);
     lines.push('', '</details>', '');
+  }
+
+  if (newSummary) {
+    lines.push(`## D. New products (A–Z list) waiting for your answers in A1 (${heldBack.length})`, '');
+    lines.push('Not added yet, so answering A1 can\'t leave two copies of the same part. After you answer, the matching one is added (or merged with your existing product).', '');
+    for (const h of heldBack) lines.push(`- ${h}`);
+    lines.push('', `## E. New products with no draft price — "SET MANUALLY" (${newSummary.setManually}) and no market price (${newSummary.noMarketPrice})`, '');
+    lines.push('Mostly SIM trays, speakers, camera glass, flex cables and cheap charging boards (market ৳199–৳399). They are listed in `import/new-products.json` (flag "SET MANUALLY"). Give me one rule for small parts (for example "market price − 20%") and I will fill them all, or set prices in the admin panel.', '');
   }
 
   const none = drafts.filter((d) => !d.draftPrice && d.priceNote.startsWith('no market price'));
@@ -349,8 +547,33 @@ function main() {
       brandFilled: fixes.filter((f) => f.status === 'auto-fix' && !f.old_brand && f.brand).length,
     };
   }
+  if (PHASES.has('5')) {
+    const rows = readCsv(path.join(DATA, 'noyon_new_products_all.csv'));
+    const { products: newProducts, skipped, heldBack } = buildNewProducts({
+      fixes, existingProducts: products, rows, withDescriptions: WITH_DESCRIPTIONS, describe: buildProductDescription,
+    });
+    fs.writeFileSync(path.join(OUT, 'new-products.json'), JSON.stringify(newProducts, null, 1));
+    const tally = (key) => newProducts.reduce((acc, p) => ({ ...acc, [p[key]]: (acc[p[key]] || 0) + 1 }), {});
+    summary.newProducts = {
+      sourceRows: rows.length,
+      toAdd: newProducts.length,
+      skipped,
+      heldBack,
+      withDraft: newProducts.filter((p) => p.draftPrice).length,
+      setManually: newProducts.filter((p) => p.flag.startsWith('SET MANUALLY')).length,
+      noMarketPrice: newProducts.filter((p) => p.flag === 'NO PRICE').length,
+      descriptions: WITH_DESCRIPTIONS,
+      byCategory: tally('category'),
+      byBrand: tally('brand'),
+    };
+    if (WITH_DESCRIPTIONS) {
+      fs.writeFileSync(path.join(OUT, 'existing-descriptions.json'), JSON.stringify(buildExistingDescriptions(fixes, buildProductDescription), null, 1));
+    }
+  }
   if (PHASES.has('3') || PHASES.has('4')) {
-    replaceGeneratedBlock(path.join(OUT, '..', 'OWNER-QUESTIONS.md'), ownerQuestionsBlock({ fixes, drafts }));
+    replaceGeneratedBlock(path.join(OUT, '..', 'OWNER-QUESTIONS.md'), ownerQuestionsBlock({
+      fixes, drafts, heldBack: summary.newProducts?.heldBack || [], newSummary: summary.newProducts || null,
+    }));
   }
   fs.writeFileSync(path.join(OUT, 'summary.json'), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary, null, 2));

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { MENU_BRANDS } from '../utils/taxonomy';
 
 // Fallback only — the real lists are fetched from /products below, which
 // returns just the categories/brands that actually have published products
 // (see getActiveCategories/getActiveBrands). These are used if that request
 // fails, so the finder still renders something usable offline.
-const BRANDS = ['Apple', 'Samsung', 'OnePlus', 'Vivo', 'Oppo', 'Xiaomi', 'Realme', 'Google Pixel', 'Motorola'];
+const BRANDS = MENU_BRANDS;
 
 // Representative model list per brand — the Shop page's search already
 // matches against the full compatibleModels field on every product, so this
@@ -24,7 +25,7 @@ const MODELS_BY_BRAND = {
   Motorola: ['Moto G84', 'Moto Edge 40', 'Moto G54'],
 };
 
-const CATEGORIES = ['Display', 'Back Glass', 'Charging Port', 'SIM Tray', 'Camera', 'Housing', 'Speaker', 'Frame'];
+const CATEGORIES = ['Display', 'Upper Glass', 'Back Glass', 'Charging Port', 'SIM Tray', 'Camera', 'Speaker', 'Frame'];
 
 export default function PartFinder() {
   const { t } = useLanguage();
