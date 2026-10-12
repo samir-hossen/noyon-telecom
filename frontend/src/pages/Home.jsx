@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
-import { productUrl } from '../utils/slug';
+import { productUrl, slugify } from '../utils/slug';
 import AnnouncementBar from '../components/AnnouncementBar.jsx';
 import HeroCarousel from '../components/HeroCarousel.jsx';
 import ProductCard from '../components/ProductCard.jsx';
@@ -17,7 +17,7 @@ import FeatureStrip from '../components/FeatureStrip.jsx';
 import FAQAccordion, { FAQS } from '../components/FAQAccordion.jsx';
 
 export default function Home() {
-  const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], latestImports: [], deals: [] });
+  const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [] });
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -98,7 +98,7 @@ export default function Home() {
     }
   }
 
-  const { featured, newArrivals, bestSellers, deals } = sections;
+  const { featured, newArrivals, bestSellers, deals, brandRails = [] } = sections;
 
   return (
     <div>
@@ -119,6 +119,22 @@ export default function Home() {
         </div>
         <CategoryGrid />
       </section>
+
+      {/* One row of parts per main brand, each with a link to all of that brand's parts. */}
+      {brandRails.map((rail) => {
+        const label = rail.brand === 'Apple' ? 'iPhone' : rail.brand;
+        return (
+          <section className="section container home-rail" key={rail.brand}>
+            <div className="section-head">
+              <h2 className="section-title">{t('home.brandRail', null, { brand: label })}</h2>
+              <Link to={`/brand/${slugify(rail.brand)}`} className="section-link">{t('home.brandRailMore', null, { brand: label })} →</Link>
+            </div>
+            <div className="grid grid-six">
+              {rail.products.map((p) => <ProductCard key={p.id} product={p} onAdd={handleAdd} />)}
+            </div>
+          </section>
+        );
+      })}
 
       {!loading && deals.length > 0 && <FlashSale products={deals} onAdd={handleAdd} />}
 
@@ -145,9 +161,9 @@ export default function Home() {
           <h2 className="section-title">{t('home.featured')}</h2>
           <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
         </div>
-        <div className="grid">
+        <div className="grid grid-six">
           {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
+            ? Array.from({ length: 6 }).map((_, i) => (
                 <div className="card skeleton-card" key={i}>
                   <div className="skeleton-block" style={{ aspectRatio: '1 / 1.05' }} />
                   <div className="card-body">
@@ -172,7 +188,7 @@ export default function Home() {
             <h2 className="section-title">{t('home.newArrivals')}</h2>
             <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
           </div>
-          <div className="grid">
+          <div className="grid grid-six">
             {newArrivals.map((p) => (
               <ProductCard key={p.id} product={p} onAdd={handleAdd} />
             ))}
@@ -186,7 +202,7 @@ export default function Home() {
             <h2 className="section-title">{t('home.bestSelling')}</h2>
             <Link to="/shop?sort=rating" className="section-link">{t('home.viewAll')} →</Link>
           </div>
-          <div className="grid">
+          <div className="grid grid-six">
             {bestSellers.map((p) => (
               <ProductCard key={p.id} product={p} onAdd={handleAdd} />
             ))}

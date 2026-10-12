@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, planSwitchedOff, toCreateData } from './importPlan.js';
+import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, planSwitchedOff, toCreateData, cheapPartPrice, planHiddenPrices } from './importPlan.js';
 
 // One product as it was on 11 Oct, with its rows from the import files.
 const before = {
@@ -197,4 +197,34 @@ test('products the shop does not sell are switched off (Upper Glass, Camera Glas
     { id: 'x', name: 'Old Camera Glass', categories: ['Camera'], published: false },
   ];
   assert.deepEqual(planSwitchedOff(db).map((p) => p.id), ['u', 'c']);
+});
+
+test('cheapPartPrice: market − 20%, ending in 9 (same as pricing_rule.py)', () => {
+  assert.equal(cheapPartPrice(199), 159);
+  assert.equal(cheapPartPrice(299), 239);
+  assert.equal(cheapPartPrice(349), 279);
+  assert.equal(cheapPartPrice(279), 219);
+  assert.equal(cheapPartPrice(79), 59);
+});
+
+test('planHiddenPrices: cheap parts, owner prices and close market prices go live; the rest stay hidden', () => {
+  const base = { published: true, priceStatus: 'draft', price: 0, category: 'Speaker', categories: ['Speaker'] };
+  const rows = [
+    { ...base, name: 'Vivo Y72 Ear Speaker', referencePrice: 199, priceNote: 'market 199 [(single option)] — SET MANUALLY: the rule gives too low a price · owner-rule-2026-10' },
+    { ...base, name: 'A15 Display', category: 'Display', categories: ['Display'], draftPrice: 880, priceNote: 'kept the current price ৳880 as the draft (no usable market match — brand unclear) · owner-rule-2026-10' },
+    { ...base, name: 'Huawei Y7 (2019) Display', draftPrice: 1199, priceNote: 'etel 1399 [(single option)] <2,000 -200 · owner-rule-2026-10 · all options: (single option) 1399 -> 1199 | (single option) 1449 -> 1249' },
+    { ...base, name: 'Google Pixel 6 Pro Back Glass', draftPrice: 1399, priceNote: 'etel 1599 · all options: (single option) 5499 -> 5039 | (single option) 1599 -> 1399' },
+    { ...base, name: 'Huawei Pura 80 Pro Display', draftPrice: 1099, priceNote: "market grades can't be right (Original ৳1,099 < High Quality ৳7,299) — set the price yourself" },
+    { ...base, name: 'Samsung Galaxy J7 Duo (J720) Display', draftPrice: 2499, priceNote: 'etel 2799 [(single option)] 2,000-2,999 -300 · owner-rule-2026-10' },
+    { ...base, name: 'Asus Zenfone 11 Ultra Display', referencePrice: 1, priceNote: 'market shows no price (call for price) · owner-rule-2026-10' },
+    { ...base, name: 'Oppo A57s Camera Glass', referencePrice: 199, priceNote: 'SET MANUALLY' },
+    { ...base, name: 'Already Shown', priceStatus: 'published', price: 500 },
+  ];
+  const plan = planHiddenPrices(rows);
+  assert.deepEqual(plan.cheap.map((x) => [x.p.name, x.price]), [['Vivo Y72 Ear Speaker', 159]]);
+  assert.match(plan.cheap[0].note, /→ cheap part −20%: 159/);
+  assert.deepEqual(plan.ownerKept.map((x) => x.p.name), ['A15 Display']);
+  assert.deepEqual(plan.suggested.map((x) => x.p.name), ['Huawei Y7 (2019) Display', 'Samsung Galaxy J7 Duo (J720) Display']);
+  assert.deepEqual(plan.keptHidden.map((x) => x.p.name), ['Google Pixel 6 Pro Back Glass', 'Huawei Pura 80 Pro Display']);
+  assert.deepEqual(plan.noPrice.map((x) => x.p.name), ['Asus Zenfone 11 Ultra Display']);
 });

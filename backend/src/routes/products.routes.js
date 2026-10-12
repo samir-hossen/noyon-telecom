@@ -11,6 +11,7 @@ import { getOrSet, invalidateProductCache } from '../utils/cache.js';
 import { searchProductIds, isSearchEngineEnabled } from '../utils/search.js';
 import { productSeo } from '../seo/pages.js';
 import { modelSlugsFor } from '../utils/modelSlugs.js';
+import { loadBrandRails } from '../utils/homeRails.js';
 
 const router = Router();
 
@@ -28,7 +29,7 @@ export { ALL_CATEGORIES, ALL_BRANDS };
 router.get('/home-sections', optionalAuth, async (req, res, next) => {
   try {
     setProductCacheControl(req, res);
-    const take = 8; // covers both the 4-up rails and latestImports' 4:8 slice
+    const take = 6; // the home rails are 6 across
     // Cache-aside on the raw DB rows only — never on the final response.
     // These four queries return the exact same rows for every visitor
     // (dealer pricing is applied per-request below, after this cache read),
@@ -37,7 +38,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
     // "don't re-run 4 queries for every single hit" — see utils/cache.js
     // for the invalidation story (admin edits clear this immediately;
     // checkout deliberately doesn't, by design).
-    const [featuredRows, newArrivalRows, bestSellerRows, dealRows] = await getOrSet(
+    const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails] = await getOrSet(
       'products:home-sections',
       90,
       () =>
@@ -45,9 +46,9 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           // Home rails show products with a real photo (most of the A–Z
           // catalog has none yet); sellable (in stock + published price)
           // first, never ordered by a hidden draft price.
-          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 }, img: { not: '' } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take: 4 }),
+          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 }, img: { not: '' } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take }),
           prisma.product.findMany({ where: storefrontWhere({ img: { not: '' } }), orderBy: { createdAt: 'desc' }, take }),
-          prisma.product.findMany({ where: storefrontWhere({ reviewCount: { gt: 0 } }), orderBy: { rating: 'desc' }, take: 4 }),
+          prisma.product.findMany({ where: storefrontWhere({ reviewCount: { gt: 0 } }), orderBy: { rating: 'desc' }, take }),
           // compareAt > price can't be expressed as a plain Prisma `where` filter
           // (it compares two columns on the same row), so this one query stays
           // raw SQL — same pattern already used for the admin analytics
@@ -61,16 +62,18 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
         ORDER BY ("compareAt" - price) / "compareAt" DESC
         LIMIT 6
       `,
+          // One row of parts per main brand (Apple, Samsung, Xiaomi …).
+          loadBrandRails(),
         ])
     );
 
     const pack = (rows) => rows.map((p) => withViewerPricing(serializeProduct(p), req.user));
     res.json({
       featured: pack(featuredRows),
-      newArrivals: pack(newArrivalRows.slice(0, 4)),
-      latestImports: pack(newArrivalRows.slice(4, 8)),
+      newArrivals: pack(newArrivalRows),
       bestSellers: pack(bestSellerRows),
       deals: pack(dealRows),
+      brandRails: brandRails.map((rail) => ({ brand: rail.brand, products: pack(rail.products) })),
     });
   } catch (err) {
     next(err);

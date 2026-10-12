@@ -180,3 +180,46 @@ export function planSwitchedOff(dbProducts) {
     .filter((p) => p.published && (findDisabledCategory(p.categories || p.category) || isDisabledPartName(p.name)))
     .map((p) => ({ id: p.id, name: p.name, data: { published: false } }));
 }
+
+// ---------- Owner, 12 Oct 2026: show the hidden prices ----------
+// Cheap parts (the rule's cut would leave < 50% of the market price, the old
+// "SET MANUALLY" rows): market price − 20%, rounded to end in 9 — same as
+// noyon-telecom-kit/scripts/pricing_rule.py's cheap_price().
+export function cheapPartPrice(marketPrice) {
+  return Math.round((Number(marketPrice) * 0.8) / 10) * 10 - 1;
+}
+
+// Which hidden prices go live: the cheap parts, the owner's own price kept
+// hidden on 11 Oct (unclear name), and the rule's suggested price — unless
+// the market listed two prices far apart (two grades/versions?) or the data
+// was wrong ("set the price yourself"). Those stay hidden for the owner.
+const CLOSE_OPTIONS = 1.15;
+
+export function planHiddenPrices(products) {
+  const plan = { cheap: [], ownerKept: [], suggested: [], keptHidden: [], noPrice: [] };
+  for (const p of products) {
+    if (!p.published || p.priceStatus === 'published') continue;
+    if (findDisabledCategory(p.categories || p.category) || isDisabledPartName(p.name)) continue;
+    const note = String(p.priceNote || '');
+    const draft = Number(p.draftPrice) || 0;
+    const market = Number(p.referencePrice) || 0;
+    if (!draft && !(Number(p.price) > 0) && /SET MANUALLY/.test(note) && market >= 50 && market < 400) {
+      const price = cheapPartPrice(market);
+      plan.cheap.push({ p, price, note: note.replace(/ — SET MANUALLY: the rule gives too low a price/, ` → cheap part −20%: ${price}`) });
+    } else if (draft > 0 && /set the price yourself/.test(note)) {
+      plan.keptHidden.push({ p, reason: 'market data wrong' });
+    } else if (draft > 0 && /^kept the current price/.test(note)) {
+      plan.ownerKept.push({ p, price: draft, note });
+    } else if (draft > 0) {
+      const options = [...note.matchAll(/(\d+) -> \d+/g)].map((m) => Number(m[1]));
+      if (options.length >= 2 && Math.max(...options) > Math.min(...options) * CLOSE_OPTIONS) {
+        plan.keptHidden.push({ p, reason: `market prices ${Math.min(...options)}–${Math.max(...options)}` });
+      } else {
+        plan.suggested.push({ p, price: draft, note });
+      }
+    } else {
+      plan.noPrice.push({ p });
+    }
+  }
+  return plan;
+}

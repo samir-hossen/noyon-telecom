@@ -1564,9 +1564,9 @@ export default function Admin() {
                           </>
                         ) : (
                           <>
-                            <span className="admin-price-badge hidden">লুকানো</span>{' '}
+                            <span className="admin-price-badge hidden" title="প্রোডাক্ট সাইটে আছে, শুধু দাম লুকানো — কাস্টমার 'দাম জানতে WhatsApp করুন' দেখে">দাম লুকানো</span>{' '}
                             <span style={{ color: '#9a8f8a', fontSize: '0.78rem' }}>
-                              {p.draftPrice ? `সাজেস্টেড ${formatPrice(p.draftPrice)}` : 'সাজেস্টেড নেই'}
+                              {p.draftPrice ? `সাজেস্টেড ${formatPrice(p.draftPrice)}` : 'সাজেস্টেড দাম নেই'}
                             </span>
                           </>
                         )}

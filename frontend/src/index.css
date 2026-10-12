@@ -754,15 +754,10 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
   grid-template-columns: repeat(4, 1fr);
   gap: 26px;
 }
-/* Catalog pages on wide screens: 6 across (24 per page = 4 full rows),
-   with a slightly more compact card. */
-@media (min-width: 1360px) {
-  .grid-wide { grid-template-columns: repeat(6, 1fr); gap: 20px; }
-  .grid-wide .card-body { padding: 14px; gap: 6px; }
-  .grid-wide .card-name { font-size: 0.95rem; }
-  .grid-wide .card-price .now { font-size: 1.08rem; }
-  .grid-wide .card-cta { font-size: 0.8rem; padding: 10px 8px; min-height: 40px; }
-}
+/* 6 across on wide screens: catalog pages (24 per page = 4 full rows) and
+   the home rails (6 = one row; 3 + 3 on tablets). */
+@media (min-width: 1200px) { .grid-wide, .grid-six { grid-template-columns: repeat(6, 1fr); gap: 16px; } }
+@media (min-width: 981px) and (max-width: 1199px) { .grid-six { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 980px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
 @media (max-width: 700px) {
   .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -3013,3 +3008,52 @@ a.card-cta { display: block; text-align: center; text-decoration: none; }
 .admin-more { margin: 4px 0 16px; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 0 14px; }
 .admin-more > summary { cursor: pointer; padding: 12px 0; font-weight: 600; font-size: 0.88rem; }
 .admin-more[open] > summary { margin-bottom: 6px; }
+
+/* ---------- Compact sizing (owner, 12 Oct 2026: "everything a bit smaller") ----------
+   15px base text everywhere (phones already had it), a slimmer header, a
+   shorter hero, tighter sections and denser product cards. */
+html { font-size: 93.75%; }
+@media (min-width: 901px) {
+  .nav-topbar-inner { padding-top: 5px; padding-bottom: 5px; }
+  .nav-top { padding-top: 12px; padding-bottom: 12px; }
+  .nav-logo { font-size: 1.45rem; }
+  .nav-logo-mark { width: 28px; }
+  .nav-search form { padding: 8px 16px; }
+  .nav-top .btn { min-height: 38px; }
+  .nav-catbar-inner { min-height: 40px; }
+  .mega-trigger-btn { padding: 9px 16px; }
+  .announcement-bar { margin-top: 10px; margin-bottom: 4px; }
+  .hero { margin-top: 12px; }
+  /* The slide image no longer sets the height (it used to stretch the hero to ~490px). */
+  .hero-grid { min-height: 0; height: 340px; }
+  .hero-img img { position: absolute; inset: 0; }
+  .hero-copy { padding: 24px 28px; }
+  .feature-strip { padding: 14px 20px; margin-top: 14px; }
+  .part-finder { padding: 18px 22px; margin-top: 16px; }
+  .category-tile { padding: 18px 10px; gap: 8px; }
+  .section { padding-top: 40px; padding-bottom: 40px; }
+  .home-rail { padding-top: 22px; padding-bottom: 14px; }
+  .section-head { margin-bottom: 18px; }
+  .section-title { font-size: 1.6rem; }
+  .page-header { padding: 20px 0 6px; }
+  .page-title { font-size: 2.1rem; margin: 6px 0 0; }
+  /* Shop / category pages: filters and the first products on the first screen */
+  .cat-strip { padding-top: 10px; padding-bottom: 10px; gap: 8px; }
+  .cat-pill { padding: 7px 15px; font-size: 0.8rem; }
+  .sticky-search-bar { padding: 8px 0; }
+  .pd-title { font-size: 1.75rem; }
+  /* Product page: a smaller photo, and the buy box no wider than it needs to be */
+  .pd-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 40px; padding: 12px 0 48px; }
+  .pd-buybox .pd-quality-select, .pd-buybox .pd-action-row, .pd-buybox .btn-block, .pd-buybox .pd-trust { max-width: 560px; }
+  .pd-action-row .btn { padding: 11px 18px; min-height: 44px; }
+  .pd-price .now { font-size: 1.7rem; }
+}
+@media (min-width: 701px) {
+  .grid { gap: 18px; }
+  .card { border-radius: 16px; }
+  .card-img { aspect-ratio: 1 / 1; }
+  .card-body { padding: 14px; gap: 6px; }
+  .card-name { font-size: 0.95rem; }
+  .card-price .now { font-size: 1.08rem; }
+  .card-cta { margin-top: 8px; padding: 9px 10px; min-height: 40px; font-size: 0.82rem; }
+}
