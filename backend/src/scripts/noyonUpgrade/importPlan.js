@@ -223,3 +223,29 @@ export function planHiddenPrices(products) {
   }
   return plan;
 }
+
+// ---------- The owner's own price list (e.g. iPhone back glass, 12 Oct 2026) ----------
+// Each listed product gets exactly the owner's grades (cheapest first; the
+// price is the cheapest) and goes live. With hideOthersInScope, the other
+// products of the same brand + category lose their old (market-rule) price:
+// they go back to "price on WhatsApp" until the owner prices them.
+export function planOwnerPrices(products, list) {
+  const scope = list.scope || {};
+  const inScope = (p) => p.published
+    && (!scope.brand || p.brand === scope.brand)
+    && (!scope.category || p.category === scope.category);
+  const byName = new Map(products.map((p) => [String(p.name).trim().toLowerCase(), p]));
+  const set = [];
+  const unmatched = [];
+  for (const entry of list.prices || []) {
+    const p = byName.get(String(entry.name).trim().toLowerCase());
+    const grades = normalizeQualityOptions(entry.grades);
+    if (!p || !grades.length) { unmatched.push(entry.name); continue; }
+    set.push({ p, grades, price: grades[0].price });
+  }
+  const listed = new Set(set.map((x) => x.p.id));
+  const hide = list.hideOthersInScope
+    ? products.filter((p) => inScope(p) && !listed.has(p.id) && p.priceStatus === 'published')
+    : [];
+  return { set, hide, unmatched };
+}

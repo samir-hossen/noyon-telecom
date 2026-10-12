@@ -14,10 +14,17 @@ footer and the product page), which is what the licences ask for. Our edited ver
 The home page hero uses three real repair photos from the same source (`frontend/public/images/hero/`),
 credited on the same page.
 
+`model_backs.py` makes **one photo per phone model** (`frontend/public/images/models/`, now every iPhone
+from 8 to 16 Pro Max): a real photo of that phone's back, straightened and cut out, for its Back Glass
+product. `model-backs.json` holds the corners picked for each photo and which products use it; the script
+also writes the product → photo map for the storefront and the server pages. A product's own photo
+(uploaded by the owner) always wins.
+
 Never use photos from other shops, Google Images or suppliers without written permission.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install pillow numpy scipy
 .venv/bin/python fetch.py                                   # originals -> src/ (git-ignored)
 .venv/bin/python process.py ../../frontend/public/images/parts
+.venv/bin/pip install opencv-python-headless && .venv/bin/python model_backs.py ../../frontend/public/images
 ```

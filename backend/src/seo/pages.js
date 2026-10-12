@@ -205,7 +205,7 @@ async function productPage(slug) {
     status: 200,
     kind: 'product',
     // Link previews (WhatsApp, Facebook) show the part-type photo until the product has its own.
-    head: { ...seo, canonical: path, ogType: 'product', image: images[0] || absoluteUrl(partPreviewPath(row.category, row.name)) },
+    head: { ...seo, canonical: path, ogType: 'product', image: images[0] || absoluteUrl(partPreviewPath(row.category, row.name, row.slug)) },
     h1,
     breadcrumb: crumbs,
     product: {

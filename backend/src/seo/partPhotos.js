@@ -1,7 +1,9 @@
-// Representative photo of a part type, for products without their own photo
-// (the storefront's public/images/parts/: photos/*.webp on the page,
-// og/*.jpg for link previews). Never used in JSON-LD or the Merchant feed —
-// those only get a product's real photos.
+// Representative photo for products without their own photo: that phone
+// model's own photo where we have one (the storefront's public/images/models/,
+// e.g. each iPhone's back), otherwise the part type's (public/images/parts/).
+// photos/*.webp on the page, og/*.jpg for link previews. Never used in JSON-LD
+// or the Merchant feed — those only get a product's real photos.
+import { MODEL_PHOTOS } from './modelPhotos.js';
 const PHOTOS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board']);
 
 // The part word a product's name ends with decides the photo (same table as
@@ -21,5 +23,12 @@ export function partPhotoSlug(category, name = '') {
   return PHOTOS.has(slug) ? slug : 'default';
 }
 
-export const partPhotoPath = (category, name) => `/images/parts/photos/${partPhotoSlug(category, name)}.webp`;
-export const partPreviewPath = (category, name) => `/images/parts/og/${partPhotoSlug(category, name)}.jpg`;
+export function partPhotoPath(category, name, slug) {
+  const model = MODEL_PHOTOS[slug];
+  return model ? `/images/models/${model}-back.webp` : `/images/parts/photos/${partPhotoSlug(category, name)}.webp`;
+}
+
+export function partPreviewPath(category, name, slug) {
+  const model = MODEL_PHOTOS[slug];
+  return model ? `/images/models/og/${model}-back.jpg` : `/images/parts/og/${partPhotoSlug(category, name)}.jpg`;
+}

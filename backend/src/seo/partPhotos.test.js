@@ -15,3 +15,9 @@ test('partPhotoSlug: by category, with front camera / ear speaker by name', () =
   assert.equal(partPhotoPath('Logic Board'), '/images/parts/photos/logic-board.webp');
   assert.equal(partPreviewPath('SIM Tray'), '/images/parts/og/sim-tray.jpg');
 });
+
+test("a phone model's own photo comes first", () => {
+  assert.equal(partPhotoPath('Back Glass', 'iPhone 15 Pro Back Glass', 'iphone-15-pro-back-glass'), '/images/models/iphone-15-pro-back.webp');
+  assert.equal(partPreviewPath('Back Glass', 'iPhone 13 Back Glass', 'iphone-13-back-glass'), '/images/models/og/iphone-13-mini-back.jpg');
+  assert.equal(partPhotoPath('Back Glass', 'Vivo Y21 Back Glass', 'vivo-y21-back-glass'), '/images/parts/photos/back-glass.webp');
+});

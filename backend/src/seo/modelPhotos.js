@@ -1,0 +1,33 @@
+// Made by tools/part-photos/model_backs.py: product link -> real photo of that
+// phone model (public/images/models/{photo}-back.webp). Do not edit by hand.
+export const MODEL_PHOTOS = {
+  "iphone-11-back-glass": "iphone-11",
+  "iphone-11-pro-back-glass": "iphone-11-pro-max",
+  "iphone-11-pro-max-back-glass": "iphone-11-pro-max",
+  "iphone-12-back-glass": "iphone-12-mini",
+  "iphone-12-mini-back-glass": "iphone-12-mini",
+  "iphone-12-pro-back-glass": "iphone-12-pro",
+  "iphone-12-pro-max-back-glass": "iphone-12-pro-max",
+  "iphone-13-back-glass": "iphone-13-mini",
+  "iphone-13-mini-back-glass": "iphone-13-mini",
+  "iphone-13-pro-back-glass": "iphone-13-pro",
+  "iphone-13-pro-max-back-glass": "iphone-13-pro",
+  "iphone-14-back-glass": "iphone-14",
+  "iphone-14-plus-back-glass": "iphone-14-plus",
+  "iphone-14-pro-back-glass": "iphone-14-pro",
+  "iphone-14-pro-max-back-glass": "iphone-14-pro-max",
+  "iphone-15-back-glass": "iphone-15",
+  "iphone-15-plus-back-glass": "iphone-15-plus",
+  "iphone-15-pro-back-glass": "iphone-15-pro",
+  "iphone-15-pro-max-back-glass": "iphone-15-pro-max",
+  "iphone-16-back-glass": "iphone-16",
+  "iphone-16-plus-back-glass": "iphone-16",
+  "iphone-16-pro-back-glass": "iphone-16-pro",
+  "iphone-16-pro-max-back-glass": "iphone-16-pro-max",
+  "iphone-8-back-glass": "iphone-8",
+  "iphone-8-plus-back-glass": "iphone-8-plus",
+  "iphone-x-back-glass": "iphone-x",
+  "iphone-xr-back-glass": "iphone-xr",
+  "iphone-xs-back-glass": "iphone-xs",
+  "iphone-xs-max-back-glass": "iphone-xs"
+};

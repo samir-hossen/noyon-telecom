@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, planSwitchedOff, toCreateData, cheapPartPrice, planHiddenPrices } from './importPlan.js';
+import { editedSince, planExisting, planNew, planOldAdminPrices, planGradeUpdates, planCorrections, planSwitchedOff, toCreateData, cheapPartPrice, planHiddenPrices, planOwnerPrices } from './importPlan.js';
 
 // One product as it was on 11 Oct, with its rows from the import files.
 const before = {
@@ -227,4 +227,27 @@ test('planHiddenPrices: cheap parts, owner prices and close market prices go liv
   assert.deepEqual(plan.suggested.map((x) => x.p.name), ['Huawei Y7 (2019) Display', 'Samsung Galaxy J7 Duo (J720) Display']);
   assert.deepEqual(plan.keptHidden.map((x) => x.p.name), ['Google Pixel 6 Pro Back Glass', 'Huawei Pura 80 Pro Display']);
   assert.deepEqual(plan.noPrice.map((x) => x.p.name), ['Asus Zenfone 11 Ultra Display']);
+});
+
+test("planOwnerPrices: the owner's grades go live; other prices in the same brand + category are hidden", () => {
+  const base = { published: true, brand: 'Apple', category: 'Back Glass', priceStatus: 'published', price: 1599 };
+  const products = [
+    { ...base, id: '1', name: 'iPhone 15 Back Glass' },
+    { ...base, id: '2', name: 'iPhone 8 Back Glass' },
+    { ...base, id: '3', name: 'iPhone 7 Back Glass' },
+    { ...base, id: '4', name: 'iPhone SE Back Glass', priceStatus: 'draft' },
+    { ...base, id: '5', name: 'iPhone 15 Display', category: 'Display' },
+  ];
+  const plan = planOwnerPrices(products, {
+    scope: { brand: 'Apple', category: 'Back Glass' },
+    hideOthersInScope: true,
+    prices: [
+      { name: 'iPhone 15 Back Glass', grades: [{ label: 'Original', price: 1499 }, { label: 'Market Quality', price: 450 }] },
+      { name: 'iPhone 8 back glass', grades: [{ label: 'Market Quality', price: 180 }] },
+      { name: 'iPhone 99 Back Glass', grades: [{ label: 'Original', price: 999 }] },
+    ],
+  });
+  assert.deepEqual(plan.set.map((x) => [x.p.id, x.price, x.grades.map((g) => g.label)]), [['1', 450, ['Market Quality', 'Original']], ['2', 180, ['Market Quality']]]);
+  assert.deepEqual(plan.hide.map((p) => p.id), ['3']);
+  assert.deepEqual(plan.unmatched, ['iPhone 99 Back Glass']);
 });

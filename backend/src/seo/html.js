@@ -112,7 +112,7 @@ function paginationHtml(model) {
 
 function productBody(model) {
   const p = model.product;
-  const img = p.images[0] || partPhotoPath(p.category, p.name);
+  const img = p.images[0] || partPhotoPath(p.category, p.name, p.slug);
   const photoNote = p.images[0] ? '' : '<p class="pd-photo-note">Representative photo — you get the part for your exact model · <a href="/photo-credits">Photo credits</a></p>';
   const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(priceRequestMessage({ ...p, url: absoluteUrl(model.head.canonical) }))}`;
   const specs = [
