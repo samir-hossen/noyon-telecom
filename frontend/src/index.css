@@ -2068,12 +2068,16 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
   transition: all 0.25s var(--ease);
 }
 .category-tile:hover .category-tile-icon { transform: scale(1.08); }
+.category-tile-photo { width: 84px; height: 84px; display: grid; place-items: center; transition: transform 0.25s var(--ease); }
+.category-tile-photo img { width: 100%; height: 100%; object-fit: contain; }
+.category-tile:hover .category-tile-photo { transform: scale(1.06); }
 .category-tile-name { font-size: 0.84rem; font-weight: 600; }
 @media (max-width: 900px) { .category-grid { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 560px) {
   .category-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
   .category-tile { padding: 12px 5px; gap: 6px; }
   .category-tile-icon { width: 38px; height: 38px; font-size: 1.1rem; }
+  .category-tile-photo { width: 52px; height: 52px; }
   .category-tile-name { font-size: 0.62rem; line-height: 1.2; }
 }
 
@@ -2283,12 +2287,13 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
   .feature-strip-item > div { text-align: center; width: 100%; }
 }
 @media (max-width: 480px) {
-  .feature-strip { padding: 12px 4px; gap: 4px; }
-  .feature-strip-icon { width: 28px; height: 28px; }
-  .feature-strip-icon svg { width: 14px; height: 14px; }
-  .feature-strip-item { gap: 4px; }
-  .feature-strip-item strong { font-size: 0.6rem; line-height: 1.15; }
-  .feature-strip-item > div span { font-size: 0.5rem; line-height: 1.1; margin-top: 1px; }
+  .feature-strip { grid-template-columns: repeat(2, 1fr); padding: 12px 10px; gap: 12px 8px; }
+  .feature-strip-item { flex-direction: row; justify-content: flex-start; text-align: left; gap: 8px; }
+  .feature-strip-item > div { text-align: left; }
+  .feature-strip-icon { width: 32px; height: 32px; flex-shrink: 0; }
+  .feature-strip-icon svg { width: 15px; height: 15px; }
+  .feature-strip-item strong { font-size: 0.74rem; line-height: 1.2; }
+  .feature-strip-item > div span { font-size: 0.66rem; line-height: 1.25; margin-top: 1px; }
 }
 
 /* ---------- Homepage dark trust bar ---------- */
@@ -3056,4 +3061,21 @@ html { font-size: 93.75%; }
   .card-name { font-size: 0.95rem; }
   .card-price .now { font-size: 1.08rem; }
   .card-cta { margin-top: 8px; padding: 9px 10px; min-height: 40px; font-size: 0.82rem; }
+}
+
+/* Phones: the home rows (6 parts each) swipe sideways in one line instead of
+   stacking 3 rows deep — the page was ~12,000px long. */
+@media (max-width: 700px) {
+  .grid.grid-six {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 44%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+  .grid.grid-six::-webkit-scrollbar { display: none; }
+  .grid.grid-six > * { scroll-snap-align: start; }
 }

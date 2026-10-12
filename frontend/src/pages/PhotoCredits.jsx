@@ -19,7 +19,7 @@ export default function PhotoCredits() {
         <ul className="credit-list">
           {PHOTO_CREDITS.map((c) => (
             <li key={c.file}>
-              <img src={`/images/parts/photos/${c.file}-sm.webp`} alt="" width="88" height="88" loading="lazy" decoding="async" />
+              <img src={c.img || `/images/parts/photos/${c.file}-sm.webp`} alt="" width="88" height="88" loading="lazy" decoding="async" />
               <div>
                 <strong>{c.part}</strong>
                 <span>

@@ -4,7 +4,7 @@
 #   python3 process.py ../../frontend/public/images/parts
 # Writes photos/{part}.webp (900px), photos/{part}-sm.webp (480px, cards)
 # and og/{part}.jpg (1200x630 link-preview image).
-import sys, json
+import os, sys, json
 import numpy as np
 from PIL import Image, ImageFilter
 from scipy import ndimage
@@ -101,31 +101,80 @@ def inpaint_logo(im, region, is_logo, is_source, sigma=5.0):
     a[y0:y1, x0:x1] = sub
     return Image.fromarray(a.astype(np.uint8), 'RGBA')
 
+def dark_part(rgba, max_lum=110):
+    """A dark part (a black glass panel) on a light background: everything
+    darker than max_lum, holes filled — no grey shadow around it."""
+    a = np.asarray(rgba.convert('RGBA')).astype(np.float32)
+    m = ndimage.binary_fill_holes(a[..., :3].mean(-1) < max_lum)
+    a[..., 3] = ndimage.gaussian_filter(m.astype(np.float32), 0.8) * 255
+    return Image.fromarray(a.astype(np.uint8), 'RGBA')
+
+
+def drop_thin(rgba, r):
+    """Removes thin things sticking out of the part (a cable, a wire): a
+    morphological opening of the alpha mask, keeping the largest piece."""
+    a = np.asarray(rgba).astype(np.float32)
+    m = a[..., 3] > 127
+    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+    disk = xx * xx + yy * yy <= r * r
+    opened = ndimage.binary_opening(m, structure=disk)
+    lab, n = ndimage.label(opened)
+    if n > 1:
+        sizes = ndimage.sum(opened, lab, range(1, n + 1))
+        opened = lab == (np.argmax(sizes) + 1)
+    keep = ndimage.gaussian_filter(opened.astype(np.float32), 1.0)
+    a[..., 3] = a[..., 3] * np.clip(keep * 1.5, 0, 1)
+    return Image.fromarray(a.astype(np.uint8), 'RGBA')
+
+
 lum = lambda s: s[..., :3].mean(-1)
 opaque = lambda s: s[..., 3] > 250
 
-# Fairphone 3 exploded view (studio image, already transparent)
-fp3 = src('fp3-modularity-4k.png').convert('RGBA')
-# Default (any other part): the Fairphone 3 frame, modules and display together
-full = inpaint_logo(fp3, (2690, 1284, 2810, 1376), lambda s: (lum(s) > 120) & opaque(s), lambda s: (lum(s) < 40) & opaque(s))
-finish(full.crop((1480, 60, 2990, 1500)), 'default', shadow=True, fill=0.9)
+# Display: a real phone front with the screen off (Samsung Galaxy S8, the left one of three)
+trio = src('phone-screen-off.jpg').convert('RGB'); W, H = trio.size
+finish(cutout(trio.crop((0, int(H * 0.10), int(W * 0.285), int(H * 0.98)))), 'display')
 
-# Display: the display module; logo painted out
-disp = fp3.crop((2530, 100, 2960, 1480))
-disp = inpaint_logo(disp, (160, 1184, 280, 1276), lambda s: (lum(s) > 120) & opaque(s), lambda s: (lum(s) < 40) & opaque(s))
-finish(disp, 'display', shadow=True)
-# Back glass: Fairphone 3 back cover; mirrored logo painted out
-back = fp3.crop((680, 80, 1090, 1470))
-back = inpaint_logo(back, (40, 500, 360, 800), lambda s: (lum(s) > 190) & opaque(s), lambda s: (lum(s) <= 185) & (lum(s) > 120) & opaque(s))
-finish(back, 'back-glass', shadow=True)
+# Back glass: a real glass back (Sony Xperia Z1), turned upright; "SONY" and "XPERIA" painted out
+back = src('xperia-z1-rear-full.jpg').convert('RGBA').rotate(180)
+back = inpaint_logo(back, (515, 1235, 870, 1345), lambda s: (lum(s) > 60) & opaque(s), lambda s: (lum(s) < 45) & opaque(s))
+back = inpaint_logo(back, (520, 2250, 820, 2360), lambda s: (lum(s) > 44) & opaque(s), lambda s: (lum(s) < 40) & opaque(s))
+back = inpaint_logo(back, (650, 700, 740, 780), lambda s: (lum(s) > 30) & opaque(s), lambda s: (lum(s) < 28) & opaque(s))  # NFC mark
+finish(drop_thin(dark_part(back, 72), 12), 'back-glass')  # just the glass panel; a charging cable hangs off one corner
+
+# Default (any other part): a real opened phone, back cover beside it
+finish(cutout(src('rn8-opened.jpg')), 'default')
 
 finish(cutout(src('rn8-camera.jpg')), 'camera')
 finish(cutout(src('wiko-frontcam.jpg')), 'front-camera')
 finish(cutout(src('rn8-io.jpg')), 'charging-port')
-finish(cutout(src('rn8-board.jpg')), 'logic-board')
+# "Logic Board" in this catalog = the charging sub-board (the owner's own photos show those), not the mainboard
+finish(cutout(src('rn8-io.jpg')), 'logic-board')
 finish(cutout(src('ip5s-speaker.jpg')), 'speaker')
 finish(cutout(src('lg-ear.jpg')), 'ear-speaker')
 finish(cutout(src('j5-flex.jpg')), 'flex')
 finish(cutout(src('lg-frame.jpg')), 'frame')
 zen = src('sim-zenfone.png').convert('RGB'); W, H = zen.size
 finish(cutout(zen.crop((int(W * 0.40), int(H * 0.28), int(W * 0.98), int(H * 0.88)))), 'sim-tray')
+
+
+# ---------- Home page hero photos (scene photos, not cut out) ----------
+HERO_OUT = os.path.join(OUT, '..', 'hero')
+
+
+def hero(img, name, rotate=0, focus_y=0.5, size=(1400, 736), quality=76):
+    os.makedirs(HERO_OUT, exist_ok=True)
+    img = img.convert('RGB')
+    if rotate:
+        img = img.rotate(rotate, expand=True)
+    w, h = img.size
+    tw, th = size
+    scale = tw / w
+    img = img.resize((tw, round(h * scale)), Image.LANCZOS)
+    top = max(0, min(img.height - th, round(img.height * focus_y - th / 2)))
+    img.crop((0, top, tw, top + th)).save(f'{HERO_OUT}/{name}.webp', 'WEBP', quality=quality, method=6)
+    print('hero', name)
+
+
+hero(src('shift6mq-repair-4k.jpg'), 'hero-parts', focus_y=0.47)
+hero(src('ip6s-repair-4.jpg'), 'hero-wholesale', rotate=90, focus_y=0.5, quality=68)
+hero(src('ip6s-repair-2.jpg'), 'hero-repair', rotate=90, focus_y=0.5, quality=68)

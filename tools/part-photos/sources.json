@@ -2,22 +2,22 @@
   {
     "part": "Display",
     "file": "display",
-    "title": "Fairphone 3 Modularity (48858510338).png",
-    "source": "https://commons.wikimedia.org/wiki/File:Fairphone_3_Modularity_(48858510338).png",
-    "author": "Fairphone",
-    "license": "CC BY-SA 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-    "changes": "Cropped from an exploded view, logo removed, shadow added"
+    "title": "Smartphone (screen off).jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Smartphone_(screen_off).jpg",
+    "author": "彭嘉傑",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "The left phone cut out of a photo of three, background removed"
   },
   {
     "part": "Back Glass",
     "file": "back-glass",
-    "title": "Fairphone 3 Modularity (48858510338).png",
-    "source": "https://commons.wikimedia.org/wiki/File:Fairphone_3_Modularity_(48858510338).png",
-    "author": "Fairphone",
-    "license": "CC BY-SA 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-    "changes": "Cropped from an exploded view, logo removed, shadow added"
+    "title": "Sony Xperia Z1 Black C6903 rear.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Sony_Xperia_Z1_Black_C6903_rear.JPG",
+    "author": "ulfb",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "changes": "Turned upright, logos painted out, the glass panel cut out"
   },
   {
     "part": "Camera",
@@ -42,6 +42,16 @@
   {
     "part": "Charging Port",
     "file": "charging-port",
+    "title": "Redmi Note 8 - IO board-4926.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_IO_board-4926.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Logic Board (charging board)",
+    "file": "logic-board",
     "title": "Redmi Note 8 - IO board-4926.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_IO_board-4926.jpg",
     "author": "Raimond Spekking",
@@ -100,23 +110,46 @@
     "changes": "Background removed, cropped"
   },
   {
-    "part": "Logic Board",
-    "file": "logic-board",
-    "title": "Redmi Note 8 - board-4933.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_board-4933.jpg",
+    "part": "Other parts",
+    "file": "default",
+    "title": "Redmi Note 8 - case opened-4336.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_case_opened-4336.jpg",
     "author": "Raimond Spekking",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
     "changes": "Background removed, cropped"
   },
   {
-    "part": "Other parts",
-    "file": "default",
-    "title": "Fairphone 3 Modularity (48858510338).png",
-    "source": "https://commons.wikimedia.org/wiki/File:Fairphone_3_Modularity_(48858510338).png",
-    "author": "Fairphone",
-    "license": "CC BY-SA 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
-    "changes": "Cropped from an exploded view, logo removed, shadow added"
+    "part": "Home page photo 1",
+    "file": "hero-parts",
+    "img": "/images/hero/hero-parts.webp",
+    "title": "SHIFT6mq Repair.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:SHIFT6mq_Repair.jpg",
+    "author": "Triskal",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Cropped"
+  },
+  {
+    "part": "Home page photo 2",
+    "file": "hero-wholesale",
+    "img": "/images/hero/hero-wholesale.webp",
+    "title": "IPhone 6s display repair 4.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:IPhone_6s_display_repair_4.jpg",
+    "author": "Thilo Parg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Turned, cropped"
+  },
+  {
+    "part": "Home page photo 3",
+    "file": "hero-repair",
+    "img": "/images/hero/hero-repair.webp",
+    "title": "IPhone 6s display repair 2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:IPhone_6s_display_repair_2.jpg",
+    "author": "Thilo Parg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Turned, cropped"
   }
 ]

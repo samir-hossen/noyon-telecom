@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { categoryUrl, isDisabledCategory } from '../utils/taxonomy';
+import { slugify } from '../utils/slug';
 
 function Icon({ children }) {
   return (
@@ -16,34 +17,13 @@ function Icon({ children }) {
 // the same nav.* keys already used in the navbar's category dropdown for
 // these exact categories.
 const CATEGORIES = [
-  {
-    name: 'Display', labelKey: 'nav.display', bg: '#fde8ea', color: '#c4001f',
-    icon: <Icon><rect x="6" y="2.5" width="12" height="19" rx="2.2" /><path d="M10 19.2h4" /></Icon>,
-  },
-  {
-    name: 'SIM Tray', labelKey: 'nav.simTray', bg: '#e4f6ea', color: '#16a34a',
-    icon: <Icon><path d="M4 7.5 7.5 4H20v16H4V7.5Z" /><rect x="8" y="9" width="8" height="7" rx="1" /><path d="M11 9v7M8 12.5h8" /></Icon>,
-  },
-  {
-    name: 'Charging Port', labelKey: 'nav.chargingPort', bg: '#e6edfd', color: '#2563eb',
-    icon: <Icon><rect x="4" y="9" width="16" height="7" rx="1.5" /><path d="M8 9V6.5M12 9V6.5M16 9V6.5" /></Icon>,
-  },
-  {
-    name: 'Back Glass', labelKey: 'nav.backGlass', bg: '#f3e8fd', color: '#7c3aed',
-    icon: <Icon><rect x="5" y="3" width="14" height="18" rx="2.4" /><path d="M9 3v18" strokeDasharray="1.5 3" /></Icon>,
-  },
-  {
-    name: 'Camera', labelKey: 'nav.camera', bg: '#eef0f3', color: '#14161a',
-    icon: <Icon><rect x="2.5" y="7" width="19" height="13" rx="2" /><circle cx="12" cy="13.5" r="3.6" /><path d="M8 7l1.4-2.5h5.2L16 7" /></Icon>,
-  },
-  {
-    name: 'Logic Board', labelKey: 'nav.logicBoard', bg: '#fff3e0', color: '#c2740c',
-    icon: <Icon><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" rx="1" /><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" /></Icon>,
-  },
-  {
-    name: 'Speaker', labelKey: 'nav.speaker', bg: '#fde8ea', color: '#c4001f',
-    icon: <Icon><circle cx="12" cy="12" r="9.2" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.8" fill="currentColor" /></Icon>,
-  },
+  { name: 'Display', labelKey: 'nav.display' },
+  { name: 'SIM Tray', labelKey: 'nav.simTray' },
+  { name: 'Charging Port', labelKey: 'nav.chargingPort' },
+  { name: 'Back Glass', labelKey: 'nav.backGlass' },
+  { name: 'Camera', labelKey: 'nav.camera' },
+  { name: 'Logic Board', labelKey: 'nav.logicBoard' },
+  { name: 'Speaker', labelKey: 'nav.speaker' },
 ];
 
 export default function CategoryGrid() {
@@ -56,7 +36,10 @@ export default function CategoryGrid() {
     <div className="category-grid">
       {shown.map((c) => (
         <Link key={c.name} to={categoryUrl(c.name)} className="category-tile">
-          <span className="category-tile-icon" style={{ background: c.bg, color: c.color }}>{c.icon}</span>
+          {/* A real photo of the part (same as on the products without their own photo) */}
+          <span className="category-tile-photo">
+            <img src={`/images/parts/photos/${slugify(c.name)}-sm.webp`} alt="" width="96" height="96" loading="lazy" decoding="async" />
+          </span>
           <span className="category-tile-name">{t(c.labelKey)}</span>
         </Link>
       ))}

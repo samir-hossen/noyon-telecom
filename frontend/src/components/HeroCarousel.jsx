@@ -21,8 +21,8 @@ const SLIDES = [
     titleEmKey: 'hero.slide1.titleEm',
     titleRestKey: 'hero.slide1.titleRest',
     subKey: 'hero.slide1.sub',
-    img: '/images/hero/hero-parts.svg',
-    alt: 'Mobile phone display and spare parts on a workbench',
+    img: '/images/hero/hero-parts.webp',
+    alt: 'Phone opened on a repair mat with its display, battery and screwdriver',
     stripeKey: 'hero.slide1.stripe',
     cta1: { labelKey: 'hero.slide1.cta1', to: '/shop' },
     cta2: { labelKey: 'hero.slide1.cta2', to: categoryUrl('Display') },
@@ -33,8 +33,8 @@ const SLIDES = [
     titleEmKey: 'hero.slide2.titleEm',
     titleRestKey: 'hero.slide2.titleRest',
     subKey: 'hero.slide2.sub',
-    img: '/images/hero/hero-wholesale.svg',
-    alt: 'Boxed mobile phone spare parts ready for wholesale dispatch',
+    img: '/images/hero/hero-wholesale.webp',
+    alt: 'Opened phone, its display and small parts on a repair mat',
     stripeKey: 'hero.slide2.stripe',
     cta1: { labelKey: 'hero.slide2.cta1', to: '/register' },
     cta2: { labelKey: 'hero.slide2.cta2', to: '/shop?sort=rating' },
@@ -45,8 +45,8 @@ const SLIDES = [
     titleEmKey: 'hero.slide3.titleEm',
     titleRestKey: 'hero.slide3.titleRest',
     subKey: 'hero.slide3.sub',
-    img: '/images/hero/hero-camera.svg',
-    alt: 'Mobile phone camera module component',
+    img: '/images/hero/hero-repair.webp',
+    alt: 'Cracked phone screen next to the opened phone, ready for a new display',
     stripeKey: 'hero.slide3.stripe',
     cta1: { labelKey: 'hero.slide3.cta1', to: '/shop' },
     cta2: { labelKey: 'hero.slide3.cta2', to: 'https://wa.me/8801560047377' },
@@ -248,8 +248,8 @@ export default function HeroCarousel() {
                 <img
                   src={s.img}
                   alt={s.alt}
-                  width="1200"
-                  height="900"
+                  width="1400"
+                  height="736"
                   loading={i === 0 ? 'eager' : 'lazy'}
                   decoding="async"
                   fetchPriority={i === 0 ? 'high' : 'auto'}

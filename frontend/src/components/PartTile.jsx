@@ -11,8 +11,14 @@ const PART_LABELS = [
   'Middle Frame', 'Logic Board', 'Display',
 ];
 const PHOTOS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board']);
-// Parts that look different from the rest of their category.
-const PHOTO_BY_PART = { 'Front Camera': 'front-camera', 'Ear Speaker': 'ear-speaker' };
+// The photo for the part word a product's name ends with, so every product
+// shows its own kind of part; the category is only the fallback.
+const PHOTO_BY_PART = {
+  Display: 'display', 'Back Glass': 'back-glass', 'Back Camera': 'camera', 'Front Camera': 'front-camera',
+  'Charging Port': 'charging-port', 'Charging Flex Cable': 'charging-port', 'SIM Tray': 'sim-tray',
+  Loudspeaker: 'speaker', 'Ear Speaker': 'ear-speaker', 'Motherboard Flex Cable': 'flex', 'Flex Cable': 'flex',
+  'Middle Frame': 'frame', 'Logic Board': 'logic-board',
+};
 
 // "Samsung Galaxy A15 Display" (brand Samsung) -> { brand, model: "Galaxy A15", part: "Display" }
 export function splitProductName(product) {

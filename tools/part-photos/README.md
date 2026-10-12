@@ -1,4 +1,4 @@
-# Part photos
+# Part photos (and the home page photos)
 
 Products without their own photo show a **representative photo of the part type**
 (`frontend/public/images/parts/photos/`) with the brand and model written under it,
@@ -10,6 +10,9 @@ commercial use (CC BY / CC BY-SA). `sources.json` lists each one with its author
 licence and link; the site shows the same list at `/photo-credits` (linked from the
 footer and the product page), which is what the licences ask for. Our edited versions
 (background removed, logos painted out) are shared under the same licence.
+
+The home page hero uses three real repair photos from the same source (`frontend/public/images/hero/`),
+credited on the same page.
 
 Never use photos from other shops, Google Images or suppliers without written permission.
 
