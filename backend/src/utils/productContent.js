@@ -249,3 +249,43 @@ export function buildProductDescription({ name, partKey, modelLabel, models = []
   paragraphs.push(`${modelLabel} এর ${part.bn} পাইকারি দামে — টেস্ট করা, ৭ দিনের ওয়ারেন্টি; দাম জানতে WhatsApp করুন।`);
   return paragraphs.join('\n\n');
 }
+
+// ---------- Products added in the admin panel ----------
+// The part a product is, from the end of its name ("... Front Camera") or
+// else its category, and the name without the part ("Samsung Galaxy A15").
+const PART_KEY_BY_CATEGORY = {
+  'display': 'display', 'back glass': 'backGlass', 'camera': 'backCamera', 'charging port': 'chargingPort',
+  'sim tray': 'simTray', 'speaker': 'loudspeaker', 'flex': 'flex', 'frame': 'frame', 'logic board': 'logicBoard',
+};
+const PART_NAMES_LONGEST_FIRST = Object.keys(PART_KEY_BY_NAME).sort((a, b) => b.length - a.length);
+
+export function partOfProduct(name, category) {
+  const clean = String(name || '').trim().replace(/\s+/g, ' ');
+  const label = PART_NAMES_LONGEST_FIRST.find((l) => clean.toLowerCase().endsWith(` ${l}`));
+  const partKey = (label && PART_KEY_BY_NAME[label]) || PART_KEY_BY_CATEGORY[String(category || '').trim().toLowerCase()] || null;
+  return { partKey, modelLabel: label ? clean.slice(0, -(label.length + 1)) : clean };
+}
+
+// A product saved without a description gets its part type's English
+// template (same text as the imported products).
+export function describeNewProduct({ name, category, compatibleModels = [], moq = 1 }) {
+  const { partKey, modelLabel } = partOfProduct(name, category);
+  const clean = String(name || '').trim().replace(/\s+/g, ' ');
+  if (!partKey || !PART_TYPES[partKey]) {
+    return `${clean} — wholesale for repair shops and dealers in Bangladesh. Pre-tested, 7-day testing warranty. Ask on WhatsApp for today's price and stock.`;
+  }
+  const models = compatibleModels.length ? compatibleModels : [modelLabel];
+  return buildProductDescription({ name: clean, partKey, modelLabel, models, grades: [], moq });
+}
+
+// Same SKU pattern as the imported products: NT-DIS-SAMSUNG-GALAXY-A15.
+const SKU_CODE_BY_PART = {
+  display: 'DIS', backGlass: 'BG', backCamera: 'BCAM', frontCamera: 'FCAM', chargingPort: 'CCFLEX', simTray: 'SIMTRAY',
+  loudspeaker: 'LSPK', earSpeaker: 'ESPK', flex: 'FLEX', frame: 'FRAME', logicBoard: 'LB',
+};
+
+export function suggestedSku(name, category) {
+  const { partKey, modelLabel } = partOfProduct(name, category);
+  const rest = String(modelLabel).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return rest ? `NT-${SKU_CODE_BY_PART[partKey] || 'PART'}-${rest}` : null;
+}

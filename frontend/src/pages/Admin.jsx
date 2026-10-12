@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { resizeForUpload } from '../utils/resizeImage';
-import { api, resolveImg } from '../api';
+import { api, resolveImg, productImg } from '../api';
 import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { formatPrice } from '../utils/currency';
 import { useToast } from '../context/ToastContext';
@@ -8,14 +8,25 @@ import { usePageMeta } from '../hooks/usePageTitle';
 import { ALL_CATEGORIES, ALL_BRANDS, isDisabledCategory } from '../utils/taxonomy';
 
 const emptyForm = {
-  name: '', categories: ['Display'], price: '', compareAt: '', stock: '', images: [], desc: '',
+  name: '', categories: ['Display'], price: '', compareAt: '', stock: '0', images: [], desc: '',
   sku: '', brand: '', compatibleModels: '', moq: '1', dealerPrice: '', warranty: '', published: true,
   // Read-only hidden-price info shown as hints while editing (never sent back).
   priceStatus: 'draft', draftPrice: null, referencePrice: null, priceNote: '', hiddenPrice: null,
   // Grades with their own price ({ label, price } as typed); sent only when
   // edited, like a typed price.
   qualityOptions: [], optionsDirty: false,
+  // New product: the name is built from brand + model + part ("{Brand}
+  // {Model} {Part}") until it's typed over by hand.
+  model: '', part: 'Display', nameAuto: true,
 };
+// The part words our product names end with, per category.
+const PART_OPTIONS = {
+  Display: ['Display'], 'Back Glass': ['Back Glass'], Camera: ['Back Camera', 'Front Camera'],
+  'Charging Port': ['Charging Port'], 'SIM Tray': ['SIM Tray'], Speaker: ['Loudspeaker', 'Ear Speaker'],
+  Flex: ['Motherboard Flex Cable'], Frame: ['Middle Frame'], 'Logic Board': ['Logic Board'],
+};
+const partOptionsFor = (category) => PART_OPTIONS[category] || [category];
+const buildProductName = (brand, model, part) => [brand, String(model || '').trim(), part].filter(Boolean).join(' ').replace(/\s+/g, ' ');
 const emptyCoupon = { code: '', type: 'percent', value: '', minSubtotal: '', usageLimit: '', usageLimitPerCustomer: '', expiresAt: '' };
 const ORDER_STATUSES = ['processing', 'paid', 'shipped', 'delivered', 'cancelled'];
 // Access-time choices for Admin > Security > Add admin (minutes; '' = permanent).
@@ -121,6 +132,10 @@ export default function Admin() {
   const [productSearchInput, setProductSearchInput] = useState('');
   const [productStatusFilter, setProductStatusFilter] = useState('all'); // all | published | draft
   const [priceStatusFilter, setPriceStatusFilter] = useState('all'); // all | published | draft (price shown / hidden)
+  const [productCategory, setProductCategory] = useState(''); // '' = every category
+  const [productBrand, setProductBrand] = useState('');
+  const [productPhotoFilter, setProductPhotoFilter] = useState('all'); // all | none (no photo of its own) | has
+  const [categoryCounts, setCategoryCounts] = useState({ total: 0, categories: [] });
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [priceActionBusy, setPriceActionBusy] = useState(false);
   const [analytics, setAnalytics] = useState({
@@ -148,16 +163,23 @@ export default function Admin() {
   // surfaces it as a toast — previously an unhandled rejection here (e.g.
   // session expired, network hiccup) left that tab's data silently empty
   // with no explanation, indistinguishable from "there's just nothing here".
-  function loadProducts(page = productPage, search = productSearch, status = productStatusFilter, priceStatus = priceStatusFilter) {
-    const params = new URLSearchParams({ page, limit: 50, status, priceStatus });
-    if (search) params.set('search', search);
+  function loadProducts(page = productPage, overrides = {}) {
+    const f = {
+      search: productSearch, status: productStatusFilter, priceStatus: priceStatusFilter,
+      category: productCategory, brand: productBrand, photo: productPhotoFilter, ...overrides,
+    };
+    const params = new URLSearchParams({ page, limit: 50, status: f.status, priceStatus: f.priceStatus });
+    if (f.search) params.set('search', f.search);
+    if (f.category) params.set('category', f.category);
+    if (f.brand) params.set('brand', f.brand);
+    if (f.photo !== 'all') params.set('photo', f.photo);
     api.get(`/admin/products?${params}`).then((d) => {
       // The backend doesn't clamp an out-of-range page — deleting the last
       // product on the last page re-requests that same (now nonexistent)
       // page number and gets back 0 rows. Self-correct once by refetching
       // the new last page instead of leaving the table stuck empty.
       if (d.products.length === 0 && d.page > 1 && d.total > 0) {
-        loadProducts(d.totalPages, search, status, priceStatus);
+        loadProducts(d.totalPages, overrides);
         return;
       }
       setProducts(d.products);
@@ -169,11 +191,52 @@ export default function Admin() {
   }
   function onProductStatusChange(status) {
     setProductStatusFilter(status);
-    loadProducts(1, productSearch, status);
+    loadProducts(1, { status });
   }
   function onPriceStatusFilterChange(priceStatus) {
     setPriceStatusFilter(priceStatus);
-    loadProducts(1, productSearch, productStatusFilter, priceStatus);
+    loadProducts(1, { priceStatus });
+  }
+  function onCategoryChipChange(category) {
+    setProductCategory(category);
+    loadProducts(1, { category });
+  }
+  function onBrandFilterChange(brand) {
+    setProductBrand(brand);
+    loadProducts(1, { brand });
+  }
+  function onPhotoFilterChange(photo) {
+    setProductPhotoFilter(photo);
+    loadProducts(1, { photo });
+  }
+  // Product count per category (and how many still have no photo of their own).
+  function loadCategoryCounts() {
+    api.get('/admin/products/counts').then(setCategoryCounts).catch((err) => showToast(err.message, 'error'));
+  }
+
+  // Hide from the site / show again / delete — one product or a selection.
+  async function bulkProductAction(action, ids = [...selectedIds]) {
+    if (!ids.length) return;
+    if (action === 'delete' && !window.confirm(ids.length === 1
+      ? 'এই প্রোডাক্টটা মুছে ফেলবেন? এটা আর ফেরানো যাবে না।\n(শুধু সাইট থেকে সরাতে চাইলে "লুকাও" চাপুন।)'
+      : `${ids.length}টা প্রোডাক্ট মুছে ফেলবেন? এটা আর ফেরানো যাবে না।\n(শুধু সাইট থেকে সরাতে চাইলে "লুকাও" চাপুন।)`)) return;
+    setPriceActionBusy(true);
+    try {
+      const d = await api.post('/admin/products/bulk', { action, ids });
+      const verb = { hide: 'সাইট থেকে লুকানো হয়েছে', show: 'এখন সাইটে দেখাচ্ছে', delete: 'মুছে ফেলা হয়েছে' }[action];
+      const notes = [];
+      if (d.hiddenInstead?.length) notes.push(`${d.hiddenInstead.length}টা পুরনো অর্ডারে আছে, তাই মোছা যায়নি — লুকানো হয়েছে`);
+      if (d.blocked?.length) notes.push(`${d.blocked.length}টা বন্ধ করা পার্টসের (যেমন Battery), তাই লুকানোই থাকল`);
+      showToast(`${d.done}টা প্রোডাক্ট ${verb}${notes.length ? ` · ${notes.join(' · ')}` : ''}`, notes.length ? 'error' : 'success');
+      if (action === 'delete' && editingId && ids.includes(editingId)) closeProductForm();
+      loadProducts();
+      loadCategoryCounts();
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setPriceActionBusy(false);
+    }
   }
 
   // ---- Hidden draft price: publish / hide (one product, or a selection) ----
@@ -228,7 +291,7 @@ export default function Admin() {
   function onProductSearchSubmit(e) {
     e.preventDefault();
     setProductSearch(productSearchInput);
-    loadProducts(1, productSearchInput);
+    loadProducts(1, { search: productSearchInput });
   }
   function loadOrders(page = orderPage, status = orderStatusFilter) {
     const params = new URLSearchParams({ page, limit: 25 });
@@ -301,6 +364,7 @@ export default function Admin() {
 
   useEffect(() => {
     loadProducts();
+    loadCategoryCounts();
     loadOrders();
     loadAnalytics();
     loadCoupons();
@@ -537,7 +601,7 @@ export default function Admin() {
       showToast(`Imported: ${data.created} created, ${data.updated} updated`, data.errors.length ? 'error' : 'success');
       setProductSearchInput('');
       setProductSearch('');
-      loadProducts(1, '');
+      loadProducts(1, { search: '' });
       loadAuditLogs();
     } catch (err) {
       showToast(err.message, 'error');
@@ -582,7 +646,7 @@ export default function Admin() {
       showToast(`Restored ${data.restored} of ${data.attempted} products`, 'success');
       setProductSearchInput('');
       setProductSearch('');
-      loadProducts(1, '');
+      loadProducts(1, { search: '' });
       loadAuditLogs();
     } catch (err) {
       showToast(err.message, 'error');
@@ -598,10 +662,11 @@ export default function Admin() {
   // and when an edit is saved or cancelled, return to that product's row.
   const productFormRef = useRef(null);
   const productNameRef = useRef(null);
-  function showProductForm() {
+  const quickModelRef = useRef(null);
+  function showProductForm(focusRef = productNameRef) {
     setTimeout(() => {
       productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      productNameRef.current?.focus({ preventScroll: true });
+      focusRef.current?.focus({ preventScroll: true });
     }, 0);
   }
   function closeProductForm() {
@@ -641,16 +706,30 @@ export default function Admin() {
       dealerPrice: p.dealerPrice || '',
       warranty: p.warranty || '',
       published: p.published !== false,
+      model: '', part: '', nameAuto: false,
     });
     setShowForm(true);
     showProductForm();
   }
 
+  // New product in the category (and brand) being looked at.
   function startNew() {
     setEditingId(null);
-    setForm(emptyForm);
+    const category = productCategory || 'Display';
+    const part = partOptionsFor(category)[0];
+    setForm({ ...emptyForm, categories: [category], part, brand: productBrand, name: buildProductName(productBrand, '', part) });
     setShowForm(true);
-    showProductForm();
+    showProductForm(quickModelRef);
+  }
+  // Brand / model / part of a new product -> its name, until the name is typed over.
+  function setQuick(patch) {
+    setForm((f) => {
+      const next = { ...f, ...patch };
+      return next.nameAuto ? { ...next, name: buildProductName(next.brand, next.model, next.part) } : next;
+    });
+  }
+  function setQuickCategory(category) {
+    setQuick({ categories: [category], part: partOptionsFor(category)[0] });
   }
 
   // Enter key moves to the next field instead of submitting — the form has
@@ -722,18 +801,16 @@ export default function Admin() {
   async function onSubmit(e) {
     e.preventDefault();
     setError('');
+    // No photo: the site shows a photo of the part type until one is added.
+    // No description: the part type's English description is written for it.
     const images = form.images.map((i) => i.trim()).filter(Boolean);
-    if (images.length === 0) {
-      setError('Add at least one product image');
-      return;
-    }
     const payload = {
       name: form.name,
       desc: form.desc,
       categories: form.categories,
       category: form.categories[0],
       images,
-      img: images[0],
+      img: images[0] || '',
       // Empty = leave the price as it is (hidden stays hidden); a typed
       // price is published as soon as this is saved.
       ...(String(form.price).trim() !== '' ? { price: parseFloat(form.price) } : {}),
@@ -742,7 +819,7 @@ export default function Admin() {
         ? { qualityOptions: form.qualityOptions.map((g) => ({ label: g.label.trim(), price: parseFloat(g.price) })).filter((g) => g.label && g.price > 0) }
         : {}),
       compareAt: form.compareAt ? parseFloat(form.compareAt) : null,
-      stock: parseInt(form.stock, 10),
+      stock: parseInt(form.stock, 10) || 0,
       sku: form.sku.trim() || null,
       brand: form.brand || null,
       compatibleModels: form.compatibleModels
@@ -768,7 +845,9 @@ export default function Admin() {
         // contradicting the comment below's promise that it'll be visible.
         setProductStatusFilter('all');
         setPriceStatusFilter('all');
-        loadProducts(1, '', 'all', 'all'); // new products sort first — jump to page 1 so it's visible
+        setProductPhotoFilter('all');
+        loadProducts(1, { search: '', status: 'all', priceStatus: 'all', photo: 'all' }); // new products sort first — jump to page 1 so it's visible
+        loadCategoryCounts();
         // Keep the form open for the next product instead of closing it —
         // a batch of similar parts (same category/brand/MOQ/warranty,
         // different name/photo/price) is the common case, and reopening +
@@ -777,33 +856,20 @@ export default function Admin() {
         setForm((f) => ({
           ...emptyForm,
           categories: f.categories,
+          part: f.part,
           brand: f.brand,
+          name: buildProductName(f.brand, '', f.part),
           moq: f.moq,
           dealerPrice: f.dealerPrice,
           warranty: f.warranty,
           published: f.published,
         }));
-        showProductForm();
+        showProductForm(quickModelRef);
       }
       loadAuditLogs();
-      showToast(editingId ? 'Product updated' : 'Product created — ready for the next one', 'success');
+      showToast(editingId ? 'প্রোডাক্ট আপডেট হয়েছে' : 'প্রোডাক্ট যোগ হয়েছে — পরেরটার মডেল লিখুন', 'success');
     } catch (err) {
       setError(err.message);
-    }
-  }
-
-  async function onDelete(id) {
-    if (!confirm('Delete this product?')) return;
-    try {
-      await api.del(`/admin/products/${id}`);
-      loadProducts();
-      loadAuditLogs();
-      showToast('Product deleted', 'success');
-    } catch (err) {
-      // Most common cause: the product has order history and is protected
-      // from deletion (see admin.routes.js) — the backend already sends a
-      // specific, actionable message for that case, so just surface it.
-      showToast(err.message, 'error');
     }
   }
 
@@ -1080,19 +1146,39 @@ export default function Admin() {
       {tab === 'products' && (
         <div style={{ paddingBottom: 80 }}>
           <div className="admin-toolbar">
-            <span>{productTotal} product{productTotal === 1 ? '' : 's'}</span>
-            <button className="btn btn-primary" onClick={startNew}>+ Add product</button>
+            <span>
+              {productTotal.toLocaleString('en-US')}টা প্রোডাক্ট{productCategory ? ` · ${productCategory}` : ''}{productBrand ? ` · ${productBrand}` : ''}
+            </span>
+            <button className="btn btn-primary" onClick={startNew}>+ নতুন {productCategory || 'প্রোডাক্ট'}</button>
+          </div>
+
+          {/* Category buttons: click one to see (and add to) just that category. */}
+          <div className="admin-cat-chips" aria-label="ক্যাটাগরি">
+            <button type="button" className={`admin-cat-chip${productCategory ? '' : ' active'}`} onClick={() => onCategoryChipChange('')}>
+              সব <span>{categoryCounts.total.toLocaleString('en-US')}</span>
+            </button>
+            {categoryCounts.categories.map((c) => (
+              <button
+                type="button"
+                key={c.name}
+                className={`admin-cat-chip${productCategory === c.name ? ' active' : ''}`}
+                onClick={() => onCategoryChipChange(c.name)}
+                title={`${c.noPhoto.toLocaleString('en-US')}টায় নিজের ছবি নেই · ${c.hidden.toLocaleString('en-US')}টা লুকানো`}
+              >
+                {c.name} <span>{c.total.toLocaleString('en-US')}</span>
+              </button>
+            ))}
           </div>
 
           <form onSubmit={onProductSearchSubmit} className="admin-filters">
             <input
               value={productSearchInput}
               onChange={(e) => setProductSearchInput(e.target.value)}
-              placeholder="Search by name, SKU, or brand…"
+              placeholder="নাম, মডেল বা SKU দিয়ে খুঁজুন…"
               className="admin-search"
               aria-label="Search products"
             />
-            <button type="submit" className="btn btn-outline btn-sm">Search</button>
+            <button type="submit" className="btn btn-outline btn-sm">খুঁজুন</button>
             {productSearch && (
               <button
                 type="button"
@@ -1100,7 +1186,7 @@ export default function Admin() {
                 onClick={() => {
                   setProductSearchInput('');
                   setProductSearch('');
-                  loadProducts(1, '');
+                  loadProducts(1, { search: '' });
                 }}
               >
                 Clear
@@ -1112,9 +1198,18 @@ export default function Admin() {
               onChange={(e) => onProductStatusChange(e.target.value)}
               aria-label="Filter by publish status"
             >
-              <option value="all">All products</option>
-              <option value="published">Published only</option>
-              <option value="draft">Drafts only</option>
+              <option value="all">সাইটে: সব</option>
+              <option value="published">সাইটে দেখাচ্ছে</option>
+              <option value="draft">সাইট থেকে লুকানো</option>
+            </select>
+            <select className="select" value={productBrand} onChange={(e) => onBrandFilterChange(e.target.value)} aria-label="Filter by brand">
+              <option value="">সব ব্র্যান্ড</option>
+              {ALL_BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+            <select className="select" value={productPhotoFilter} onChange={(e) => onPhotoFilterChange(e.target.value)} aria-label="Filter by photo">
+              <option value="all">ছবি: সব</option>
+              <option value="none">নিজের ছবি নেই</option>
+              <option value="has">নিজের ছবি আছে</option>
             </select>
             <select
               className="select"
@@ -1137,31 +1232,71 @@ export default function Admin() {
               <button type="button" className="btn btn-outline btn-sm" disabled={priceActionBusy} onClick={() => bulkPriceAction('hide')}>
                 দাম লুকাও
               </button>
+              <span className="admin-bulk-sep" aria-hidden="true" />
+              <button type="button" className="btn btn-outline btn-sm" disabled={priceActionBusy} onClick={() => bulkProductAction('hide')}>
+                সাইট থেকে লুকাও
+              </button>
+              <button type="button" className="btn btn-outline btn-sm" disabled={priceActionBusy} onClick={() => bulkProductAction('show')}>
+                সাইটে দেখাও
+              </button>
+              <button type="button" className="btn btn-outline btn-sm admin-danger" disabled={priceActionBusy} onClick={() => bulkProductAction('delete')}>
+                ডিলিট
+              </button>
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setSelectedIds(new Set())}>Clear</button>
             </div>
           )}
 
           {showForm && (
             <form ref={productFormRef} onSubmit={onSubmit} onKeyDown={focusNextFieldOnEnter} className="form-panel wide admin-product-form" style={{ marginBottom: 30 }}>
-              <h3 className="admin-form-title">{editingId ? `Edit: ${form.name || 'product'}` : 'Add a new product'}</h3>
+              <h3 className="admin-form-title">{editingId ? `এডিট: ${form.name || 'product'}` : `নতুন ${form.categories[0] || 'প্রোডাক্ট'} যোগ করুন`}</h3>
               {error && <div className="form-error">{error}</div>}
+              {!editingId && (
+                <div className="admin-quick-name">
+                  <div className="field">
+                    <label>ক্যাটাগরি</label>
+                    <select value={form.categories[0]} onChange={(e) => setQuickCategory(e.target.value)}>
+                      {ALL_CATEGORIES.filter((c) => !isDisabledCategory(c)).map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>ব্র্যান্ড</label>
+                    <select value={form.brand} onChange={(e) => setQuick({ brand: e.target.value })}>
+                      <option value="">— ব্র্যান্ড বাছুন —</option>
+                      {ALL_BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>মডেল</label>
+                    <input ref={quickModelRef} value={form.model} placeholder="যেমন Galaxy A15" onChange={(e) => setQuick({ model: e.target.value })} />
+                  </div>
+                  <div className="field">
+                    <label>পার্টস</label>
+                    <select value={form.part} onChange={(e) => setQuick({ part: e.target.value })}>
+                      {partOptionsFor(form.categories[0]).map((x) => <option key={x} value={x}>{x}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
               <div className="field-row">
                 <div className="field">
-                  <label>Product name</label>
-                  <input required ref={productNameRef} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <label>প্রোডাক্টের নাম{editingId ? '' : ' — উপরের ঘর থেকে নিজে তৈরি হয়, চাইলে বদলান'}</label>
+                  <input required ref={productNameRef} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, nameAuto: false })} />
                 </div>
-                <div className="field">
-                  <label>Categories</label>
-                  <div className="admin-cat-picker">
-                    {ALL_CATEGORIES.filter((c) => !isDisabledCategory(c)).map((c) => (
-                      <label key={c} className={form.categories.includes(c) ? 'checked' : ''}>
-                        <input type="checkbox" checked={form.categories.includes(c)} onChange={() => toggleCategory(c)} />
-                        {c}
-                      </label>
-                    ))}
+                {/* A new product takes its one category from the boxes above; more can be added while editing. */}
+                {editingId && (
+                  <div className="field">
+                    <label>Categories</label>
+                    <div className="admin-cat-picker">
+                      {ALL_CATEGORIES.filter((c) => !isDisabledCategory(c)).map((c) => (
+                        <label key={c} className={form.categories.includes(c) ? 'checked' : ''}>
+                          <input type="checkbox" checked={form.categories.includes(c)} onChange={() => toggleCategory(c)} />
+                          {c}
+                        </label>
+                      ))}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', color: '#9a8f8a' }}>Pick one or more — this product will show up under each.</span>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#9a8f8a' }}>Pick one or more — this product will show up under each.</span>
-                </div>
+                )}
               </div>
               <div className="field-row">
                 <div className="field">
@@ -1221,62 +1356,8 @@ export default function Admin() {
               </div>
               <div className="field-row">
                 <div className="field">
-                  <label>Compare-at price (optional)</label>
-                  <input type="number" step="0.01" value={form.compareAt} onChange={(e) => setForm({ ...form, compareAt: e.target.value })} />
-                </div>
-              </div>
-              <div className="field-row">
-                <div className="field">
-                  <label>Stock</label>
-                  <input required type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
-                </div>
-                <div className="field">
-                  <label>SKU</label>
-                  <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="e.g. NT-DIS-IP13-OLED" />
-                </div>
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <label>Brand</label>
-                  <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })}>
-                    <option value="">— Not brand-specific —</option>
-                    {ALL_BRANDS.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Compatible models (comma-separated)</label>
-                  <input
-                    value={form.compatibleModels}
-                    onChange={(e) => setForm({ ...form, compatibleModels: e.target.value })}
-                    placeholder="e.g. iPhone 13, iPhone 13 Pro"
-                  />
-                </div>
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <label>MOQ (minimum order quantity)</label>
-                  <input required type="number" min="1" value={form.moq} onChange={(e) => setForm({ ...form, moq: e.target.value })} />
-                </div>
-                <div className="field">
-                  <label>Dealer price (৳, optional)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={form.dealerPrice}
-                    onChange={(e) => setForm({ ...form, dealerPrice: e.target.value })}
-                    placeholder="Falls back to retail price if empty"
-                  />
-                </div>
-              </div>
-
-              <div className="field-row">
-                <div className="field">
-                  <label>Warranty</label>
-                  <input value={form.warranty} onChange={(e) => setForm({ ...form, warranty: e.target.value })} placeholder="e.g. 30 Days, 7 Days Testing Warranty" />
+                  <label>স্টক (০ = "স্টক জানতে WhatsApp করুন")</label>
+                  <input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
                 </div>
                 <div className="field admin-check-field">
                   <input
@@ -1286,10 +1367,67 @@ export default function Admin() {
                     onChange={(e) => setForm({ ...form, published: e.target.checked })}
                   />
                   <label htmlFor="published-toggle" style={{ margin: 0 }}>
-                    Published (visible to customers)
+                    সাইটে দেখাও (Published)
                   </label>
                 </div>
               </div>
+
+              <details className="admin-more" open={Boolean(editingId)}>
+                <summary>আরও অপশন — SKU, মডেল, MOQ, ওয়ারেন্টি, ডিলার দাম</summary>
+                <div className="field-row">
+                  <div className="field">
+                    <label>SKU (খালি রাখলে নিজে তৈরি হবে)</label>
+                    <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} placeholder="e.g. NT-DIS-SAMSUNG-GALAXY-A15" />
+                  </div>
+                  <div className="field">
+                    <label>Compare-at price (optional)</label>
+                    <input type="number" step="0.01" value={form.compareAt} onChange={(e) => setForm({ ...form, compareAt: e.target.value })} />
+                  </div>
+                </div>
+                <div className="field-row">
+                  {editingId && (
+                    <div className="field">
+                      <label>Brand</label>
+                      <select value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })}>
+                        <option value="">— Not brand-specific —</option>
+                        {ALL_BRANDS.map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  <div className="field">
+                    <label>যেসব মডেলে লাগে (কমা দিয়ে; খালি রাখলে নামের মডেল)</label>
+                    <input
+                      value={form.compatibleModels}
+                      onChange={(e) => setForm({ ...form, compatibleModels: e.target.value })}
+                      placeholder="e.g. Samsung Galaxy A15, Samsung Galaxy A15 5G"
+                    />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label>MOQ (minimum order quantity)</label>
+                    <input required type="number" min="1" value={form.moq} onChange={(e) => setForm({ ...form, moq: e.target.value })} />
+                  </div>
+                  <div className="field">
+                    <label>Dealer price (৳, optional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={form.dealerPrice}
+                      onChange={(e) => setForm({ ...form, dealerPrice: e.target.value })}
+                      placeholder="Falls back to retail price if empty"
+                    />
+                  </div>
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <label>Warranty</label>
+                    <input value={form.warranty} onChange={(e) => setForm({ ...form, warranty: e.target.value })} placeholder="e.g. 7 Days Testing Warranty" />
+                  </div>
+                </div>
+              </details>
               {form.published === false && (
                 <p style={{ color: 'var(--accent, #f5720c)', fontSize: '0.85rem', marginTop: '-8px' }}>
                   This product is hidden from the storefront — customers can't see it until you check "Published"
@@ -1298,7 +1436,7 @@ export default function Admin() {
               )}
 
               <div className="field">
-                <label>Product images (gallery, up to 8 — the first one is used as the thumbnail)</label>
+                <label>ছবি (ঐচ্ছিক, ৮টা পর্যন্ত — প্রথমটা মূল ছবি). না দিলে এই পার্টসের একটা ছবি দেখাবে।</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
                   {form.images.map((img, i) => (
                     <div key={i} style={{ position: 'relative' }}>
@@ -1351,12 +1489,17 @@ export default function Admin() {
               </div>
 
               <div className="field">
-                <label>Description</label>
-                <textarea required rows={3} value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} />
+                <label>বিবরণ (ঐচ্ছিক — খালি রাখলে পার্টস অনুযায়ী ইংরেজি বিবরণ নিজে লেখা হবে)</label>
+                <textarea rows={3} value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} />
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button className="btn btn-berry">{editingId ? 'Save changes' : 'Create product'}</button>
-                <button type="button" className="btn btn-outline" onClick={closeProductForm}>Cancel</button>
+                <button className="btn btn-berry">{editingId ? 'Save করুন' : 'প্রোডাক্ট যোগ করুন'}</button>
+                <button type="button" className="btn btn-outline" onClick={closeProductForm}>বাতিল</button>
+                {editingId && (
+                  <button type="button" className="btn btn-outline admin-danger" disabled={priceActionBusy} onClick={() => bulkProductAction('delete', [editingId])}>
+                    ডিলিট
+                  </button>
+                )}
               </div>
             </form>
           )}
@@ -1391,13 +1534,12 @@ export default function Admin() {
                         <input type="checkbox" aria-label={`Select ${p.name}`} checked={selectedIds.has(p.id)} onChange={() => toggleSelected(p.id)} />
                       </td>
                       <td data-label="Product" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <img src={resolveImg(p.img)} alt={p.name} loading="lazy" decoding="async" style={{ width: 36, height: 36, objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
-                        {p.name}
-                        {p.published === false && (
-                          <span style={{ fontSize: '0.7rem', background: '#f5720c', color: '#fff', padding: '2px 6px', borderRadius: 4 }}>
-                            Draft
-                          </span>
-                        )}
+                        <img className="admin-thumb" src={productImg(p, 80)} alt="" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+                        <span>
+                          {p.name}
+                          {p.published === false && <span className="admin-badge admin-badge-hidden" title="কাস্টমাররা এটা দেখতে পায় না">সাইটে নেই</span>}
+                          {!p.img && <span className="admin-badge" title="নিজের ছবি নেই — সাইটে এই পার্টসের একটা ছবি দেখাচ্ছে">ছবি নেই</span>}
+                        </span>
                       </td>
                       <td data-label="Category">
                         {(p.categories && p.categories.length ? p.categories : [p.category]).join(', ')}
@@ -1431,8 +1573,13 @@ export default function Admin() {
                       </td>
                       <td data-label="Stock">{p.stock}</td>
                       <td data-label="Actions">
-                        <button className="remove-link" style={{ marginRight: 12 }} onClick={() => startEdit(p)}>Edit</button>
-                        <button className="remove-link" onClick={() => onDelete(p.id)}>Delete</button>
+                        <div className="admin-row-actions">
+                          <button type="button" className="remove-link" onClick={() => startEdit(p)}>এডিট</button>
+                          <button type="button" className="remove-link" disabled={priceActionBusy} title={p.published === false ? 'আবার সাইটে দেখাও' : 'সাইট থেকে লুকাও (মুছবে না)'} onClick={() => bulkProductAction(p.published === false ? 'show' : 'hide', [p.id])}>
+                            {p.published === false ? 'দেখাও' : 'লুকাও'}
+                          </button>
+                          <button type="button" className="remove-link admin-danger-link" disabled={priceActionBusy} onClick={() => bulkProductAction('delete', [p.id])}>ডিলিট</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1446,7 +1593,7 @@ export default function Admin() {
                 type="button"
                 className="btn btn-outline btn-sm"
                 disabled={productPage <= 1}
-                onClick={() => loadProducts(productPage - 1, productSearch)}
+                onClick={() => loadProducts(productPage - 1)}
               >
                 Previous
               </button>
@@ -1457,7 +1604,7 @@ export default function Admin() {
                 type="button"
                 className="btn btn-outline btn-sm"
                 disabled={productPage >= productTotalPages}
-                onClick={() => loadProducts(productPage + 1, productSearch)}
+                onClick={() => loadProducts(productPage + 1)}
               >
                 Next
               </button>

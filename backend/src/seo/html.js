@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import { WHATSAPP_NUMBER, priceRequestMessage } from './whatsapp.js';
 import { absoluteUrl } from './pages.js';
+import { partPhotoPath } from './partPhotos.js';
 
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
 const SHELL_TTL_MS = 60 * 1000;
@@ -72,12 +73,6 @@ function formatTaka(n) {
   return `৳${Math.round(Number(n) || 0).toLocaleString('en-US')}`;
 }
 
-function placeholderFor(category) {
-  const slug = String(category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  const known = ['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board'];
-  return `/images/parts/${known.includes(slug) ? slug : 'default'}.webp`;
-}
-
 function breadcrumbHtml(crumbs) {
   return `<nav class="breadcrumb-trail" aria-label="Breadcrumb">${crumbs
     .map((c, i) => (i === crumbs.length - 1 ? `<span aria-current="page">${escapeHtml(c.name)}</span>` : `<a href="${escapeHtml(c.path)}">${escapeHtml(c.name)}</a>`))
@@ -117,7 +112,8 @@ function paginationHtml(model) {
 
 function productBody(model) {
   const p = model.product;
-  const img = p.images[0] || placeholderFor(p.category);
+  const img = p.images[0] || partPhotoPath(p.category, p.name);
+  const photoNote = p.images[0] ? '' : '<p class="pd-photo-note">Representative photo — you get the part for your exact model · <a href="/photo-credits">Photo credits</a></p>';
   const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(priceRequestMessage({ ...p, url: absoluteUrl(model.head.canonical) }))}`;
   const specs = [
     p.sku && `<div><span>SKU</span><strong>${escapeHtml(p.sku)}</strong></div>`,
@@ -141,7 +137,7 @@ function productBody(model) {
   return `<div class="container">
 ${breadcrumbHtml(model.breadcrumb)}
 <div class="pd-grid">
-<div><div class="pd-img"><img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" width="600" height="600" /></div></div>
+<div><div class="pd-img"><img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" width="600" height="600" /></div>${photoNote}</div>
 <div>
 <p class="pd-cat"><a href="/category/${escapeHtml(p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}">${escapeHtml(p.category)}</a></p>
 <h1 class="pd-title">${escapeHtml(model.h1 || p.name)}</h1>

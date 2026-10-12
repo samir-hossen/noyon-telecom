@@ -7,7 +7,8 @@ import { serializeProduct, serializeOrder } from '../utils/serialize.js';
 import { buildProductWhere, parsePagination, computeReadyToSell, resolvePriceUpdate, resolveQualityOptionsUpdate, parseOptionalPrice } from '../utils/productQuery.js';
 import { hasQualityOptions, normalizeQualityOptions } from '../utils/qualityOptions.js';
 import { backfillReadyToSell } from '../backfillReadyToSell.js';
-import { findDisabledCategory, disabledCategoryError } from '../config/catalog.js';
+import { findDisabledCategory, disabledCategoryError, isDisabledPartName, ACTIVE_CATEGORIES } from '../config/catalog.js';
+import { describeNewProduct, suggestedSku, partOfProduct } from '../utils/productContent.js';
 import { modelSlugsFor } from '../utils/modelSlugs.js';
 import { logAdminAction } from '../utils/audit.js';
 import { upload, storeUploadedFile, deleteStoredImage } from '../utils/upload.js';
@@ -137,9 +138,21 @@ router.post('/products', requireCsrf, async (req, res, next) => {
     // request that omits it (and has no `categories` array either) reaches
     // `prisma.product.create` with `category: undefined` and throws an
     // unhandled PrismaClientValidationError instead of this clean 400.
-    if (!p.name || !p.desc || !Array.isArray(p.images) || p.images.length === 0 || (!p.category && !p.categories?.length)) {
-      return res.status(400).json({ error: 'Missing required product fields' });
+    // Only a name and a category are required: without a photo the product
+    // shows its part type's photo, without a description it gets the part
+    // type's English template, without a SKU the usual NT-... pattern.
+    if (!p.name || !String(p.name).trim() || (!p.category && !p.categories?.length)) {
+      return res.status(400).json({ error: 'নাম আর ক্যাটাগরি দিন। (Name and category are required.)' });
     }
+    const images = Array.isArray(p.images) ? p.images.filter((src) => typeof src === 'string' && src.trim()) : [];
+    const primaryCategory = p.category || p.categories?.[0];
+    // No models given: the model in the name ("Samsung Galaxy A15 Display" ->
+    // "Samsung Galaxy A15"), so the product is listed on that model's page.
+    const typedModels = Array.isArray(p.compatibleModels) ? p.compatibleModels.filter(Boolean) : [];
+    const namePart = partOfProduct(p.name, primaryCategory);
+    const compatibleModels = typedModels.length ? typedModels : namePart.partKey && namePart.modelLabel !== String(p.name).trim() ? [namePart.modelLabel] : [];
+    const desc = String(p.desc || '').trim() || describeNewProduct({ name: p.name, category: primaryCategory, compatibleModels, moq: parseInt(p.moq, 10) || 1 });
+    const sku = p.sku ? String(p.sku).trim() : await uniqueSku(suggestedSku(p.name, primaryCategory));
     // Switched-off categories (Battery) can't get new products.
     const offCategory = findDisabledCategory([...(p.categories || []), p.category].filter(Boolean));
     if (offCategory) return res.status(400).json({ error: disabledCategoryError(offCategory) });
@@ -155,12 +168,12 @@ router.post('/products', requireCsrf, async (req, res, next) => {
     const created = await prisma.product.create({
       data: {
         slug,
-        name: p.name,
-        desc: p.desc,
+        name: String(p.name).trim(),
+        desc,
         categories: p.categories?.length ? p.categories : [p.category],
-        category: p.category || p.categories?.[0],
-        images: p.images,
-        img: p.img || p.images[0],
+        category: primaryCategory,
+        images,
+        img: images[0] || '',
         price,
         priceStatus,
         qualityOptions: optionChange?.qualityOptions ?? [],
@@ -170,14 +183,14 @@ router.post('/products', requireCsrf, async (req, res, next) => {
         compareAt: p.compareAt ? parseFloat(p.compareAt) : null,
         stock: parseInt(p.stock, 10) || 0,
         readyToSell: computeReadyToSell(parseInt(p.stock, 10) || 0, price, priceStatus),
-        sku: p.sku || null,
+        sku: sku || null,
         // Auto-fills from a brand word already written in the name (e.g.
         // "Samsung Galaxy A12 Display" -> "Samsung") when the admin didn't
         // pick one explicitly — never guesses a brand for a bare model code
         // like "Y20" that could belong to several brands (see utils/brand.js).
         brand: p.brand || detectBrandFromText(p.name) || null,
-        compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : [],
-        modelSlugs: modelSlugsFor(p.compatibleModels),
+        compatibleModels,
+        modelSlugs: modelSlugsFor(compatibleModels),
         moq: parseInt(p.moq, 10) || 1,
         dealerPrice: p.dealerPrice ? parseFloat(p.dealerPrice) : null,
         bulkPricing: Array.isArray(p.bulkPricing) ? p.bulkPricing : [],
@@ -235,13 +248,20 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
       data: {
         slug,
         name: p.name,
-        desc: p.desc,
+        desc: p.desc !== undefined
+          ? (String(p.desc).trim() || describeNewProduct({
+            name: p.name || existing.name,
+            category: p.category || p.categories?.[0] || existing.category,
+            compatibleModels: Array.isArray(p.compatibleModels) ? p.compatibleModels : existing.compatibleModels || [],
+            moq: parseInt(p.moq, 10) || existing.moq || 1,
+          }))
+          : undefined,
         // Only touched when the request actually sends them, so a partial
         // update (e.g. just a price) can't wipe the categories or photos.
         categories: p.categories?.length ? p.categories : p.category ? [p.category] : undefined,
         category: p.category || p.categories?.[0] || undefined,
         images: p.images,
-        img: p.img || p.images?.[0],
+        img: Array.isArray(p.images) ? (p.img || p.images[0] || '') : p.img,
         price: priceChange.price,
         priceStatus: priceChange.priceStatus,
         qualityOptions: optionChange ? optionChange.qualityOptions : undefined,
@@ -279,6 +299,88 @@ router.put('/products/:id', requireCsrf, async (req, res, next) => {
     invalidateProductCache();
     indexProduct(updated).catch((err) => console.error('Meilisearch index failed:', err.message));
     res.json({ product: serializeProduct(updated) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// A free SKU: the suggested one, or with -2, -3 … if it's taken.
+async function uniqueSku(base) {
+  if (!base) return null;
+  for (let n = 1; n <= 50; n++) {
+    const candidate = n === 1 ? base : `${base}-${n}`;
+    if (!(await prisma.product.findUnique({ where: { sku: candidate }, select: { id: true } }))) return candidate;
+  }
+  return null;
+}
+
+// ---------- Many products at once: hide, show again, delete ----------
+// Delete can't remove a product that is in a past order (the order keeps
+// pointing at it) — those are hidden instead and counted as such.
+const MAX_BULK_IDS = 500;
+
+router.post('/products/bulk', requireCsrf, async (req, res, next) => {
+  try {
+    const { action } = req.body;
+    const ids = Array.isArray(req.body.ids) ? [...new Set(req.body.ids.filter((id) => typeof id === 'string'))] : [];
+    if (!['hide', 'show', 'delete'].includes(action)) return res.status(400).json({ error: 'Unknown action.' });
+    if (ids.length === 0) return res.status(400).json({ error: 'কমপক্ষে একটা প্রোডাক্ট সিলেক্ট করুন। (Select at least one product.)' });
+    if (ids.length > MAX_BULK_IDS) return res.status(400).json({ error: `একবারে সর্বোচ্চ ${MAX_BULK_IDS}টা। (At most ${MAX_BULK_IDS} at a time.)` });
+
+    const products = await prisma.product.findMany({ where: { id: { in: ids } } });
+    let done = 0;
+    const hiddenInstead = [];
+    const blocked = [];
+    if (action === 'delete') {
+      for (const product of products) {
+        try {
+          await prisma.product.delete({ where: { id: product.id } });
+          (Array.isArray(product.images) ? product.images : []).forEach((img) => deleteStoredImage(img));
+          deleteProductFromIndex(product.id).catch((err) => console.error('Meilisearch delete failed:', err.message));
+          done++;
+        } catch (err) {
+          if (err.code !== 'P2003') throw err;
+          await prisma.product.update({ where: { id: product.id }, data: { published: false } });
+          hiddenInstead.push({ id: product.id, name: product.name });
+        }
+      }
+    } else {
+      // Switched-off parts (Battery, Upper Glass, Camera Glass) stay hidden.
+      const allowed = action === 'show'
+        ? products.filter((p) => {
+          const off = findDisabledCategory(p.categories || p.category) || isDisabledPartName(p.name);
+          if (off) blocked.push({ id: p.id, name: p.name });
+          return !off;
+        })
+        : products;
+      const result = await prisma.product.updateMany({ where: { id: { in: allowed.map((p) => p.id) } }, data: { published: action === 'show' } });
+      done = result.count;
+      const changed = await prisma.product.findMany({ where: { id: { in: allowed.map((p) => p.id) } } });
+      indexProducts(changed).catch((err) => console.error('Meilisearch bulk index failed:', err.message));
+    }
+    await logAdminAction(req.user, `product.bulk_${action}`, { count: done, hiddenInstead: hiddenInstead.length, blocked: blocked.length });
+    invalidateProductCache();
+    res.json({ done, hiddenInstead, blocked, notFound: ids.length - products.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// How many products each category has (and how many still have no photo of
+// their own) — the admin panel's category buttons.
+router.get('/products/counts', async (req, res, next) => {
+  try {
+    const rows = await Promise.all(ACTIVE_CATEGORIES.map(async (name) => {
+      const where = buildProductWhere({ category: name, status: 'all' });
+      const [total, hidden, noPhoto] = await Promise.all([
+        prisma.product.count({ where }),
+        prisma.product.count({ where: { ...where, published: false } }),
+        prisma.product.count({ where: { ...where, img: '' } }),
+      ]);
+      return { name, total, hidden, noPhoto };
+    }));
+    const total = await prisma.product.count();
+    res.json({ total, categories: rows.filter((r) => r.total > 0) });
   } catch (err) {
     next(err);
   }
@@ -418,6 +520,8 @@ router.get('/products', async (req, res, next) => {
       status: (req.query.status || 'all').toString(), // all | published | draft
       priceStatus: (req.query.priceStatus || 'all').toString(), // all | published | draft (price shown / hidden)
     });
+    if (req.query.photo === 'none') where.img = '';
+    else if (req.query.photo === 'has') where.NOT = { img: '' };
     // Deliberately NOT buildProductOrderBy()'s default — that puts sellable
     // (in-stock, priced) products first for the storefront, but an admin
     // managing the catalog (e.g. checking what just got bulk-imported)

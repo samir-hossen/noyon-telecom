@@ -224,41 +224,37 @@ export default function ProductDetail() {
     product ? productUrl(product) : undefined,
     product
       ? [
-          {
-            id: 'product',
-            data: {
-              '@context': 'https://schema.org',
-              '@type': 'Product',
-              name: product.name,
-              description: String(product.desc || '').split(/\n\s*\n/)[0] || product.name,
-              ...(productImages.length ? { image: productImages.map((img) => resolveImg(img)) } : {}),
-              sku: product.sku || undefined,
-              mpn: product.sku || undefined,
-              brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
-              category: `Mobile Phone Parts > ${product.category}`,
-              // A product with no real price yet (the "contact for price"
-              // convention — price: 0) must not claim a fake ৳0 Offer at
-              // all: Google's Merchant/Rich Results policy treats a
-              // misleading price as grounds to disapprove the listing.
-              ...(product.price > 0
-                ? {
-                    offers: {
-                      // Same as the server-rendered page: several grades = one
-                      // AggregateOffer from the cheapest to the dearest.
-                      ...(priceRange(product)
-                        ? { '@type': 'AggregateOffer', lowPrice: priceRange(product).min, highPrice: priceRange(product).max, offerCount: qualityOptions(product).length }
-                        : { '@type': 'Offer', price: product.price }),
-                      priceCurrency: 'BDT',
-                      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-                      url: `${window.location.origin}${productUrl(product)}`,
-                    },
-                  }
-                : {}),
-              ...(product.reviewCount > 0
-                ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
-                : {}),
-            },
-          },
+          // Product markup only with a published price (same as the server-
+          // rendered page): without offers Google counts it as an invalid item.
+          ...(product.price > 0
+            ? [{
+                id: 'product',
+                data: {
+                  '@context': 'https://schema.org',
+                  '@type': 'Product',
+                  name: product.name,
+                  description: String(product.desc || '').split(/\n\s*\n/)[0] || product.name,
+                  ...(productImages.length ? { image: productImages.map((img) => resolveImg(img)) } : {}),
+                  sku: product.sku || undefined,
+                  mpn: product.sku || undefined,
+                  brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+                  category: `Mobile Phone Parts > ${product.category}`,
+                  offers: {
+                    // Several grades = one AggregateOffer from the cheapest to the dearest.
+                    ...(priceRange(product)
+                      ? { '@type': 'AggregateOffer', lowPrice: priceRange(product).min, highPrice: priceRange(product).max, offerCount: qualityOptions(product).length }
+                      : { '@type': 'Offer', price: product.price }),
+                    priceCurrency: 'BDT',
+                    // Stock 0 = "ask us", not sold out: no availability claim then.
+                    ...(product.stock > 0 ? { availability: 'https://schema.org/InStock' } : {}),
+                    url: `${window.location.origin}${productUrl(product)}`,
+                  },
+                  ...(product.reviewCount > 0
+                    ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount } }
+                    : {}),
+                },
+              }]
+            : []),
           {
             id: 'breadcrumb',
             data: {
@@ -448,6 +444,9 @@ export default function ProductDetail() {
               <PartTile product={product} large />
             )}
           </div>
+          {!gallery.length && (
+            <p className="pd-photo-note">{t('pd.photoNote')} · <Link to="/photo-credits">{t('pd.photoCredits')}</Link></p>
+          )}
           {gallery.length > 1 && (
             <div className="pd-thumb-row">
               {gallery.map((img, i) => (

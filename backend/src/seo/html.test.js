@@ -63,7 +63,8 @@ test('server-rendered product page', async (t) => {
     assert.match(html, /<p>Second paragraph\.<\/p>/);
     assert.match(html, /<a href="\/product\/vivo-y21-back-glass">Vivo Y21 Back Glass<\/a>/);
     assert.match(html, /<a href="\/model\/vivo-y21">All Vivo Y21 parts →<\/a>/);
-    assert.match(html, /<img src="\/images\/parts\/display\.webp" alt="Vivo Y21 Display"/);
+    assert.match(html, /<img src="\/images\/parts\/photos\/display\.webp" alt="Vivo Y21 Display"/);
+    assert.match(html, /<p class="pd-photo-note">Representative photo — you get the part for your exact model · <a href="\/photo-credits">Photo credits<\/a><\/p>/);
   });
 
   await t.test('a hidden price shows the WhatsApp ask, never ৳0', () => {

@@ -82,7 +82,7 @@ export default function ModelHub() {
       {!data ? (
         <p style={{ padding: '40px 0', color: 'var(--muted)' }}>{t('shop.searching')}</p>
       ) : (
-        <div className="grid" style={{ paddingBottom: 40 }}>
+        <div className="grid grid-wide" style={{ paddingBottom: 40 }}>
           {data.products.map((p) => (
             <ProductCard key={p.id} product={p} onAdd={handleAdd} />
           ))}

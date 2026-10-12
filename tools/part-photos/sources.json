@@ -1,0 +1,122 @@
+[
+  {
+    "part": "Display",
+    "file": "display",
+    "title": "Fairphone 3 Modularity (48858510338).png",
+    "source": "https://commons.wikimedia.org/wiki/File:Fairphone_3_Modularity_(48858510338).png",
+    "author": "Fairphone",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "changes": "Cropped from an exploded view, logo removed, shadow added"
+  },
+  {
+    "part": "Back Glass",
+    "file": "back-glass",
+    "title": "Fairphone 3 Modularity (48858510338).png",
+    "source": "https://commons.wikimedia.org/wiki/File:Fairphone_3_Modularity_(48858510338).png",
+    "author": "Fairphone",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "changes": "Cropped from an exploded view, logo removed, shadow added"
+  },
+  {
+    "part": "Camera",
+    "file": "camera",
+    "title": "Redmi Note 8 - camera module-4929.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_camera_module-4929.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Front Camera",
+    "file": "front-camera",
+    "title": "Wiko Rainbow 4G - front camera-91639.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Wiko_Rainbow_4G_-_front_camera-91639.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Charging Port",
+    "file": "charging-port",
+    "title": "Redmi Note 8 - IO board-4926.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_IO_board-4926.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "SIM Tray",
+    "file": "sim-tray",
+    "title": "ZenFone 6 sim tray.png",
+    "source": "https://commons.wikimedia.org/wiki/File:ZenFone_6_sim_tray.png",
+    "author": "isbonny (邦尼幫你), frame by 17jiangz1",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "changes": "Cropped from a video frame, background removed"
+  },
+  {
+    "part": "Speaker",
+    "file": "speaker",
+    "title": "IPhone 5s (model A1457) - loudspeaker-5111.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:IPhone_5s_(model_A1457)_-_loudspeaker-5111.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Ear Speaker",
+    "file": "ear-speaker",
+    "title": "LG P710 Optimus L7 II - loudspeaker-7051.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:LG_P710_Optimus_L7_II_-_loudspeaker-7051.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Flex Cable",
+    "file": "flex",
+    "title": "Samsung Galaxy J5 (2017, SM-J530F-DS) - flexible board for display-1053.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Samsung_Galaxy_J5_(2017,_SM-J530F-DS)_-_flexible_board_for_display-1053.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Frame",
+    "file": "frame",
+    "title": "LG P700 Optimus L7 - middle cover, rear view-1341.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:LG_P700_Optimus_L7_-_middle_cover,_rear_view-1341.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Logic Board",
+    "file": "logic-board",
+    "title": "Redmi Note 8 - board-4933.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_board-4933.jpg",
+    "author": "Raimond Spekking",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Background removed, cropped"
+  },
+  {
+    "part": "Other parts",
+    "file": "default",
+    "title": "Fairphone 3 Modularity (48858510338).png",
+    "source": "https://commons.wikimedia.org/wiki/File:Fairphone_3_Modularity_(48858510338).png",
+    "author": "Fairphone",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "changes": "Cropped from an exploded view, logo removed, shadow added"
+  }
+]

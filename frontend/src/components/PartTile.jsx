@@ -1,18 +1,18 @@
 import { slugify } from '../utils/slug';
 
-// Shown instead of a photo until the owner adds one: a 3D render of the
-// part type (our own, public/images/parts/*.webp) with the brand, the model
-// and the part — not "photo coming soon" on thousands of products. Real
-// photos (the owner's own, or supplier photos they're allowed to use)
-// replace it as soon as they're uploaded.
+// Shown instead of a photo until the owner adds one: a real photo of the
+// part type (public/images/parts/photos/*.webp — free-licence photos, see
+// /photo-credits) with the brand, the model and the part, so the tile still
+// says exactly which product it is. The owner's own photos replace it as
+// soon as they're uploaded.
 const PART_LABELS = [
   'Motherboard Flex Cable', 'Charging Flex Cable', 'Display Upper Glass', 'Upper Glass', 'Back Glass', 'Back Camera',
   'Front Camera', 'Camera Glass', 'Charging Port', 'SIM Tray', 'Loudspeaker', 'Ear Speaker', 'Flex Cable',
   'Middle Frame', 'Logic Board', 'Display',
 ];
-const ICONS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board']);
+const PHOTOS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board']);
 // Parts that look different from the rest of their category.
-const ICON_BY_PART = { 'Front Camera': 'front-camera', 'Ear Speaker': 'ear-speaker' };
+const PHOTO_BY_PART = { 'Front Camera': 'front-camera', 'Ear Speaker': 'ear-speaker' };
 
 // "Samsung Galaxy A15 Display" (brand Samsung) -> { brand, model: "Galaxy A15", part: "Display" }
 export function splitProductName(product) {
@@ -27,10 +27,19 @@ export function splitProductName(product) {
 export default function PartTile({ product, large = false }) {
   const { brand, model, part } = splitProductName(product);
   const slug = slugify(product?.category || '');
-  const icon = ICON_BY_PART[part] || (ICONS.has(slug) ? slug : 'default');
+  const photo = PHOTO_BY_PART[part] || (PHOTOS.has(slug) ? slug : 'default');
+  // On a product card the name is printed right under the image, so the
+  // card shows just the photo; the product page adds the model under it.
+  if (!large) {
+    return (
+      <div className="part-tile">
+        <img className="part-tile-photo" src={`/images/parts/photos/${photo}-sm.webp`} alt={product?.name || ''} width="480" height="480" loading="lazy" decoding="async" />
+      </div>
+    );
+  }
   return (
-    <div className={`part-tile${large ? ' part-tile-lg' : ''}`} role="img" aria-label={product?.name}>
-      <span className="part-tile-icon" style={{ backgroundImage: `url(/images/parts/${icon}.webp)` }} aria-hidden="true" />
+    <div className="part-tile part-tile-lg" role="img" aria-label={product?.name}>
+      <img className="part-tile-photo" src={`/images/parts/photos/${photo}.webp`} alt="" width="900" height="900" decoding="async" />
       {brand && <span className="part-tile-brand">{brand}</span>}
       <span className="part-tile-model">{model}</span>
       <span className="part-tile-part">{part}</span>

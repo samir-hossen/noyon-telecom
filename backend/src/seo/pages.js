@@ -13,6 +13,7 @@ import { normalizeQualityOptions } from '../utils/qualityOptions.js';
 import { modelSlugsFor } from '../utils/modelSlugs.js';
 import { getOrSet } from '../utils/cache.js';
 import * as content from './content.js';
+import { partPreviewPath } from './partPhotos.js';
 
 export const PAGE_SIZE = 24;
 const SITE_URL = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '');
@@ -190,7 +191,8 @@ async function productPage(slug) {
             : { '@type': 'Offer', price: grades[0]?.price ?? row.price }),
           url: absoluteUrl(path),
           priceCurrency: 'BDT',
-          availability: row.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          // Stock 0 means "ask us" (not tracked), never sold out — so no availability claim then.
+          ...(row.stock > 0 ? { availability: 'https://schema.org/InStock' } : {}),
           itemCondition: 'https://schema.org/NewCondition',
           eligibleQuantity: { '@type': 'QuantitativeValue', minValue: row.moq || 1 },
           seller: { '@type': 'Organization', name: 'Noyon Telecom' },
@@ -202,7 +204,8 @@ async function productPage(slug) {
   return {
     status: 200,
     kind: 'product',
-    head: { ...seo, canonical: path, ogType: 'product', image: images[0] || null },
+    // Link previews (WhatsApp, Facebook) show the part-type photo until the product has its own.
+    head: { ...seo, canonical: path, ogType: 'product', image: images[0] || absoluteUrl(partPreviewPath(row.category, row.name)) },
     h1,
     breadcrumb: crumbs,
     product: {
@@ -224,7 +227,10 @@ async function productPage(slug) {
     },
     model: modelSlug && modelName ? { slug: modelSlug, name: modelName, path: `/model/${modelSlug}` } : null,
     related: relatedRows.map(listItem),
-    jsonLd: [{ id: 'product', data: productLd }, breadcrumbLd(crumbs)],
+    // Product markup only with a published price: Google treats a Product
+    // without offers/reviews as an invalid item (thousands of Search Console
+    // errors); the price-on-WhatsApp pages keep their breadcrumb.
+    jsonLd: [published ? { id: 'product', data: productLd } : null, breadcrumbLd(crumbs)].filter(Boolean),
   };
 }
 

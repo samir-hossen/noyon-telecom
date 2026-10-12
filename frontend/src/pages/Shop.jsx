@@ -354,7 +354,7 @@ export default function Shop() {
       </div>
 
       {loading ? (
-        <div className="grid" style={{ paddingBottom: 40 }}>
+        <div className="grid grid-wide" style={{ paddingBottom: 40 }}>
           {Array.from({ length: 8 }).map((_, i) => (
             <div className="card skeleton-card" key={i}>
               <div className="skeleton-block" style={{ aspectRatio: '1 / 1.05' }} />
@@ -382,7 +382,7 @@ export default function Shop() {
           </button>
         </div>
       ) : (
-        <div className="grid" style={{ paddingBottom: 40 }}>
+        <div className="grid grid-wide" style={{ paddingBottom: 40 }}>
           {products.map((p) => (
             <ProductCard key={p.id} product={p} onAdd={handleAdd} />
           ))}

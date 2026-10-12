@@ -34,6 +34,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy.jsx'));
 const Terms = lazy(() => import('./pages/Terms.jsx'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy.jsx'));
 const WarrantyPolicy = lazy(() => import('./pages/WarrantyPolicy.jsx'));
+const PhotoCredits = lazy(() => import('./pages/PhotoCredits.jsx'));
 const DeliveryPolicy = lazy(() => import('./pages/DeliveryPolicy.jsx'));
 const TrackOrder = lazy(() => import('./pages/TrackOrder.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
@@ -133,6 +134,7 @@ export default function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/refund-policy" element={<RefundPolicy />} />
           <Route path="/warranty-policy" element={<WarrantyPolicy />} />
+          <Route path="/photo-credits" element={<PhotoCredits />} />
           <Route path="/delivery-policy" element={<DeliveryPolicy />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<AboutUs />} />

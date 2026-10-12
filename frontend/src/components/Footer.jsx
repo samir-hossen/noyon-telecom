@@ -145,7 +145,7 @@ export default function Footer() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} Noyon Telecom — {t('common.footer.rights')}</span>
           <span className="footer-legal-links">
-            <Link to="/privacy-policy">{t('footer.privacy')}</Link> · <Link to="/terms">{t('footer.terms')}</Link> · <Link to="/refund-policy">{t('footer.refunds')}</Link> · <Link to="/admin/login">{t('nav.admin')}</Link>
+            <Link to="/privacy-policy">{t('footer.privacy')}</Link> · <Link to="/terms">{t('footer.terms')}</Link> · <Link to="/refund-policy">{t('footer.refunds')}</Link> · <Link to="/photo-credits">{t('footer.photoCredits')}</Link> · <Link to="/admin/login">{t('nav.admin')}</Link>
           </span>
         </div>
       </div>

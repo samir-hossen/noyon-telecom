@@ -12,7 +12,7 @@ test('photoKeys: SKU or link name, plus an extra-photo number', () => {
 });
 
 test('withPhoto: main photo first, extras after, no placeholders, at most 8', () => {
-  assert.deepEqual(withPhoto(['/images/parts/display.svg'], 'a.jpg'), ['a.jpg']);
+  assert.deepEqual(withPhoto(['/images/parts/photos/display.webp'], 'a.jpg'), ['a.jpg']);
   assert.deepEqual(withPhoto(['old.jpg'], 'new.jpg'), ['new.jpg', 'old.jpg']);
   assert.deepEqual(withPhoto(['main.jpg'], 'side.jpg', { extra: true }), ['main.jpg', 'side.jpg']);
   assert.deepEqual(withPhoto(['a.jpg'], 'a.jpg'), ['a.jpg']);
