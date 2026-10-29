@@ -20,7 +20,8 @@
     "prisma:studio": "prisma studio",
     "prisma:generate": "prisma generate",
     "test": "node --test src/**/*.test.js src/scripts/*/*.test.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "migrate:deploy": "node scripts/migrateDeploy.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
