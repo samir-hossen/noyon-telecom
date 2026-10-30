@@ -128,7 +128,7 @@ export default function Navbar() {
         </button>
 
         <Link to="/" className="nav-logo" onClick={closeMenu}>
-          <img src="/logo-mark.png" alt="" className="nav-logo-mark" />
+          <img src="/logo-mark-small.webp" alt="" className="nav-logo-mark" width="112" height="87" decoding="async" />
           Noyon <span>Telecom</span>
         </Link>
 

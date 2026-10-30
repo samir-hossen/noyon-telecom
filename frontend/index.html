@@ -26,6 +26,12 @@
          tolerates a missing canonical (it infers self-canonical) far
          better than a contradicting one. -->
 
+    <!-- Start the first hero image before React downloads and renders. -->
+    <link rel="preload" as="image" href="/images/hero/hero-parts.webp"
+      imagesrcset="/images/hero/hero-parts-sm.webp 700w, /images/hero/hero-parts.webp 1400w"
+      imagesizes="(max-width: 900px) 100vw, 600px" fetchpriority="high" />
+    <link rel="preconnect" href="https://api.noyontelecom.com" crossorigin />
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

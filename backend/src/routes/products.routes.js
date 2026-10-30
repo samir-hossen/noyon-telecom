@@ -2,7 +2,7 @@ import { Router } from 'express';
 import prisma from '../prismaClient.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
-import { serializeProduct, serializeReview, withViewerPricing } from '../utils/serialize.js';
+import { serializeProduct, serializeProductCard, serializeReview, withViewerPricing } from '../utils/serialize.js';
 import { upload, storeUploadedFile } from '../utils/upload.js';
 import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCategories, getActiveBrands, storefrontWhere } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS, DISABLED_CATEGORIES_LOWER, findDisabledCategory } from '../config/catalog.js';
@@ -67,7 +67,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
         ])
     );
 
-    const pack = (rows) => rows.map((p) => withViewerPricing(serializeProduct(p), req.user));
+    const pack = (rows) => rows.map((p) => serializeProductCard(p, req.user));
     res.json({
       featured: pack(featuredRows),
       newArrivals: pack(newArrivalRows),

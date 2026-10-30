@@ -83,7 +83,13 @@ const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 async function request(path, options = {}, _isRetry = false) {
   const method = (options.method || 'GET').toUpperCase();
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  // A bodyless GET must remain a simple CORS request: application/json
+  // would add an OPTIONS round trip before every new API URL.
+  const headers = {
+    Accept: 'application/json',
+    ...(options.body != null ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.headers || {}),
+  };
 
   if (MUTATING.has(method)) {
     const token = await ensureCsrfToken();

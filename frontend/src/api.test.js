@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { resolveImg } from './api.js';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { resolveImg, api } from './api.js';
 import { FALLBACK_IMG } from './utils/fallbackImage.js';
 
 describe('resolveImg', () => {
@@ -43,5 +43,32 @@ describe('resolveImg', () => {
     it('leaves a non-Cloudinary URL untouched even with a width given', () => {
       expect(resolveImg('https://cdn.example.com/photo.jpg', 400)).toBe('https://cdn.example.com/photo.jpg');
     });
+  });
+});
+
+
+describe('API request headers', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('GET requests avoid JSON Content-Type so cross-origin reads need no preflight', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ products: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(api.get('/products')).resolves.toEqual({ products: [] });
+    const options = fetchMock.mock.calls[0][1];
+    expect(options.headers['Content-Type']).toBeUndefined();
+    expect(options.headers.Accept).toBe('application/json');
+    expect(options.credentials).toBe('include');
+  });
+
+  it('POST requests keep JSON and CSRF protection', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ csrfToken: 'test-token' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await api.post('/contact', { message: 'test' });
+    const options = fetchMock.mock.calls[1][1];
+    expect(options.headers['Content-Type']).toBe('application/json');
+    expect(options.headers['x-csrf-token']).toBe('test-token');
+    expect(JSON.parse(options.body)).toEqual({ message: 'test' });
   });
 });

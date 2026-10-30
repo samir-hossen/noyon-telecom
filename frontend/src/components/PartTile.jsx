@@ -10,7 +10,7 @@ export default function PartTile({ product, large = false }) {
   if (!large) {
     return (
       <div className="part-tile">
-        <img className="part-tile-photo" src={placeholderPhoto(product)} alt={product?.name || ''} width="480" height="480" loading="lazy" decoding="async" />
+        <img className="part-tile-photo" src={placeholderPhoto(product)} srcSet={`${placeholderPhoto(product).replace('-sm.webp', '-xs.webp')} 240w, ${placeholderPhoto(product)} 480w`} sizes="(max-width: 700px) 160px, (max-width: 1199px) 30vw, 180px" alt={product?.name || ''} width="480" height="480" loading="lazy" decoding="async" />
       </div>
     );
   }

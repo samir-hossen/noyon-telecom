@@ -150,3 +150,12 @@ export function serializeOrder(o) {
     })),
   };
 }
+
+// Homepage cards do not need full descriptions, galleries or model indexes.
+// Price visibility and dealer discounts are still applied before projection.
+export function serializeProductCard(product, user) {
+  const priced = withViewerPricing(serializeProduct(product), user);
+  const fields = ['id', 'slug', 'name', 'category', 'img', 'price', 'retailPrice',
+    'compareAt', 'stock', 'rating', 'reviewCount', 'sku', 'brand', 'moq', 'qualityOptions'];
+  return Object.fromEntries(fields.map((key) => [key, priced[key]]));
+}

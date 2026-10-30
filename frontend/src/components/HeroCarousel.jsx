@@ -247,6 +247,8 @@ export default function HeroCarousel() {
               <div className="hero-img">
                 <img
                   src={s.img}
+                  srcSet={`${s.img.replace('.webp', '-sm.webp')} 700w, ${s.img} 1400w`}
+                  sizes="(max-width: 900px) 100vw, 600px"
                   alt={s.alt}
                   width="1400"
                   height="736"

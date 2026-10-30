@@ -57,18 +57,23 @@ export default defineConfig({
         // renders the right page client-side from the URL — this is also
         // what makes navigation "work offline" in the first place.
         navigateFallback: 'index.html',
+        // XML, robots and API URLs must reach their real server handlers.
+        navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/uploads\//, /\.(?:xml|txt)(?:\?|$)/],
+        // Admin spreadsheets are only needed after an admin opens them.
+        globIgnores: ['**/Admin-*.js', '**/xlsx-*.js'],
         runtimeCaching: [
           {
-            // Product/category/price data changes constantly — always try
-            // the network first, only falling back to a cached copy (so the
-            // page still renders something) when the request fails outright.
-            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
+            // Never replay cached account data or viewer-specific prices.
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/assets/') && url.pathname.endsWith('.js'),
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 6,
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 10 },
+              cacheName: 'route-chunks',
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
           {

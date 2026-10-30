@@ -38,7 +38,7 @@ export default function CategoryGrid() {
         <Link key={c.name} to={categoryUrl(c.name)} className="category-tile">
           {/* A real photo of the part (same as on the products without their own photo) */}
           <span className="category-tile-photo">
-            <img src={`/images/parts/photos/${slugify(c.name)}-sm.webp`} alt="" width="96" height="96" loading="lazy" decoding="async" />
+            <img src={`/images/parts/photos/${slugify(c.name)}-icon.webp`} alt="" width="96" height="96" loading="lazy" decoding="async" />
           </span>
           <span className="category-tile-name">{t(c.labelKey)}</span>
         </Link>

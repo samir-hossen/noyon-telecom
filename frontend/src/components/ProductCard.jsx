@@ -76,7 +76,7 @@ export default function ProductCard({ product, onAdd }) {
             {saved ? '♥' : '♡'}
           </button>
           {product.img ? (
-            <img src={productImg(product, 400)} alt={product.name} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+            <img src={productImg(product, 400)} alt={product.name} width="400" height="400" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
           ) : (
             <PartTile product={product} />
           )}
