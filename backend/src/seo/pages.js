@@ -237,7 +237,7 @@ async function productPage(slug) {
 // ---------- listing helpers ----------
 async function listProducts(where, page) {
   const [rows, total] = await Promise.all([
-    prisma.product.findMany({ where, orderBy: buildProductOrderBy(''), skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE, select: LIST_SELECT }),
+    prisma.product.findMany({ where, orderBy: buildProductOrderBy('popular'), skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE, select: LIST_SELECT }),
     prisma.product.count({ where }),
   ]);
   return { products: rows.map(listItem), total, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };

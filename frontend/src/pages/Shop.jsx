@@ -349,7 +349,8 @@ export default function Shop() {
               />
             </div>
             <select className="select" value={sort} onChange={(e) => setFilter('sort', e.target.value)}>
-              <option value="">Most viewed / বেশি দেখা</option>
+              <option value="">{search ? 'Relevant products / প্রাসঙ্গিক পণ্য' : 'Most viewed / বেশি দেখা'}</option>
+              <option value="popular">Most viewed / বেশি দেখা</option>
               <option value="newest">Newest / নতুন পণ্য</option>
               <option value="price-asc">{t('shop.sortPriceAsc')}</option>
               <option value="price-desc">{t('shop.sortPriceDesc')}</option>
