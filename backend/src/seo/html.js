@@ -5,6 +5,7 @@
 // <div id="root">. Search engines and link previews get a complete page
 // without running JavaScript.
 import fs from 'node:fs';
+import { createShellCache } from './shellCache.js';
 import { WHATSAPP_NUMBER, priceRequestMessage } from './whatsapp.js';
 import { absoluteUrl } from './pages.js';
 import { partPhotoPath } from './partPhotos.js';
@@ -25,13 +26,19 @@ const MINIMAL_SHELL = `<!doctype html>
   </body>
 </html>`;
 
-let shellCache = { html: null, at: 0 };
+const getRemoteShell = createShellCache(async () => {
+  const res = await fetch(`${SITE_URL}/index.html`, { signal: AbortSignal.timeout(5000), headers: { 'User-Agent': 'noyon-ssr/1.0' } });
+  if (!res.ok) throw new Error(`shell HTTP ${res.status}`);
+  const html = await res.text();
+  if (!html.includes('<div id="root">')) throw new Error('shell has no #root');
+  return html;
+}, {
+  ttlMs: SHELL_TTL_MS,
+  onError: (err) => console.error('SSR: could not load the storefront shell:', err.message),
+});
 
-// The built index.html: from SSR_SHELL_FILE when set (local runs), otherwise
-// fetched from the live storefront (its /index.html is a real file, so no
-// rewrite rule applies to it) and kept for a minute — short, so a frontend
-// deploy's new asset names show up quickly. A failed refresh keeps the last
-// good copy.
+// Refresh the built shell in the background after a minute. Visitors keep
+// receiving the last good HTML without waiting for an extra storefront fetch.
 export async function getShell() {
   if (process.env.SSR_SHELL_FILE) {
     try {
@@ -40,18 +47,7 @@ export async function getShell() {
       return MINIMAL_SHELL;
     }
   }
-  if (shellCache.html && Date.now() - shellCache.at < SHELL_TTL_MS) return shellCache.html;
-  try {
-    const res = await fetch(`${SITE_URL}/index.html`, { signal: AbortSignal.timeout(5000), headers: { 'User-Agent': 'noyon-ssr/1.0' } });
-    if (!res.ok) throw new Error(`shell HTTP ${res.status}`);
-    const html = await res.text();
-    if (!html.includes('<div id="root">')) throw new Error('shell has no #root');
-    shellCache = { html, at: Date.now() };
-    return html;
-  } catch (err) {
-    console.error('SSR: could not load the storefront shell:', err.message);
-    return shellCache.html || MINIMAL_SHELL;
-  }
+  return (await getRemoteShell()) || MINIMAL_SHELL;
 }
 
 export function escapeHtml(s) {
