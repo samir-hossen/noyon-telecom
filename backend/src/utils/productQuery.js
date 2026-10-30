@@ -142,6 +142,8 @@ export function parseOptionalPrice(value) {
 export function buildProductOrderBy(sort) {
   if (sort === 'price-asc') return [{ priceStatus: 'desc' }, { price: 'asc' }, { createdAt: 'desc' }];
   if (sort === 'price-desc') return [{ priceStatus: 'desc' }, { price: 'desc' }, { createdAt: 'desc' }];
+  if (sort === 'popular') return [{ viewCount: 'desc' }, { readyToSell: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }];
+  if (sort === 'newest') return [{ createdAt: 'desc' }, { id: 'asc' }];
   if (sort === 'rating') return { rating: 'desc' };
   // Default ("Featured"): sellable products (in stock, published price)
   // first, then the rest with a shown price, then "ask price on WhatsApp"
@@ -209,3 +211,4 @@ export async function getActiveBrandCategoryPairs(prisma) {
 }
 
 export { MAX_LIMIT };
+

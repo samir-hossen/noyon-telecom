@@ -95,7 +95,10 @@ function setJsonLd(id, data) {
 export function usePageMeta(title, description, image, canonicalPath, jsonLd, noindex, options = {}) {
   const exactTitle = Boolean(options.exactTitle);
   const ogType = options.ogType || 'website';
+  const preserveExisting = Boolean(options.preserveExisting);
   useEffect(() => {
+    // Keep server-rendered metadata during loading or temporary API failures.
+    if (preserveExisting) return;
     const fullTitle = title ? (exactTitle ? title : title + ' — ' + SITE_NAME) : DEFAULT_TITLE;
     const desc = description || DEFAULT_DESCRIPTION;
     // Drops the query string when a page doesn't pass its own canonicalPath
@@ -138,10 +141,11 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
       if (noindex) setOrRemoveMeta('robots', null);
     };
      
-  }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex, exactTitle, ogType]);
+  }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex, exactTitle, ogType, preserveExisting]);
 }
 
 // Back-compat alias for older call sites that only set a title.
 export function usePageTitle(title) {
   usePageMeta(title);
 }
+

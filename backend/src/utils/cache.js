@@ -26,19 +26,20 @@ import NodeCache from 'node-cache';
 // every hit.
 const cache = new NodeCache({ checkperiod: 120, useClones: false });
 
-// Cache-aside: return the cached value if present: otherwise call
-// `fetchFn`, store what it resolves to under `key` for `ttlSeconds`, and
-// return that. Concurrent requests for the same not-yet-cached key each
-// still run `fetchFn` once each (no request coalescing) — acceptable here
-// since a cache miss just means a normal DB query, same as if this cache
-// didn't exist; the win is avoiding that query on every *subsequent* hit
-// within the TTL window, not eliminating every possible duplicate query.
+// Coalesce concurrent cold reads. A write invalidates in-flight results too.
+const pending = new Map();
+let generation = 0;
 export async function getOrSet(key, ttlSeconds, fetchFn) {
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
-  const value = await fetchFn();
-  cache.set(key, value, ttlSeconds);
-  return value;
+  if (pending.has(key)) return pending.get(key);
+  const started = generation;
+  const promise = Promise.resolve().then(fetchFn).then((value) => {
+    if (started === generation) cache.set(key, value, ttlSeconds);
+    return value;
+  }).finally(() => { if (pending.get(key) === promise) pending.delete(key); });
+  pending.set(key, promise);
+  return promise;
 }
 
 // Call this after any write that could change what a cached catalog read
@@ -61,7 +62,10 @@ export async function getOrSet(key, ttlSeconds, fetchFn) {
 // not a correctness one — the same tradeoff the existing 30s HTTP
 // Cache-Control on these routes already makes (see cacheControl.js).
 export function invalidateProductCache() {
+  generation += 1;
+  pending.clear();
   cache.flushAll();
 }
 
 export { cache };
+

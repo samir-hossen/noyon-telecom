@@ -26,6 +26,8 @@ export default function Shop() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
   const [seoPage, setSeoPage] = useState(null);
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -189,6 +191,7 @@ export default function Shop() {
   useEffect(() => {
     let current = true;
     setLoading(true);
+    setLoadError('');
     const q = new URLSearchParams();
     if (category !== 'All') q.set('category', category);
     if (brand !== 'All') q.set('brand', brand);
@@ -196,6 +199,7 @@ export default function Shop() {
     if (sort) q.set('sort', sort);
     q.set('page', page);
     q.set('limit', PAGE_SIZE);
+    q.set('card', '1');
 
     api
       .get(`/products?${q.toString()}`)
@@ -207,6 +211,7 @@ export default function Shop() {
         setTotal(d.total);
         setTotalPages(d.totalPages);
       })
+      .catch((err) => { if (current) { setProducts([]); setTotal(0); setTotalPages(1); setLoadError(err.message); } })
       .finally(() => {
         if (current) setLoading(false);
       });
@@ -215,7 +220,7 @@ export default function Shop() {
     return () => {
       current = false;
     };
-  }, [category, brand, search, sort, page]);
+  }, [category, brand, search, sort, page, retry]);
 
   async function handleAdd(id) {
     try {
@@ -344,7 +349,8 @@ export default function Shop() {
               />
             </div>
             <select className="select" value={sort} onChange={(e) => setFilter('sort', e.target.value)}>
-              <option value="">{t('shop.sortFeatured')}</option>
+              <option value="">Most viewed / বেশি দেখা</option>
+              <option value="newest">Newest / নতুন পণ্য</option>
               <option value="price-asc">{t('shop.sortPriceAsc')}</option>
               <option value="price-desc">{t('shop.sortPriceDesc')}</option>
               <option value="rating">{t('shop.sortTopRated')}</option>
@@ -366,6 +372,8 @@ export default function Shop() {
             </div>
           ))}
         </div>
+      ) : loadError ? (
+        <div className="empty-state" role="alert"><p>{loadError}</p><button className="btn btn-primary" onClick={() => setRetry((n) => n + 1)}>Try again / আবার চেষ্টা করুন</button></div>
       ) : products.length === 0 ? (
         <div className="empty-state">
           <div className="icon">🔍</div>

@@ -87,6 +87,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [missingProduct, setMissingProduct] = useState(false);
   const [related, setRelated] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
@@ -131,6 +132,7 @@ export default function ProductDetail() {
     setAdded(false);
     setProduct(null);
     setLoadError('');
+    setMissingProduct(false);
     setQty(1);
     setActiveImg(0);
     setGradeLabel(null);
@@ -152,9 +154,24 @@ export default function ProductDetail() {
         }
         setProduct(d.product);
       })
-      .catch((err) => { if (current) setLoadError(err.message); });
+      .catch((err) => { if (current) { setLoadError(err.message); setMissingProduct(err.status === 404 || err.status === 410); } });
     return () => { current = false; };
   }, [id]);
+
+  // Count an engaged view, never a listing/prefetch. Server deduplicates too.
+  useEffect(() => {
+    if (!product?.id || user?.role === 'admin') return;
+    const timer = setTimeout(() => {
+      if (document.visibilityState !== 'visible') return;
+      const key = `nt-view:${product.id}`;
+      const day = new Date().toISOString().slice(0, 10);
+      try { if (sessionStorage.getItem(key) === day) return; } catch { /* storage optional */ }
+      api.post(`/products/${product.id}/view`, {}).then(() => {
+        try { sessionStorage.setItem(key, day); } catch { /* storage optional */ }
+      }).catch(() => {});
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [product?.id, user?.role]);
 
   // Object URLs (used for the "add photos" preview thumbnails) are only
   // valid for this tab's lifetime. A ref (rather than depending on
@@ -185,14 +202,14 @@ export default function ProductDetail() {
     // rows client-side. At 10k+ products a category can easily hold
     // hundreds of rows, so that was needlessly shipping and discarding a
     // couple hundred full product records on every product-detail view.
-    api.get(`/products?category=${encodeURIComponent(product.category)}&limit=8`).then((d) => {
+    api.get(`/products?category=${encodeURIComponent(product.category)}&limit=8&card=1`).then((d) => {
       setRelated(d.products.filter((p) => p.id !== product.id).slice(0, 4));
     });
     api.get(`/products/${product.id}/reviews`).then((d) => setReviews(d.reviews));
     const modelSlug = product.modelSlugs?.[0];
     setModelParts({ model: null, products: [] });
     if (modelSlug) {
-      api.get(`/products/model/${encodeURIComponent(modelSlug)}?exclude=${encodeURIComponent(product.id)}&limit=12`)
+      api.get(`/products/model/${encodeURIComponent(modelSlug)}?exclude=${encodeURIComponent(product.id)}&limit=12&card=1`)
         .then((d) => setModelParts({ model: d.model, products: d.products }))
         .catch(() => {});
     }
@@ -268,8 +285,8 @@ export default function ProductDetail() {
     // noindex once the fetch has definitively failed (deleted product, bad
     // link, etc) — without this, a dead product URL kept whatever meta the
     // previously-viewed page left behind and was never marked non-indexable.
-    !!loadError,
-    { exactTitle: Boolean(product?.seo?.title), ogType: product ? 'product' : 'website' }
+    missingProduct,
+    { exactTitle: Boolean(product?.seo?.title), ogType: product ? 'product' : 'website', preserveExisting: !product && !missingProduct }
   );
 
   if (loadError) {
@@ -859,3 +876,4 @@ export default function ProductDetail() {
     </div>
   );
 }
+

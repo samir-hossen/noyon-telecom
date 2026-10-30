@@ -98,7 +98,7 @@ export default function Home() {
     }
   }
 
-  const { featured, newArrivals, bestSellers, deals, brandRails = [] } = sections;
+  const { popular = [], featured, newArrivals, bestSellers, deals, brandRails = [] } = sections;
 
   return (
     <div>
@@ -119,6 +119,13 @@ export default function Home() {
         </div>
         <CategoryGrid />
       </section>
+
+      {popular.length > 0 && (
+        <section className="section container home-rail">
+          <div className="section-head"><h2 className="section-title">Most viewed / বেশি দেখা পণ্য</h2><Link to="/shop?sort=popular" className="section-link">{t('home.viewAll')} →</Link></div>
+          <div className="grid grid-six">{popular.map((p) => <ProductCard key={p.id} product={p} onAdd={handleAdd} />)}</div>
+        </section>
+      )}
 
       {/* One row of parts per main brand, each with a link to all of that brand's parts. */}
       {brandRails.map((rail) => {
@@ -217,3 +224,4 @@ export default function Home() {
     </div>
   );
 }
+

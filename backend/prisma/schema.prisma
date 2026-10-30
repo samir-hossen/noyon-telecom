@@ -108,6 +108,8 @@ model Product {
   // products first without a raw-SQL CASE expression in every query — see
   // utils/productQuery.js's buildProductOrderBy.
   readyToSell       Boolean  @default(false)
+  viewCount         Int      @default(0)
+  views             ProductView[]
   rating            Float    @default(0)
   reviewCount       Int      @default(0)
   createdAt         DateTime @default(now())
@@ -177,6 +179,7 @@ model Product {
   // list (newest first) stay index scans with ~18,000 products.
   @@index([readyToSell, priceStatus, createdAt])
   @@index([createdAt])
+  @@index([viewCount, readyToSell, createdAt])
 }
 
 enum PriceStatus {
@@ -441,4 +444,15 @@ model Banner {
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+// Daily deduplication keys, not raw IPs or account identifiers.
+model ProductView {
+  productId String
+  visitorKey String
+  day DateTime @db.Date
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@id([productId, visitorKey, day])
+  @@index([day])
 }

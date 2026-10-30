@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { recordProductView } from '../utils/productViews.js';
 import prisma from '../prismaClient.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
@@ -38,7 +40,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
     // "don't re-run 4 queries for every single hit" — see utils/cache.js
     // for the invalidation story (admin edits clear this immediately;
     // checkout deliberately doesn't, by design).
-    const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails] = await getOrSet(
+    const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails, popularRows] = await getOrSet(
       'products:home-sections',
       90,
       () =>
@@ -64,11 +66,13 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
       `,
           // One row of parts per main brand (Apple, Samsung, Xiaomi …).
           loadBrandRails(),
+          prisma.product.findMany({ where: storefrontWhere({ viewCount: { gt: 0 } }), orderBy: buildProductOrderBy('popular'), take }),
         ])
     );
 
     const pack = (rows) => rows.map((p) => serializeProductCard(p, req.user));
     res.json({
+      popular: pack(popularRows),
       featured: pack(featuredRows),
       newArrivals: pack(newArrivalRows),
       bestSellers: pack(bestSellerRows),
@@ -114,7 +118,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
         // after a delete, not a correctness risk to what's shown).
         const rows = ids.map((id) => rowsById.get(id)).filter((p) => p && !findDisabledCategory(p.categories));
         return res.json({
-          products: rows.map((p) => withViewerPricing(serializeProduct(p), req.user)),
+          products: rows.map((p) => (req.query.card === '1' ? serializeProductCard(p, req.user) : withViewerPricing(serializeProduct(p), req.user))),
           categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
           brands: await getOrSet('products:active-brands', 45, () => getActiveBrands(prisma, ALL_BRANDS)),
           total,
@@ -130,7 +134,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       status: 'published', // storefront only ever shows published products
       storefront: true, // ...and never a switched-off category (Battery)
     });
-    const orderBy = buildProductOrderBy(sort);
+    const orderBy = buildProductOrderBy(sort || (searchTerm ? '' : 'popular'));
 
     // Same cache-aside approach as /home-sections: `where`/`orderBy`/
     // `skip`/`take` are always identical for two visitors browsing the same
@@ -146,7 +150,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     );
 
     res.json({
-      products: rows.map((p) => withViewerPricing(serializeProduct(p), req.user)),
+      products: rows.map((p) => (req.query.card === '1' ? serializeProductCard(p, req.user) : withViewerPricing(serializeProduct(p), req.user))),
       categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
       brands: await getOrSet('products:active-brands', 45, () => getActiveBrands(prisma, ALL_BRANDS)),
       total,
@@ -181,12 +185,20 @@ router.get('/model/:slug', optionalAuth, async (req, res, next) => {
     const list = rows.filter((p) => p.id !== exclude && p.slug !== exclude);
     res.json({
       model: { slug, name, brand: rows[0].brand },
-      products: list.slice(0, limit).map((p) => withViewerPricing(serializeProduct(p), req.user)),
+      products: list.slice(0, limit).map((p) => (req.query.card === '1' ? serializeProductCard(p, req.user) : withViewerPricing(serializeProduct(p), req.user))),
       total: list.length,
     });
   } catch (err) {
     next(err);
   }
+});
+
+const viewLimiter = rateLimit({ windowMs: 60000, max: 30, standardHeaders: true, legacyHeaders: false });
+router.post('/:id/view', viewLimiter, optionalAuth, requireCsrf, async (req, res, next) => {
+  try {
+    await recordProductView(prisma, req);
+    res.set('Cache-Control', 'no-store').status(204).end();
+  } catch (err) { next(err); }
 });
 
 router.get('/:id', optionalAuth, async (req, res, next) => {
@@ -323,3 +335,4 @@ router.post('/:id/reviews', requireAuth, requireCsrf, async (req, res, next) => 
 });
 
 export default router;
+

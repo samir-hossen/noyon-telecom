@@ -80,7 +80,7 @@ export default function Footer() {
         <div className="footer-grid">
           <div>
             <div className="footer-logo">
-              <img src="/logo-mark.png" alt="" className="footer-logo-mark" />
+              <img src="/logo-mark-small.webp" width="112" height="87" loading="lazy" decoding="async" alt="" className="footer-logo-mark" />
               Noyon Telecom
             </div>
             <p style={{ maxWidth: 260 }}>{t('footer.tagline')}</p>
@@ -152,3 +152,4 @@ export default function Footer() {
     </footer>
   );
 }
+

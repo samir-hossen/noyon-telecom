@@ -106,7 +106,9 @@ async function request(path, options = {}, _isRetry = false) {
       csrfToken = null;
       return request(path, options, true);
     }
-    throw new Error(data.error || 'Something went wrong. Please try again.');
+    const error = new Error(data.error || 'Something went wrong. Please try again.');
+    error.status = res.status;
+    throw error;
   }
   return data;
 }
@@ -165,3 +167,4 @@ export function getRecaptchaToken(action) {
     .then(() => window.grecaptcha.execute(siteKey, { action }))
     .catch(() => null);
 }
+
