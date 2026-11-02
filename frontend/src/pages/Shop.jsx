@@ -69,11 +69,12 @@ export default function Shop() {
   // legacy /shop?category=/?brand= query string still self-canonicalizes to
   // the same clean URL as the new routes, so Google consolidates both onto it.
   const canonicalPath = basePath();
+  const paginatedCanonicalPath = page > 1 ? `${canonicalPath}?page=${page}` : canonicalPath;
 
   const activeFilterName = category !== 'All' ? category : brand !== 'All' ? brand : null;
 
   // Page text for a category/brand page (not for search results).
-  const seoForThisPage = seoPage && seoPage.basePath === canonicalPath ? seoPage : null;
+  const seoForThisPage = seoPage && seoPage.basePath === canonicalPath && seoPage.page === page ? seoPage : null;
 
   // A search-results view (/shop?search=...) canonicalizes back to the
   // plain /shop or /shop?category=X page above, but that alone still lets
@@ -92,7 +93,7 @@ export default function Shop() {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
           name: seoForThisPage?.h1 || activeFilterName || 'Shop',
-          url: `${window.location.origin}${canonicalPath}`,
+          url: `${window.location.origin}${paginatedCanonicalPath}`,
           mainEntity: {
             '@type': 'ItemList',
             itemListElement: products.slice(0, 20).map((p, i) => ({
@@ -150,7 +151,7 @@ export default function Shop() {
       ? t('shop.pageMetaCategory', null, { category: activeFilterName })
       : t('shop.pageMetaDefault'),
     undefined,
-    seoForThisPage?.head.canonical || canonicalPath,
+    seoForThisPage?.head.canonical || paginatedCanonicalPath,
     [breadcrumbJsonLd, collectionJsonLd, faqJsonLd].filter(Boolean),
     isSearchView || invalidSlug,
     { exactTitle: Boolean(seoForThisPage && !search) }

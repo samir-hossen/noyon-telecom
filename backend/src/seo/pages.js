@@ -307,7 +307,7 @@ async function categoryPage(slug, page) {
     ...list,
     page,
     basePath: path,
-    jsonLd: [breadcrumbLd(crumbs), collectionLd(head.h1, path, list.products), faqLd(faq)],
+    jsonLd: [breadcrumbLd(crumbs), collectionLd(head.h1, withPage(path, page), list.products), faqLd(faq)],
   };
 }
 
@@ -339,7 +339,7 @@ async function brandPage(brandSlug, page) {
     ...list,
     page,
     basePath: path,
-    jsonLd: [breadcrumbLd(crumbs), collectionLd(head.h1, path, list.products), faqLd(faq)],
+    jsonLd: [breadcrumbLd(crumbs), collectionLd(head.h1, withPage(path, page), list.products), faqLd(faq)],
   };
 }
 
@@ -368,7 +368,7 @@ async function brandCategoryPage(brandSlug, categorySlug, page) {
     ...list,
     page,
     basePath: path,
-    jsonLd: [breadcrumbLd(crumbs), collectionLd(head.h1, path, list.products), faqLd(faq)],
+    jsonLd: [breadcrumbLd(crumbs), collectionLd(head.h1, withPage(path, page), list.products), faqLd(faq)],
   };
 }
 

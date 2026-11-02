@@ -17,6 +17,8 @@ export default function ModelHub() {
   const [data, setData] = useState(null);
   const [page, setPage] = useState(null);
   const [missing, setMissing] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
   const { addToCart } = useCart();
   const { showToast } = useToast();
   const { t } = useLanguage();
@@ -27,14 +29,21 @@ export default function ModelHub() {
     setData(null);
     setPage(null);
     setMissing(false);
+    setLoadError('');
     api.get(`/products/model/${encodeURIComponent(modelSlug)}`)
       .then((d) => { if (current) setData(d); })
-      .catch(() => { if (current) setMissing(true); });
+      .catch((err) => {
+        if (!current) return;
+        // Only a real 404 means this model does not exist. A sleeping API,
+        // network failure or 5xx must never turn a valid hub into noindex.
+        if (err.status === 404) setMissing(true);
+        else setLoadError(err.message || 'Unable to load parts. Please try again.');
+      });
     api.get(`/seo/page?path=${encodeURIComponent(`/model/${modelSlug}`)}`)
       .then((d) => { if (current && d.status === 200) setPage(d); })
       .catch(() => {});
     return () => { current = false; };
-  }, [modelSlug]);
+  }, [modelSlug, retry]);
 
   usePageMeta(
     page?.head.title || (data ? `${data.model.name} Parts Wholesale Price in Bangladesh` : undefined),
@@ -43,7 +52,7 @@ export default function ModelHub() {
     `/model/${modelSlug}`,
     page?.jsonLd || [],
     missing,
-    { exactTitle: Boolean(page) }
+    { exactTitle: Boolean(page), preserveExisting: !page && !missing }
   );
 
   async function handleAdd(id) {
@@ -61,6 +70,15 @@ export default function ModelHub() {
   }
 
   if (missing) return <NotFound />;
+
+  if (loadError) return (
+    <div className="container">
+      <div className="empty-state" role="alert">
+        <p>{loadError}</p>
+        <button className="btn btn-primary" onClick={() => setRetry((n) => n + 1)}>Try again / আবার চেষ্টা করুন</button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="container">
