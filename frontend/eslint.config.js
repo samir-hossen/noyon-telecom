@@ -21,6 +21,7 @@ export default [
         console: 'readonly',
         fetch: 'readonly',
         localStorage: 'readonly',
+        sessionStorage: 'readonly',
         navigator: 'readonly',
         FormData: 'readonly',
         URLSearchParams: 'readonly',
