@@ -12,7 +12,7 @@ import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath } 
 import { hasQualityOptions, priceRange } from '../utils/quality';
 import PartTile from './PartTile.jsx';
 
-export default function ProductCard({ product, onAdd }) {
+export default function ProductCard({ product, onAdd, priority = false }) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const isApprovedDealer = user?.role === 'dealer' && user?.dealerStatus === 'approved';
@@ -76,7 +76,7 @@ export default function ProductCard({ product, onAdd }) {
             {saved ? '♥' : '♡'}
           </button>
           {product.img ? (
-            <img src={productImg(product, 400)} alt={product.name} width="400" height="400" loading="lazy" decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
+            <img src={productImg(product, 400)} alt={product.name} width="400" height="400" loading={priority ? "eager" : "lazy"} decoding="async" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_IMG; }} />
           ) : (
             <PartTile product={product} />
           )}
