@@ -7,7 +7,7 @@ import { WishlistProvider } from '../context/WishlistContext.jsx';
 import { ToastProvider } from '../context/ToastContext.jsx';
 import ProductCard from './ProductCard.jsx';
 
-function renderCard(product) {
+function renderCard(product, priority = false) {
   localStorage.setItem('nt-language', 'bn');
   return render(
     <MemoryRouter>
@@ -15,7 +15,7 @@ function renderCard(product) {
         <ToastProvider>
           <AuthProvider>
             <WishlistProvider>
-              <ProductCard product={product} onAdd={() => {}} />
+              <ProductCard product={product} onAdd={() => {}} priority={priority} />
             </WishlistProvider>
           </AuthProvider>
         </ToastProvider>
@@ -61,5 +61,17 @@ describe('ProductCard — several grades with their own price', () => {
     expect(container.textContent).toContain('৳999 – ৳1,699');
     expect(screen.getByRole('link', { name: 'কোয়ালিটি ও দাম দেখুন' })).toHaveAttribute('href', '/product/vivo-y21-display');
     expect(screen.queryByRole('button', { name: 'কার্টে যোগ করুন' })).toBeNull();
+  });
+});
+
+
+describe('ProductCard — image loading', () => {
+  it('loads the prioritized first listing image eagerly; later images stay lazy', () => {
+    const product = { ...base, img: '/images/test.webp', price: 1150, stock: 5 };
+    const { unmount } = renderCard(product, true);
+    expect(screen.getByAltText('Vivo Y21 Display')).toHaveAttribute('loading', 'eager');
+    unmount();
+    renderCard(product);
+    expect(screen.getByAltText('Vivo Y21 Display')).toHaveAttribute('loading', 'lazy');
   });
 });
