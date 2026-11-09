@@ -18,6 +18,9 @@ const SHELL = `<!doctype html>
       property="og:description"
       content="home"
     />
+    <link rel="preload" as="image" href="/images/hero/hero-parts.webp"
+      imagesrcset="/images/hero/hero-parts-sm.webp 700w, /images/hero/hero-parts.webp 1400w" />
+    <link rel="preload" as="font" href="/fonts/store.woff2" />
     <script type="module" src="/assets/index-abc.js"></script>
   </head>
   <body>
@@ -55,6 +58,12 @@ test('server-rendered product page', async (t) => {
     assert.match(html, /<meta property="og:type" content="product" \/>/);
     assert.equal((html.match(/<title>/g) || []).length, 1);
     assert.equal((html.match(/name="description"/g) || []).length, 1);
+  });
+
+  await t.test('prioritizes the product photo instead of the homepage hero', () => {
+    assert.doesNotMatch(html, /hero-parts/);
+    assert.match(html, /href="\/fonts\/store\.woff2"/);
+    assert.match(html, /<img[^>]*alt="Vivo Y21 Display"[^>]*fetchpriority="high"/);
   });
 
   await t.test('H1, description and the "other parts" links are in the HTML, inside #root', () => {

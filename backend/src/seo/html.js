@@ -133,7 +133,7 @@ function productBody(model) {
   return `<div class="container">
 ${breadcrumbHtml(model.breadcrumb)}
 <div class="pd-grid">
-<div><div class="pd-img"><img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" width="600" height="600" /></div>${photoNote}</div>
+<div><div class="pd-img"><img src="${escapeHtml(img)}" alt="${escapeHtml(p.name)}" width="600" height="600" fetchpriority="high" /></div>${photoNote}</div>
 <div>
 <p class="pd-cat"><a href="/category/${escapeHtml(p.category.toLowerCase().replace(/[^a-z0-9]+/g, '-'))}">${escapeHtml(p.category)}</a></p>
 <h1 class="pd-title">${escapeHtml(model.h1 || p.name)}</h1>
@@ -178,7 +178,8 @@ function notFoundBody() {
 
 export function renderPage(shell, model) {
   const { head } = model;
-  let html = shell;
+  // The shared shell preloads the homepage hero, which catalog pages do not use.
+  let html = shell.replace(/<link\b(?=[^>]*\brel="preload")(?=[^>]*\bhref="\/images\/hero\/hero-parts\.webp")[^>]*>\s*/i, '');
   html = html.replace(/<title>[\s\S]*?<\/title>/i, () => `<title>${escapeHtml(head.title)}</title>`);
   html = setMeta(html, 'name', 'description', head.description);
   html = setMeta(html, 'property', 'og:title', head.title);
