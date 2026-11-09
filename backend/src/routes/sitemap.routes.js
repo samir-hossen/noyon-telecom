@@ -189,7 +189,7 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
       const urls = products
         .map(
           (p) => `  <url>
-    <loc>${SITE_URL}${productPath(p)}</loc>
+    <loc>${escapeXml(`${SITE_URL}${productPath(p)}`)}</loc>
     <lastmod>${new Date(p.updatedAt || p.createdAt).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -221,7 +221,7 @@ router.get('/sitemap-models.xml', async (req, res, next) => {
       const urls = rows
         .map(
           (r) => `  <url>
-    <loc>${SITE_URL}/model/${escapeXml(r.slug)}</loc>
+    <loc>${escapeXml(`${SITE_URL}/model/${r.slug}`)}</loc>
     <lastmod>${new Date(r.at).toISOString()}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
