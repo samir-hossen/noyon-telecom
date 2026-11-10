@@ -17,7 +17,7 @@ import FeatureStrip from '../components/FeatureStrip.jsx';
 import FAQAccordion, { FAQS } from '../components/FAQAccordion.jsx';
 
 export default function Home() {
-  const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [], categoryCovers: {} });
+  const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [] });
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -98,7 +98,7 @@ export default function Home() {
     }
   }
 
-  const { popular = [], featured, newArrivals, bestSellers, deals, brandRails = [], categoryCovers = {} } = sections;
+  const { popular = [], featured, newArrivals, bestSellers, deals, brandRails = [] } = sections;
 
   return (
     <div>
@@ -117,7 +117,7 @@ export default function Home() {
           <h2 className="section-title">{t('home.categories')}</h2>
           <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
         </div>
-        <CategoryGrid covers={categoryCovers} />
+        <CategoryGrid />
       </section>
 
       {popular.length > 0 && (

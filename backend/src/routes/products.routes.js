@@ -40,8 +40,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
     // "don't re-run 4 queries for every single hit" — see utils/cache.js
     // for the invalidation story (admin edits clear this immediately;
     // checkout deliberately doesn't, by design).
-    const coverCategories = ['Display', 'SIM Tray', 'Charging Port', 'Back Glass', 'Camera', 'Logic Board', 'Speaker'];
-    const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails, popularRows, categoryCoverRows] = await getOrSet(
+    const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails, popularRows] = await getOrSet(
       'products:home-sections',
       90,
       () =>
@@ -74,17 +73,6 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           // have an uploaded image. Admin photo uploads invalidate this cache,
           // so a newly photographed popular item can appear immediately.
           prisma.product.findMany({ where: storefrontWhere({ viewCount: { gt: 0 }, img: { not: '' } }), orderBy: buildProductOrderBy('popular'), take }),
-          // One genuine uploaded product photo for each homepage category.
-          // DISTINCT ON keeps this a single database query rather than seven
-          // browser/API calls, and prioritizes ready-to-sell/recent products.
-          prisma.$queryRaw`
-            SELECT DISTINCT ON (category) id, category, name, slug, img
-            FROM "Product"
-            WHERE published = true AND img <> '' AND category = ANY(${coverCategories})
-              AND lower(name) NOT LIKE '%camera glass'
-              AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
-            ORDER BY category, "readyToSell" DESC, "viewCount" DESC, "updatedAt" DESC
-          `,
         ])
     );
 
@@ -96,7 +84,6 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
       bestSellers: pack(bestSellerRows),
       deals: pack(dealRows),
       brandRails: brandRails.map((rail) => ({ brand: rail.brand, products: pack(rail.products) })),
-      categoryCovers: Object.fromEntries(categoryCoverRows.map((p) => [p.category, { name: p.name, slug: p.slug, img: p.img }])),
     });
   } catch (err) {
     next(err);

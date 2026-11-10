@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { categoryUrl, isDisabledCategory } from '../utils/taxonomy';
-import { slugify } from '../utils/slug';
-import { resolveImg } from '../api';
 
 function Icon({ children }) {
   return (
@@ -18,16 +16,16 @@ function Icon({ children }) {
 // the same nav.* keys already used in the navbar's category dropdown for
 // these exact categories.
 const CATEGORIES = [
-  { name: 'Display', labelKey: 'nav.display' },
-  { name: 'SIM Tray', labelKey: 'nav.simTray' },
-  { name: 'Charging Port', labelKey: 'nav.chargingPort' },
-  { name: 'Back Glass', labelKey: 'nav.backGlass' },
-  { name: 'Camera', labelKey: 'nav.camera' },
-  { name: 'Logic Board', labelKey: 'nav.logicBoard' },
-  { name: 'Speaker', labelKey: 'nav.speaker' },
+  { name: 'Display', labelKey: 'nav.display', image: 'display-icon.webp' },
+  { name: 'SIM Tray', labelKey: 'nav.simTray', image: 'sim-tray-icon.webp' },
+  { name: 'Charging Port', labelKey: 'nav.chargingPort', image: 'charging-port-icon.webp' },
+  { name: 'Back Glass', labelKey: 'nav.backGlass', image: 'back-glass-icon.webp' },
+  { name: 'Camera', labelKey: 'nav.camera', image: 'camera-icon.webp' },
+  { name: 'Logic Board', labelKey: 'nav.logicBoard', image: 'default-icon.webp' },
+  { name: 'Speaker', labelKey: 'nav.speaker', image: 'speaker-icon.webp' },
 ];
 
-export default function CategoryGrid({ covers = {} }) {
+export default function CategoryGrid() {
   const { t } = useLanguage();
   // First row-and-a-half of real categories, then a "View All Categories"
   // tile as the 8th slot — matches the 4x2 category grid in the reference
@@ -35,15 +33,13 @@ export default function CategoryGrid({ covers = {} }) {
   const shown = CATEGORIES.filter((c) => !isDisabledCategory(c.name));
   return (
     <div className="category-grid">
-      {shown.map((c) => {
-        const cover = covers[c.name];
-        return (
+      {shown.map((c) => (
         <Link key={c.name} to={categoryUrl(c.name)} className="category-tile">
-          {/* A real photo of the part (same as on the products without their own photo) */}
+          {/* Curated fixed cut-outs: predictable, clean and cacheable. */}
           <span className="category-tile-photo">
             <img
-              src={cover?.img ? resolveImg(cover.img, 240) : `/images/parts/photos/${slugify(c.name)}-icon.webp`}
-              alt={cover?.name || `${c.name} mobile phone spare part`}
+              src={`/images/parts/photos/${c.image}`}
+              alt={`${c.name} mobile phone spare part`}
               width="160"
               height="160"
               loading="lazy"
@@ -52,8 +48,7 @@ export default function CategoryGrid({ covers = {} }) {
           </span>
           <span className="category-tile-name">{t(c.labelKey)}</span>
         </Link>
-        );
-      })}
+      ))}
       <Link to="/shop" className="category-tile category-tile-viewall">
         <span className="category-tile-icon" style={{ background: 'var(--berry-tint)', color: 'var(--berry)' }}>
           <Icon><rect x="3" y="3" width="7" height="7" rx="1.4" /><rect x="14" y="3" width="7" height="7" rx="1.4" /><rect x="3" y="14" width="7" height="7" rx="1.4" /><rect x="14" y="14" width="7" height="7" rx="1.4" /></Icon>
