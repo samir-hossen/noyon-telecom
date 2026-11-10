@@ -81,8 +81,9 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
             SELECT DISTINCT ON (category) id, category, name, slug, img
             FROM "Product"
             WHERE published = true AND img <> '' AND category = ANY(${coverCategories})
+              AND lower(name) NOT LIKE '%camera glass'
               AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
-            ORDER BY category, "readyToSell" DESC, "updatedAt" DESC
+            ORDER BY category, "readyToSell" DESC, "viewCount" DESC, "updatedAt" DESC
           `,
         ])
     );
