@@ -1215,6 +1215,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 .pd-price { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
 .pd-price .now { font-family: var(--font-price); font-size: 1.9rem; font-weight: 700; color: var(--berry-text); }
 .pd-price .was { text-decoration: line-through; color: #9a8f8a; }
+.pd-saving { padding: 4px 9px; border-radius: 999px; background: #e7f6ed; color: #08783b; font-size: 0.76rem; font-weight: 800; }
 .pd-dealer-badge {
   background: var(--success);
   color: #fff;
@@ -1280,6 +1281,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 .qty-control input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .qty-control input:focus { outline: none; }
 .pd-stock { font-size: 0.85rem; color: var(--success); margin-bottom: 24px; }
+.pd-stock-low { color: #b24a00; font-weight: 700; }
 .pd-action-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .pd-action-row .btn { flex: 1; min-width: 160px; }
 .pd-whatsapp-btn { border-color: #25D366; color: #1a9e4f; }
@@ -2938,6 +2940,11 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 .pd-trust { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 6px; font-size: 0.88rem; color: #3f444b; }
 .pd-trust li { display: flex; align-items: center; gap: 8px; }
 .pd-trust li::before { content: '✓'; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #e7f6ed; color: var(--success); font-size: 0.7rem; font-weight: 700; flex: none; }
+.pd-fit-help { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 18px; padding: 14px 16px; border: 1px solid #cfe5ff; border-radius: var(--radius-md); background: #f4f9ff; }
+.pd-fit-help div { display: grid; gap: 3px; }
+.pd-fit-help strong { font-size: 0.9rem; color: var(--ink); }
+.pd-fit-help span { font-size: 0.78rem; color: #58636f; line-height: 1.4; }
+.pd-fit-help a { flex: none; color: #08783b; font-size: 0.8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 .pd-quality-select { display: flex; align-items: center; gap: 12px; margin: 14px 0 16px; padding: 10px 12px; border: 1.5px solid #f6c9cf; border-radius: var(--radius-md); background: #fff; }
 .pd-quality-select > span { font-weight: 700; color: var(--berry-text); white-space: nowrap; }
 .pd-quality-select select { flex: 1; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; font-weight: 600; color: var(--ink); background: #fff; cursor: pointer; }
@@ -2952,6 +2959,7 @@ a.card-cta { display: block; text-align: center; text-decoration: none; }
 @media (max-width: 600px) {
   .pd-buybox .pd-title { font-size: 1.45rem; }
   .pd-grid { gap: 22px; }
+  .pd-fit-help { align-items: flex-start; flex-direction: column; }
 }
 /* Admin: grades with their own price */
 .admin-quality-row { display: grid; grid-template-columns: 1fr 120px auto; gap: 8px; margin-bottom: 8px; }

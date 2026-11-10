@@ -197,30 +197,42 @@ export default function ProductDetail() {
     setQty(Math.max(1, Math.min(product.stock, product.moq || 1)));
     pushRecentlyViewed(product.id);
     trackViewItem(product);
-    // Only need ~4 related items, not the whole category — this used to
-    // request limit=200 (the endpoint's max) just to throw away all but 4
-    // rows client-side. At 10k+ products a category can easily hold
-    // hundreds of rows, so that was needlessly shipping and discarding a
-    // couple hundred full product records on every product-detail view.
-    api.get(`/products?category=${encodeURIComponent(product.category)}&limit=8&card=1`).then((d) => {
-      setRelated(d.products.filter((p) => p.id !== product.id).slice(0, 4));
-    });
-    api.get(`/products/${product.id}/reviews`).then((d) => setReviews(d.reviews));
-    const modelSlug = product.modelSlugs?.[0];
+    setRelated([]);
+    setReviews([]);
+    setRecentlyViewed([]);
     setModelParts({ model: null, products: [] });
-    if (modelSlug) {
-      api.get(`/products/model/${encodeURIComponent(modelSlug)}?exclude=${encodeURIComponent(product.id)}&limit=12&card=1`)
-        .then((d) => setModelParts({ model: d.model, products: d.products }))
-        .catch(() => {});
-    }
+    // These sections are below the buy box. Start their requests when the
+    // browser is idle so they don't compete with the main product photo,
+    // price and order controls during the first meaningful paint.
+    let cancelled = false;
+    const loadDiscovery = () => {
+      api.get(`/products?category=${encodeURIComponent(product.category)}&limit=8&card=1`).then((d) => {
+        if (!cancelled) setRelated(d.products.filter((p) => p.id !== product.id).slice(0, 4));
+      }).catch(() => {});
+      api.get(`/products/${product.id}/reviews`).then((d) => { if (!cancelled) setReviews(d.reviews); }).catch(() => {});
+      const modelSlug = product.modelSlugs?.[0];
+      if (modelSlug) {
+        api.get(`/products/model/${encodeURIComponent(modelSlug)}?exclude=${encodeURIComponent(product.id)}&limit=12&card=1`)
+          .then((d) => { if (!cancelled) setModelParts({ model: d.model, products: d.products }); })
+          .catch(() => {});
+      }
 
-    const viewedIds = readRecentlyViewed().filter((x) => x !== product.id);
-    if (viewedIds.length > 0) {
-      Promise.all(viewedIds.slice(0, 4).map((vid) => api.get(`/products/${vid}`).then((d) => d.product).catch(() => null)))
-        .then((list) => setRecentlyViewed(list.filter(Boolean)));
-    } else {
-      setRecentlyViewed([]);
-    }
+      const viewedIds = readRecentlyViewed().filter((x) => x !== product.id);
+      if (viewedIds.length > 0) {
+        Promise.all(viewedIds.slice(0, 4).map((vid) => api.get(`/products/${vid}`).then((d) => d.product).catch(() => null)))
+          .then((list) => { if (!cancelled) setRecentlyViewed(list.filter(Boolean)); });
+      } else {
+        setRecentlyViewed([]);
+      }
+    };
+    const idleId = typeof window.requestIdleCallback === 'function'
+      ? window.requestIdleCallback(loadDiscovery, { timeout: 1200 })
+      : window.setTimeout(loadDiscovery, 250);
+    return () => {
+      cancelled = true;
+      if (typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+    };
   }, [product]);
 
   // Title + meta come from the backend (same templates as the server-
@@ -264,6 +276,13 @@ export default function ProductDetail() {
                     priceCurrency: 'BDT',
                     // Stock 0 = "ask us", not sold out: no availability claim then.
                     ...(product.stock > 0 ? { availability: 'https://schema.org/InStock' } : {}),
+                    itemCondition: 'https://schema.org/NewCondition',
+                    eligibleQuantity: {
+                      '@type': 'QuantitativeValue',
+                      minValue: product.moq || 1,
+                      unitCode: 'C62',
+                    },
+                    seller: { '@id': 'https://noyontelecom.com/#store' },
                     url: `${window.location.origin}${productUrl(product)}`,
                   },
                   ...(product.reviewCount > 0
@@ -451,6 +470,10 @@ export default function ProductDetail() {
             {gallery.length ? (
               <img
                 src={resolveImg(gallery[activeImg] || gallery[0], 800)}
+                srcSet={`${resolveImg(gallery[activeImg] || gallery[0], 480)} 480w, ${resolveImg(gallery[activeImg] || gallery[0], 800)} 800w, ${resolveImg(gallery[activeImg] || gallery[0], 1200)} 1200w`}
+                sizes="(max-width: 860px) calc(100vw - 32px), 42vw"
+                width="800"
+                height="800"
                 alt={product.name}
                 loading="eager"
                 decoding="async"
@@ -533,6 +556,12 @@ export default function ProductDetail() {
             {!graded && user?.role === 'dealer' && user?.dealerStatus === 'approved' && (
               <span className="pd-dealer-badge">{t('product.dealerPrice')}</span>
             )}
+            {!priceUnavailable && !graded && (onSale || (product.retailPrice && product.retailPrice > product.price)) && (() => {
+              const oldPrice = Number(product.retailPrice || product.compareAt);
+              const savedAmount = oldPrice - Number(product.price);
+              const savedPercent = Math.round((savedAmount / oldPrice) * 100);
+              return <span className="pd-saving">{t('pd.youSave', null, { amount: formatPrice(savedAmount), percent: savedPercent })}</span>;
+            })()}
           </div>
 
           {graded ? (
@@ -606,7 +635,11 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <p className="pd-stock">{product.stock > 0 ? t('pd.inStockNote', null, { stock: product.stock }) : t('product.outOfStock')}</p>
+              <p className={`pd-stock ${product.stock <= 5 ? 'pd-stock-low' : ''}`}>
+                {product.stock <= 5
+                  ? t('pd.lowStockNote', null, { stock: product.stock })
+                  : t('pd.inStockNote', null, { stock: product.stock })}
+              </p>
 
               <button ref={mainAddRef} className="btn btn-berry btn-block" disabled={product.stock === 0} onClick={handleAdd}>
                 {added ? t('pd.addedToCart') : t('product.addToCart')}
@@ -652,6 +685,21 @@ export default function ProductDetail() {
             <li>{t('pd.trustDelivery')}</li>
             <li>{t('pd.trustWholesale')}</li>
           </ul>
+
+          <div className="pd-fit-help">
+            <div>
+              <strong>{t('pd.fitHelpTitle')}</strong>
+              <span>{t('pd.fitHelpText')}</span>
+            </div>
+            <a
+              href={whatsappLink(t('pd.fitHelpMessage', null, { name: product.name, sku: product.sku || 'N/A', link: `${window.location.origin}${productUrl(product)}` }))}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackWhatsappClick('product_fit_check')}
+            >
+              {t('pd.fitHelpCta')}
+            </a>
+          </div>
 
           <dl className="pd-meta-line">
             {product.sku && <div><dt>{t('product.sku')}</dt><dd>{product.sku}</dd></div>}
