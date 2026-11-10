@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
@@ -13,8 +13,10 @@ import { useAuth } from './context/AuthContext.jsx';
 // else ships as its own chunk, fetched only when that route is visited,
 // so the initial JS payload (and first-load time) stays small.
 import Home from './pages/Home.jsx';
-const Shop = lazy(() => import('./pages/Shop.jsx'));
-const ProductDetail = lazy(() => import('./pages/ProductDetail.jsx'));
+const loadShop = () => import('./pages/Shop.jsx');
+const loadProductDetail = () => import('./pages/ProductDetail.jsx');
+const Shop = lazy(loadShop);
+const ProductDetail = lazy(loadProductDetail);
 const ModelHub = lazy(() => import('./pages/ModelHub.jsx'));
 const Cart = lazy(() => import('./pages/Cart.jsx'));
 const Wishlist = lazy(() => import('./pages/Wishlist.jsx'));
@@ -91,6 +93,21 @@ function VerifyEmailBanner() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Shop and Product are the two overwhelmingly common next pages. Fetch
+    // their tiny route chunks only after the initial page is idle, so clicks
+    // feel instant without competing with first paint.
+    const preload = () => Promise.allSettled([loadShop(), loadProductDetail()]);
+    let idleId;
+    let timerId;
+    if ('requestIdleCallback' in window) idleId = window.requestIdleCallback(preload, { timeout: 4000 });
+    else timerId = window.setTimeout(preload, 2500);
+    return () => {
+      if (idleId) window.cancelIdleCallback(idleId);
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, []);
+
   return (
     <>
       <ScrollToTop />

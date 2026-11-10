@@ -31,6 +31,10 @@
       imagesrcset="/images/hero/hero-parts-sm.webp 700w, /images/hero/hero-parts.webp 1400w"
       imagesizes="(max-width: 900px) 100vw, 600px" fetchpriority="high" />
     <link rel="preconnect" href="https://api.noyontelecom.com" crossorigin />
+    <!-- Product photography is served from Cloudinary. Open its connection
+         during HTML parsing so the first visible card does not pay DNS/TLS
+         setup after product JSON arrives. -->
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

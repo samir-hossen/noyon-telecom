@@ -113,8 +113,22 @@ async function request(path, options = {}, _isRetry = false) {
   return data;
 }
 
+// Coalesce identical GETs that mount at the same time. AnnouncementBar and
+// Footer both need public settings, and React pages can request the same
+// product through adjacent widgets; one network trip is enough. This is not
+// a stale data cache: the entry disappears as soon as the request finishes.
+const pendingGets = new Map();
+function get(path) {
+  if (pendingGets.has(path)) return pendingGets.get(path);
+  const promise = request(path).finally(() => {
+    if (pendingGets.get(path) === promise) pendingGets.delete(path);
+  });
+  pendingGets.set(path, promise);
+  return promise;
+}
+
 export const api = {
-  get: (path) => request(path),
+  get,
   post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
   put: (path, body) => request(path, { method: 'PUT', body: JSON.stringify(body) }),
   patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),

@@ -393,8 +393,8 @@ export default function Shop() {
         </div>
       ) : (
         <div className="grid grid-wide" style={{ paddingBottom: 40 }}>
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} onAdd={handleAdd} />
+          {products.map((p, i) => (
+            <ProductCard key={p.id} product={p} onAdd={handleAdd} imagePriority={i === 0} />
           ))}
         </div>
       )}
