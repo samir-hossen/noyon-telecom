@@ -12,7 +12,7 @@ export default function VerifyEmail() {
   const { verifyEmail } = useAuth();
   const { t } = useLanguage();
 
-  usePageMeta(t('verifyEmail.pageTitle'), t('verifyEmail.pageMeta'));
+  usePageMeta(t('verifyEmail.pageTitle'), t('verifyEmail.pageMeta'), undefined, undefined, undefined, true);
 
   useEffect(() => {
     if (!token) return;

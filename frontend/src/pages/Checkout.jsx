@@ -19,7 +19,7 @@ export default function Checkout() {
   const [form, setForm] = useState({ name: '', address: '', city: '', phone: '', email: user?.email || '' });
   const { t } = useLanguage();
 
-  usePageMeta(t('checkout.pageTitle'), t('checkout.pageMeta'));
+  usePageMeta(t('checkout.pageTitle'), t('checkout.pageMeta'), undefined, undefined, undefined, true);
   const [couponInput, setCouponInput] = useState('');
   const [coupon, setCoupon] = useState(null); // { code, discount }
   const [couponError, setCouponError] = useState('');

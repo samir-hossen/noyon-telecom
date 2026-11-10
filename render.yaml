@@ -142,11 +142,12 @@ services:
     #   3. rewrite /brand/*    -> https://noyon-telecom-api.onrender.com/seo/brand/*
     #   4. rewrite /model/*    -> https://noyon-telecom-api.onrender.com/seo/model/*
     #   5. rewrite /sitemap.xml          -> https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
-    #   6. rewrite /sitemap-pages.xml    -> https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml
-    #   7. rewrite /sitemap-products.xml -> https://noyon-telecom-api.onrender.com/api/sitemap-products.xml
-    #   8. rewrite /sitemap-models.xml   -> https://noyon-telecom-api.onrender.com/api/sitemap-models.xml
-    #   9. redirect /google-merchant.xml -> https://noyon-telecom-api.onrender.com/api/google-merchant.xml (unchanged)
-    #  10. rewrite /* -> /index.html (catch-all, last)
+    #   6. rewrite /sitemap-index.xml    -> https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
+    #   7. rewrite /sitemap-pages.xml    -> https://noyon-telecom-api.onrender.com/api/sitemap-pages.xml
+    #   8. rewrite /sitemap-products.xml -> https://noyon-telecom-api.onrender.com/api/sitemap-products.xml
+    #   9. rewrite /sitemap-models.xml   -> https://noyon-telecom-api.onrender.com/api/sitemap-models.xml
+    #  10. redirect /google-merchant.xml -> https://noyon-telecom-api.onrender.com/api/google-merchant.xml (unchanged)
+    #  11. rewrite /* -> /index.html (catch-all, last)
     routes:
       - type: rewrite
         source: /product/*
@@ -162,6 +163,9 @@ services:
         destination: https://noyon-telecom-api.onrender.com/seo/model/*
       - type: rewrite
         source: /sitemap.xml
+        destination: https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
+      - type: rewrite
+        source: /sitemap-index.xml
         destination: https://noyon-telecom-api.onrender.com/api/sitemap-index.xml
       - type: rewrite
         source: /sitemap-pages.xml

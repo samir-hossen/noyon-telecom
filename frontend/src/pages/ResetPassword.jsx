@@ -16,7 +16,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  usePageMeta(t('resetPw.pageTitle'), t('resetPw.pageMeta'));
+  usePageMeta(t('resetPw.pageTitle'), t('resetPw.pageMeta'), undefined, undefined, undefined, true);
 
   async function onSubmit(e) {
     e.preventDefault();

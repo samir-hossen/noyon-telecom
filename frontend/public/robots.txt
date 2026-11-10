@@ -1,19 +1,8 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /admin/login
-Disallow: /checkout
-Disallow: /cart
-Disallow: /orders
-Disallow: /dealer
-Disallow: /login
-Disallow: /register
-Disallow: /forgot-password
-Disallow: /reset-password
-Disallow: /verify-email
-Disallow: /wishlist
-Disallow: /order-confirmation
-Disallow: /invoice
-Disallow: /track-order
+# These utility/account routes carry a page-level noindex tag. They remain
+# crawlable so search engines can actually see that directive; blocking them
+# here would create the contradictory "indexed, though blocked by robots.txt"
+# state because a crawler cannot observe noindex on a disallowed URL.
 
 Sitemap: https://noyontelecom.com/sitemap.xml

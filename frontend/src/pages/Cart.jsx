@@ -53,7 +53,7 @@ export default function Cart() {
   // request fails, so the estimate is never wildly wrong either way.
   const [deliveryFee, setDeliveryFee] = useState(150);
 
-  usePageMeta(t('cart.pageTitle'), t('cart.pageMeta'));
+  usePageMeta(t('cart.pageTitle'), t('cart.pageMeta'), undefined, undefined, undefined, true);
 
   // Phone-width checkout bar, shown while the summary's own Checkout button
   // is off-screen (it sits below every cart row on a phone).

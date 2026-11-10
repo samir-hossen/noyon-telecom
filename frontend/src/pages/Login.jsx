@@ -16,7 +16,7 @@ export default function Login() {
   const location = useLocation();
   const { t } = useLanguage();
 
-  usePageMeta(t('nav.signIn'), t('auth.signInMeta'));
+  usePageMeta(t('nav.signIn'), t('auth.signInMeta'), undefined, undefined, undefined, true);
 
   async function onSubmit(e) {
     e.preventDefault();

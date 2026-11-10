@@ -19,7 +19,7 @@ export default function Register() {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  usePageMeta(t('register.pageTitle'), t('register.pageMeta'));
+  usePageMeta(t('register.pageTitle'), t('register.pageMeta'), undefined, undefined, undefined, true);
 
   async function onSubmit(e) {
     e.preventDefault();

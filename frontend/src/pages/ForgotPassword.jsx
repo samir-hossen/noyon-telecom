@@ -12,7 +12,7 @@ export default function ForgotPassword() {
   const { forgotPassword } = useAuth();
   const { t } = useLanguage();
 
-  usePageMeta(t('forgotPw.pageTitle'), t('forgotPw.pageMeta'));
+  usePageMeta(t('forgotPw.pageTitle'), t('forgotPw.pageMeta'), undefined, undefined, undefined, true);
 
   async function onSubmit(e) {
     e.preventDefault();

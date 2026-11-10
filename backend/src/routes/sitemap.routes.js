@@ -103,13 +103,9 @@ export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brand
     { loc: `${siteUrl}/blog`, priority: '0.7', changefreq: 'weekly' },
     ...BLOG_SLUGS.map((slug) => ({ loc: `${siteUrl}/blog/${slug}`, priority: '0.6' })),
     { loc: `${siteUrl}/request-quote`, priority: '0.6' },
-    // NOT /register: robots.txt disallows it (it's the auth/signup form),
-    // so listing it here would tell Google to index a URL it's also told
-    // not to crawl — contradictory signals that show up in Search Console
-    // as "Indexed, though blocked by robots.txt". The old static
-    // frontend/public/sitemap.xml this route replaced had the same
-    // register-vs-robots.txt conflict; carried over here by mistake when
-    // porting it to be dynamic, caught during a later verification pass.
+    // NOT /register: it is an auth/signup utility page, not a search landing
+    // page. The frontend gives it a noindex directive and the sitemap must
+    // not contradict that by explicitly submitting it for indexing.
     { loc: `${siteUrl}/contact`, priority: '0.5' },
   ];
   const urls = entries

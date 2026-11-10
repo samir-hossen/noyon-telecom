@@ -38,7 +38,7 @@
     "meilisearch": "^0.60.0",
     "multer": "^2.2.0",
     "node-cache": "^5.1.2",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.4.0",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0"
   },

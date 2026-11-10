@@ -50,7 +50,7 @@ test('buildPagesSitemapXml', async (t) => {
     assert.match(xml, /\/brand\/samsung\/display</);
   });
 
-  await t.test('never lists /register — robots.txt disallows it, so listing it here would tell Google to index a URL it also can’t crawl', () => {
+  await t.test('never lists /register — it is a noindex utility page, not a search landing page', () => {
     const xml = buildPagesSitemapXml({ siteUrl: 'https://example.com', categories: [], brands: [] });
     assert.doesNotMatch(xml, /\/register</);
   });
