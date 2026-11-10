@@ -10,9 +10,9 @@
 //   - signed-in requests (any role) always get `no-store` — the response
 //     may contain dealer-specific pricing, so it must never be cached
 //     anywhere, by anyone, at any layer.
-//   - anonymous/guest requests (the only case where the response is
-//     genuinely identical for every visitor) get a conservative 30s
-//     public cache.
+//   - anonymous/guest requests revalidate on every use. The server's own
+//     short in-process cache still prevents repeated database work, while
+//     browsers never pin an old product image URL after an admin upload.
 //   - Vary: Cookie ensures a cache is never reused across a login/logout
 //     transition on the same browser — the auth cookie's value changes
 //     the moment someone logs in as a dealer, so a cache keyed only by
@@ -23,6 +23,6 @@ export function setProductCacheControl(req, res) {
   if (req.user) {
     res.set('Cache-Control', 'no-store');
   } else {
-    res.set('Cache-Control', 'public, max-age=30');
+    res.set('Cache-Control', 'no-cache, must-revalidate');
   }
 }

@@ -9,10 +9,10 @@ function fakeRes() {
 }
 
 test('setProductCacheControl', async (t) => {
-  await t.test('guest (no req.user) gets a short public cache', () => {
+  await t.test('guest (no req.user) revalidates so new product photos appear without a hard refresh', () => {
     const res = fakeRes();
     setProductCacheControl({ user: null }, res);
-    assert.equal(res.headers['Cache-Control'], 'public, max-age=30');
+    assert.equal(res.headers['Cache-Control'], 'no-cache, must-revalidate');
   });
 
   await t.test('signed-in customer gets no-store — never cached, even though customers see no dealer pricing', () => {

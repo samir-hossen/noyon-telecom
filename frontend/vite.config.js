@@ -21,7 +21,10 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        navigateFallback: 'index.html',
+        // Do not intercept document navigations. The current HTML/app shell
+        // must always come from the network; offline navigation caching was
+        // the source of stale product photos after admin updates.
+        navigateFallback: null,
         navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/uploads\//, /\.(?:xml|txt)(?:\?|$)/],
         globIgnores: ['**/Admin-*.js', '**/xlsx-*.js'],
         runtimeCaching: [
