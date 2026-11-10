@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { categoryUrl, isDisabledCategory } from '../utils/taxonomy';
 import { slugify } from '../utils/slug';
+import { resolveImg } from '../api';
 
 function Icon({ children }) {
   return (
@@ -26,7 +27,7 @@ const CATEGORIES = [
   { name: 'Speaker', labelKey: 'nav.speaker' },
 ];
 
-export default function CategoryGrid() {
+export default function CategoryGrid({ covers = {} }) {
   const { t } = useLanguage();
   // First row-and-a-half of real categories, then a "View All Categories"
   // tile as the 8th slot — matches the 4x2 category grid in the reference
@@ -34,15 +35,25 @@ export default function CategoryGrid() {
   const shown = CATEGORIES.filter((c) => !isDisabledCategory(c.name));
   return (
     <div className="category-grid">
-      {shown.map((c) => (
+      {shown.map((c) => {
+        const cover = covers[c.name];
+        return (
         <Link key={c.name} to={categoryUrl(c.name)} className="category-tile">
           {/* A real photo of the part (same as on the products without their own photo) */}
           <span className="category-tile-photo">
-            <img src={`/images/parts/photos/${slugify(c.name)}-icon.webp`} alt="" width="96" height="96" loading="lazy" decoding="async" />
+            <img
+              src={cover?.img ? resolveImg(cover.img, 240) : `/images/parts/photos/${slugify(c.name)}-icon.webp`}
+              alt={cover?.name || `${c.name} mobile phone spare part`}
+              width="160"
+              height="160"
+              loading="lazy"
+              decoding="async"
+            />
           </span>
           <span className="category-tile-name">{t(c.labelKey)}</span>
         </Link>
-      ))}
+        );
+      })}
       <Link to="/shop" className="category-tile category-tile-viewall">
         <span className="category-tile-icon" style={{ background: 'var(--berry-tint)', color: 'var(--berry)' }}>
           <Icon><rect x="3" y="3" width="7" height="7" rx="1.4" /><rect x="14" y="3" width="7" height="7" rx="1.4" /><rect x="3" y="14" width="7" height="7" rx="1.4" /><rect x="14" y="14" width="7" height="7" rx="1.4" /></Icon>

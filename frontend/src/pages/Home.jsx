@@ -16,19 +16,8 @@ import FlashSale from '../components/FlashSale.jsx';
 import FeatureStrip from '../components/FeatureStrip.jsx';
 import FAQAccordion, { FAQS } from '../components/FAQAccordion.jsx';
 
-const DISPLAY_LINKS = [
-  ['Motorola Moto G85 Display', 'motorola-moto-g85-display'],
-  ['Infinix Hot 50 Pro 4G Display', 'infinix-hot-50-pro-4g-display'],
-  ['Infinix Hot 50 Pro Plus Display', 'infinix-hot-50-pro-plus-display'],
-  ['Infinix Hot 60 Pro Plus Display', 'infinix-hot-60-pro-plus-display'],
-  ['Tecno Camon 40 Pro Display', 'tecno-camon-40-pro-display'],
-  ['Tecno Spark 40 Pro Display', 'tecno-spark-40-pro-display'],
-  ['Honor 600 Display', 'honor-600-display'],
-  ['Realme C61 Display', 'realme-c61-display'],
-];
-
 export default function Home() {
-  const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [] });
+  const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [], categoryCovers: {} });
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -109,7 +98,7 @@ export default function Home() {
     }
   }
 
-  const { popular = [], featured, newArrivals, bestSellers, deals, brandRails = [] } = sections;
+  const { popular = [], featured, newArrivals, bestSellers, deals, brandRails = [], categoryCovers = {} } = sections;
 
   return (
     <div>
@@ -128,19 +117,7 @@ export default function Home() {
           <h2 className="section-title">{t('home.categories')}</h2>
           <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
         </div>
-        <CategoryGrid />
-      </section>
-
-      <section className="section container defer-section">
-        <div className="section-head">
-          <h2 className="section-title">{t('home.featuredDisplays')}</h2>
-          <Link to="/category/display" className="section-link">{t('home.viewAll')} →</Link>
-        </div>
-        <ul className="ssr-link-list">
-          {DISPLAY_LINKS.map(([name, slug]) => (
-            <li key={slug}><Link to={`/product/${slug}`}>{name}</Link></li>
-          ))}
-        </ul>
+        <CategoryGrid covers={categoryCovers} />
       </section>
 
       {popular.length > 0 && (
