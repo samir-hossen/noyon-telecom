@@ -15,6 +15,7 @@ import BrandStrip from '../components/BrandStrip.jsx';
 import FlashSale from '../components/FlashSale.jsx';
 import FeatureStrip from '../components/FeatureStrip.jsx';
 import FAQAccordion, { FAQS } from '../components/FAQAccordion.jsx';
+import HomeSeoContent from '../components/HomeSeoContent.jsx';
 
 export default function Home() {
   const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [] });
@@ -220,6 +221,7 @@ export default function Home() {
       {/* One clean page: no second trust bar (FeatureStrip above says it),
           no "Latest Imported" rail (same products as New Arrivals), and no
           testimonials until the owner sends real dealer reviews. */}
+      <HomeSeoContent />
       <FAQAccordion />
     </div>
   );

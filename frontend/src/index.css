@@ -2961,6 +2961,20 @@ a.card-cta { display: block; text-align: center; text-decoration: none; }
 .shop-seo-text { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 24px; max-width: 860px; }
 .shop-seo-text p { color: #6b5f59; line-height: 1.75; font-size: 0.95rem; }
 
+/* Homepage discovery copy: concise visible content and direct catalogue
+   links, kept text-only so it improves crawl paths without slowing LCP. */
+.home-seo-content { border-top: 1px solid var(--line); }
+.home-seo-copy { max-width: 900px; }
+.home-seo-copy h2 { font-family: var(--font-display); font-size: clamp(1.55rem, 3vw, 2.2rem); margin: 0 0 14px; }
+.home-seo-copy p, .home-seo-grid p { color: #6b5f59; line-height: 1.75; }
+.home-seo-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; margin-top: 28px; }
+.home-seo-grid > div { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+.home-seo-grid h3 { font-family: var(--font-display); font-size: 1.12rem; margin: 0 0 8px; }
+.home-seo-grid p { font-size: 0.9rem; margin: 0 0 16px; }
+.home-seo-grid nav { display: flex; flex-wrap: wrap; gap: 9px 14px; }
+.home-seo-grid a { color: var(--berry-text); font-size: 0.88rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 800px) { .home-seo-grid { grid-template-columns: 1fr; gap: 14px; } }
+
 /* ---------- Product tile until a real photo is added ---------- */
 /* A real photo of the part type (see PartTile.jsx). On a card: the photo
    only. On the product page: the photo with the brand, model and part. */

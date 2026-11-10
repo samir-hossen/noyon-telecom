@@ -77,7 +77,7 @@
          Google Fonts request and several font downloads from the critical
          path, while keeping the storefront crisp on every device. -->
 
-    <!-- Organization + WebSite structured data. sameAs below is hardcoded
+    <!-- Store + WebSite structured data. sameAs below is hardcoded
          (this file is static, built once — it can't read the backend's
          SOCIAL_FACEBOOK_URL at request time the way Footer.jsx/Contact.jsx
          do via GET /api/settings/public); update it by hand here if that
@@ -85,7 +85,7 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
+        "@type": ["Organization", "Store"],
         "name": "Noyon Telecom",
         "url": "https://noyontelecom.com",
         "logo": "https://noyontelecom.com/apple-touch-icon.png",
@@ -103,6 +103,13 @@
           "contactType": "customer service",
           "areaServed": "BD"
         },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+          "opens": "10:00",
+          "closes": "19:00"
+        },
+        "priceRange": "৳৳",
         "sameAs": ["https://www.facebook.com/NoyonTelecomBD"]
       }
     </script>
