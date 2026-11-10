@@ -12,7 +12,7 @@ describe('placeholderPhoto', () => {
   it('otherwise the photo of the part named at the end of the name, then the category', () => {
     expect(placeholderPhoto({ slug: 'oppo-a57-ear-speaker', name: 'Oppo A57 Ear Speaker', brand: 'Oppo', category: 'Speaker' }))
       .toBe('/images/parts/photos/ear-speaker-sm.webp');
-    expect(placeholderPhoto({ slug: 'x', name: 'Vivo Y21 Charging Port', brand: 'Vivo', category: 'Flex' }))
+    expect(placeholderPhoto({ slug: 'x', name: 'Vivo Y21 Charging Logic', brand: 'Vivo', category: 'Flex' }))
       .toBe('/images/parts/photos/charging-port-sm.webp');
     expect(placeholderPhoto({ slug: 'y', name: 'Something', category: 'Unknown' })).toBe('/images/parts/photos/default-sm.webp');
   });

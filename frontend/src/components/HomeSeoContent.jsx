@@ -24,7 +24,7 @@ export default function HomeSeoContent() {
           <nav aria-label="Popular spare-part categories">
             <Link to="/category/display">Mobile displays</Link>
             <Link to="/category/back-glass">Back glass</Link>
-            <Link to="/category/charging-port">Charging ports</Link>
+            <Link to="/category/charging-logic">Charging Logic</Link>
             <Link to="/category/camera">Mobile cameras</Link>
             <Link to="/category/sim-tray">SIM trays</Link>
             <Link to="/category/speaker">Speakers</Link>

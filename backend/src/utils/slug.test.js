@@ -12,7 +12,7 @@ describe('slugify', () => {
   });
 
   test('trims leading/trailing hyphens left over from leading/trailing punctuation', () => {
-    assert.equal(slugify('  -Charging Port-  '), 'charging-port');
+    assert.equal(slugify('  -Charging Logic-  '), 'charging-logic');
   });
 
   test('falls back to "product" for empty/non-alphanumeric input, never an empty slug', () => {

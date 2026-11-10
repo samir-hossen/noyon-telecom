@@ -3,14 +3,15 @@ import { categoryUrl, brandUrl, categoryFromSlug, brandFromSlug } from './taxono
 
 describe('categoryUrl / brandUrl', () => {
   it('builds a clean path from a real category/brand name', () => {
-    expect(categoryUrl('Charging Port')).toBe('/category/charging-port');
+    expect(categoryUrl('Charging Logic')).toBe('/category/charging-logic');
     expect(brandUrl('Google Pixel')).toBe('/brand/google-pixel');
   });
 });
 
 describe('categoryFromSlug / brandFromSlug', () => {
   it('resolves a slug back to the real, correctly-cased name', () => {
-    expect(categoryFromSlug('charging-port')).toBe('Charging Port');
+    expect(categoryFromSlug('charging-logic')).toBe('Charging Logic');
+    expect(categoryFromSlug('charging-port')).toBe('Charging Logic');
     expect(brandFromSlug('google-pixel')).toBe('Google Pixel');
   });
 

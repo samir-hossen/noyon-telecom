@@ -22,7 +22,7 @@ const emptyForm = {
 // The part words our product names end with, per category.
 const PART_OPTIONS = {
   Display: ['Display'], 'Back Glass': ['Back Glass'], Camera: ['Back Camera', 'Front Camera'],
-  'Charging Port': ['Charging Port'], 'SIM Tray': ['SIM Tray'], Speaker: ['Loudspeaker', 'Ear Speaker'],
+  'Charging Logic': ['Charging Logic'], 'SIM Tray': ['SIM Tray'], Speaker: ['Loudspeaker', 'Ear Speaker'],
   Flex: ['Motherboard Flex Cable'], Frame: ['Middle Frame'], 'Logic Board': ['Logic Board'],
 };
 const partOptionsFor = (category) => PART_OPTIONS[category] || [category];

@@ -140,8 +140,8 @@ async function importList(raw, opts) {
 
 async function main() {
   const ccFlexResult = await importList(CC_FLEX_RAW, {
-    categories: ['Charging Port', 'Flex'],
-    category: 'Charging Port',
+    categories: ['Charging Logic', 'Flex'],
+    category: 'Charging Logic',
     skuPrefix: 'NT-CCFLEX',
   });
   console.log(`C/C Flex import: ${ccFlexResult.created} created, ${ccFlexResult.updated} updated.`);

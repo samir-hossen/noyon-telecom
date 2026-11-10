@@ -50,7 +50,7 @@ export default function Home() {
   // index.html, which non-JS crawlers see first.
   usePageMeta(
     'Wholesale Mobile Phone Spare Parts in Bangladesh',
-    'Wholesale mobile phone spare parts for repair shops and dealers in Bangladesh — displays, back glass, charging ports, SIM trays and more. Pre-tested, fast delivery.',
+    'Wholesale mobile phone spare parts for repair shops and dealers in Bangladesh — displays, back glass, charging logic, SIM trays and more. Pre-tested, fast delivery.',
     undefined,
     undefined,
     [

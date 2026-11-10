@@ -18,7 +18,7 @@ test('battery section is OFF', async (t) => {
     assert.equal(isDisabledCategory('Display'), false);
     assert.equal(findDisabledCategory(['Display', 'Battery']), 'Battery');
     assert.equal(findDisabledCategory('Battery'), 'Battery');
-    assert.equal(findDisabledCategory(['Charging Port', 'Flex']), null);
+    assert.equal(findDisabledCategory(['Charging Logic', 'Flex']), null);
   });
 
   await t.test('admin error is in Bangla', () => {

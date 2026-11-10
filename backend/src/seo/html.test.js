@@ -131,7 +131,7 @@ test('titles stay within ~65 characters', () => {
   assert.ok(categoryHead('Display').title.length <= 65);
   assert.ok(modelHead('Samsung Galaxy J7 Prime 2 (2018)').title.length <= 65 || true);
   assert.equal(buildProductTitle('Vivo Y21 Display'), 'Vivo Y21 Display Wholesale Price in Bangladesh | Noyon Telecom');
-  assert.equal(buildProductTitle('Xiaomi Redmi 8 / 8A / 8A Dual Charging Port'), 'Xiaomi Redmi 8 / 8A / 8A Dual Charging Port Wholesale Price in BD');
+  assert.equal(buildProductTitle('Xiaomi Redmi 8 / 8A / 8A Dual Charging Logic'), 'Xiaomi Redmi 8 / 8A / 8A Dual Charging Logic Wholesale Price');
 });
 
 test('page 2+ of a listing has its own title and description', () => {
@@ -143,9 +143,9 @@ test('page 2+ of a listing has its own title and description', () => {
 });
 
 test('meta descriptions fit in ~160 characters', () => {
-  const cats = ['Camera', 'Display', 'Back Glass', 'Charging Port', 'Frame'].map((name) => ({ name }));
+  const cats = ['Camera', 'Display', 'Back Glass', 'Charging Logic', 'Frame'].map((name) => ({ name }));
   assert.ok(brandHead('Samsung', cats).description.length <= 160);
   assert.ok(brandCategoryHead('Samsung', 'Display', 275).description.length <= 160);
   assert.ok(modelHead('Samsung Galaxy A15', ['Back Glass', 'Display', 'SIM Tray']).description.length <= 160);
-  assert.ok(modelHead('Xiaomi Redmi Note 13 Pro Plus 5G', ['Back Glass', 'Display', 'Charging Port', 'Back Camera', 'Front Camera']).description.length <= 160);
+  assert.ok(modelHead('Xiaomi Redmi Note 13 Pro Plus 5G', ['Back Glass', 'Display', 'Charging Logic', 'Back Camera', 'Front Camera']).description.length <= 160);
 });

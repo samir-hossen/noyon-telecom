@@ -18,7 +18,7 @@ function Icon({ children }) {
 const CATEGORIES = [
   { name: 'Display', labelKey: 'nav.display', image: 'display-icon.webp' },
   { name: 'SIM Tray', labelKey: 'nav.simTray', image: 'sim-tray-icon.webp' },
-  { name: 'Charging Port', labelKey: 'nav.chargingPort', image: 'charging-port-icon.webp' },
+  { name: 'Charging Logic', labelKey: 'nav.chargingPort', image: 'charging-port-icon.webp' },
   { name: 'Back Glass', labelKey: 'nav.backGlass', image: 'back-glass-icon.webp' },
   { name: 'Camera', labelKey: 'nav.camera', image: 'camera-icon.webp' },
   { name: 'Logic Board', labelKey: 'nav.logicBoard', image: 'default-icon.webp' },

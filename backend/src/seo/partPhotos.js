@@ -11,7 +11,7 @@ const PHOTOS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim
 const PHOTO_BY_PART = [
   ['motherboard flex cable', 'flex'], ['charging flex cable', 'charging-port'], ['flex cable', 'flex'],
   ['back glass', 'back-glass'], ['back camera', 'camera'], ['front camera', 'front-camera'],
-  ['charging port', 'charging-port'], ['sim tray', 'sim-tray'], ['loudspeaker', 'speaker'], ['ear speaker', 'ear-speaker'],
+  ['charging logic', 'charging-port'], ['charging port', 'charging-port'], ['sim tray', 'sim-tray'], ['loudspeaker', 'speaker'], ['ear speaker', 'ear-speaker'],
   ['middle frame', 'frame'], ['logic board', 'logic-board'], ['display', 'display'],
 ];
 
@@ -19,7 +19,9 @@ export function partPhotoSlug(category, name = '') {
   const lower = String(name || '').trim().toLowerCase();
   const byName = PHOTO_BY_PART.find(([word]) => lower.endsWith(` ${word}`));
   if (byName) return byName[1];
-  const slug = String(category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const categoryName = String(category || '').trim().toLowerCase();
+  if (categoryName === 'charging logic') return 'charging-port';
+  const slug = categoryName.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   return PHOTOS.has(slug) ? slug : 'default';
 }
 

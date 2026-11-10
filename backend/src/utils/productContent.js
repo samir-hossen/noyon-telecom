@@ -138,8 +138,8 @@ export const PART_TYPES = {
     ],
   },
   chargingPort: {
-    label: 'Charging Port',
-    category: 'Charging Port',
+    label: 'Charging Logic',
+    category: 'Charging Logic',
     bn: 'চার্জিং পোর্ট',
     intro: (n) => `The ${n} is a replacement charging port (charging board / charging flex).`,
     detail: () => [
@@ -254,7 +254,7 @@ export function buildProductDescription({ name, partKey, modelLabel, models = []
 // The part a product is, from the end of its name ("... Front Camera") or
 // else its category, and the name without the part ("Samsung Galaxy A15").
 const PART_KEY_BY_CATEGORY = {
-  'display': 'display', 'back glass': 'backGlass', 'camera': 'backCamera', 'charging port': 'chargingPort',
+  'display': 'display', 'back glass': 'backGlass', 'camera': 'backCamera', 'charging logic': 'chargingPort',
   'sim tray': 'simTray', 'speaker': 'loudspeaker', 'flex': 'flex', 'frame': 'frame', 'logic board': 'logicBoard',
 };
 const PART_NAMES_LONGEST_FIRST = Object.keys(PART_KEY_BY_NAME).sort((a, b) => b.length - a.length);

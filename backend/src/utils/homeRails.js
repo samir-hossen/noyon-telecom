@@ -5,7 +5,7 @@
 import prisma from '../prismaClient.js';
 
 export const HOME_RAIL_BRANDS = ['Apple', 'Samsung', 'Xiaomi', 'Oppo', 'Vivo', 'Realme'];
-export const RAIL_PARTS = ['Display', 'Back Glass', 'Camera', 'Charging Port', 'Speaker', 'SIM Tray', 'Flex', 'Frame'];
+export const RAIL_PARTS = ['Display', 'Back Glass', 'Camera', 'Charging Logic', 'Speaker', 'SIM Tray', 'Flex', 'Frame'];
 export const RAIL_SIZE = 6;
 
 // One pick per brand + part (rows come back in any order) -> the rails, parts in RAIL_PARTS order.

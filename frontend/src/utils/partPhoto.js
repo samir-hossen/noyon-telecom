@@ -7,7 +7,7 @@ import { MODEL_PHOTOS } from '../content/modelPhotos';
 // (public/images/parts/photos/). All credited on /photo-credits.
 export const PART_LABELS = [
   'Motherboard Flex Cable', 'Charging Flex Cable', 'Display Upper Glass', 'Upper Glass', 'Back Glass', 'Back Camera',
-  'Front Camera', 'Camera Glass', 'Charging Port', 'SIM Tray', 'Loudspeaker', 'Ear Speaker', 'Flex Cable',
+  'Front Camera', 'Camera Glass', 'Charging Logic', 'SIM Tray', 'Loudspeaker', 'Ear Speaker', 'Flex Cable',
   'Middle Frame', 'Logic Board', 'Display',
 ];
 const PHOTOS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim-tray', 'speaker', 'flex', 'frame', 'logic-board']);
@@ -15,7 +15,7 @@ const PHOTOS = new Set(['display', 'back-glass', 'camera', 'charging-port', 'sim
 // shows its own kind of part; the category is only the fallback.
 const PHOTO_BY_PART = {
   Display: 'display', 'Back Glass': 'back-glass', 'Back Camera': 'camera', 'Front Camera': 'front-camera',
-  'Charging Port': 'charging-port', 'Charging Flex Cable': 'charging-port', 'SIM Tray': 'sim-tray',
+  'Charging Logic': 'charging-port', 'Charging Flex Cable': 'charging-port', 'SIM Tray': 'sim-tray',
   Loudspeaker: 'speaker', 'Ear Speaker': 'ear-speaker', 'Motherboard Flex Cable': 'flex', 'Flex Cable': 'flex',
   'Middle Frame': 'frame', 'Logic Board': 'logic-board',
 };
@@ -35,6 +35,6 @@ export function placeholderPhoto(product, { small = true } = {}) {
   const model = MODEL_PHOTOS[product?.slug];
   if (model) return `/images/models/${model}-back${size}.webp`;
   const { part } = splitProductName(product);
-  const slug = slugify(product?.category || '');
+  const slug = product?.category === 'Charging Logic' ? 'charging-port' : slugify(product?.category || '');
   return `/images/parts/photos/${PHOTO_BY_PART[part] || (PHOTOS.has(slug) ? slug : 'default')}${size}.webp`;
 }

@@ -6,7 +6,7 @@
 // storefront mega-menu groups these visually.
 export const ALL_CATEGORIES = [
   'Display', 'OLED', 'LCD', 'Touch', 'Upper Glass', 'Battery', 'Back Glass', 'Housing', 'Frame',
-  'Camera', 'Charging Port', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
+  'Camera', 'Charging Logic', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
   'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
   'Repair Tools', 'Accessories',
 ];

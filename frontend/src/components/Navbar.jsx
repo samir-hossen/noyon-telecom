@@ -16,7 +16,7 @@ import { trackPhoneClick } from '../ecommerce.js';
 // list from products.routes.js organized into scannable columns.
 const MEGA_MENU_GROUPS = [
   { titleKey: 'nav.megaGroup.screenDisplay', categories: ['Display', 'Upper Glass', 'OLED', 'LCD', 'Touch'] },
-  { titleKey: 'nav.megaGroup.powerCharging', categories: ['Battery', 'Charging Port', 'IC'] }, // Battery is filtered out while switched off
+  { titleKey: 'nav.megaGroup.powerCharging', categories: ['Battery', 'Charging Logic', 'IC'] }, // Battery is filtered out while switched off
   { titleKey: 'nav.megaGroup.bodyHousing', categories: ['Back Glass', 'Housing', 'Frame', 'Buttons'] },
   { titleKey: 'nav.megaGroup.cameraAudio', categories: ['Camera', 'Speaker', 'Microphone'] },
   { titleKey: 'nav.megaGroup.logicSecurity', categories: ['Flex', 'Logic Board', 'Motherboard', 'CPU', 'Fingerprint', 'Face ID'] },
@@ -265,7 +265,7 @@ export default function Navbar() {
           <Link to="/">{t('nav.home')}</Link>
           <Link to="/shop">{t('nav.allParts')}</Link>
           <Link to={categoryUrl('Display')}>{t('nav.display')}</Link>
-          <Link to={categoryUrl('Charging Port')}>{t('nav.chargingPort')}</Link>
+          <Link to={categoryUrl('Charging Logic')}>{t('nav.chargingPort')}</Link>
           <Link to={categoryUrl('SIM Tray')}>{t('nav.simTray')}</Link>
           <Link to={categoryUrl('Back Glass')}>{t('nav.backGlass')}</Link>
           <Link to={categoryUrl('Camera')}>{t('nav.camera')}</Link>
@@ -287,7 +287,7 @@ export default function Navbar() {
             <Link to="/" onClick={closeMenu}>{t('nav.home')}</Link>
             <Link to="/shop" onClick={closeMenu}>{t('nav.allParts')}</Link>
             <Link to={categoryUrl('Display')} onClick={closeMenu}>{t('nav.display')}</Link>
-            <Link to={categoryUrl('Charging Port')} onClick={closeMenu}>{t('nav.chargingPort')}</Link>
+            <Link to={categoryUrl('Charging Logic')} onClick={closeMenu}>{t('nav.chargingPort')}</Link>
             <Link to={categoryUrl('SIM Tray')} onClick={closeMenu}>{t('nav.simTray')}</Link>
             <Link to={categoryUrl('Back Glass')} onClick={closeMenu}>{t('nav.backGlass')}</Link>
             <Link to={categoryUrl('Camera')} onClick={closeMenu}>{t('nav.camera')}</Link>

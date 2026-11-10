@@ -48,7 +48,7 @@ export const PHOTO_CREDITS = [
     changes: 'Background removed, cropped',
   },
   {
-    part: 'Charging Port',
+    part: 'Charging Logic',
     file: 'charging-port',
     title: 'Redmi Note 8 - IO board-4926.jpg',
     source: 'https://commons.wikimedia.org/wiki/File:Redmi_Note_8_-_IO_board-4926.jpg',

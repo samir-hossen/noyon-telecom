@@ -63,7 +63,7 @@ describe('Navbar — battery section is OFF', () => {
     renderNavbar();
     expect(document.querySelectorAll('a[href="/category/battery"]').length).toBe(0);
     // ...while the other parts are still there
-    expect(document.querySelectorAll('a[href="/category/charging-port"]').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('a[href="/category/charging-logic"]').length).toBeGreaterThan(0);
     expect(document.querySelectorAll('a[href="/category/sim-tray"]').length).toBeGreaterThan(0);
   });
 });

@@ -8,7 +8,7 @@ import { slugify } from './slug.js';
 
 export const ALL_CATEGORIES = [
   'Display', 'OLED', 'LCD', 'Touch', 'Upper Glass', 'Battery', 'Back Glass', 'Housing', 'Frame',
-  'Camera', 'Charging Port', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
+  'Camera', 'Charging Logic', 'Speaker', 'Microphone', 'Flex', 'Logic Board',
   'Motherboard', 'IC', 'CPU', 'Buttons', 'SIM Tray', 'Fingerprint', 'Face ID',
   'Repair Tools', 'Accessories',
 ];
@@ -51,6 +51,9 @@ export function brandCategoryUrl(brandName, categoryName) {
 }
 
 export function categoryFromSlug(slug) {
+  // Client-side fallback for an old link reached without a full navigation;
+  // normal document requests receive a backend 301 to /charging-logic.
+  if (slug === 'charging-port') return 'Charging Logic';
   return ALL_CATEGORIES.find((c) => slugify(c) === slug) || null;
 }
 

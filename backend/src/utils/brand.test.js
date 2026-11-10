@@ -10,7 +10,7 @@ describe('detectBrandFromText', () => {
 
   test('maps a sub-brand/product-line word to its real parent brand', () => {
     assert.equal(detectBrandFromText('iPhone 13 OLED Display Assembly'), 'Apple');
-    assert.equal(detectBrandFromText('Redmi Note 9 Charging Port'), 'Xiaomi');
+    assert.equal(detectBrandFromText('Redmi Note 9 Charging Logic'), 'Xiaomi');
     assert.equal(detectBrandFromText('Poco X3 Battery'), 'Xiaomi');
     assert.equal(detectBrandFromText('Pixel 6 Back Glass'), 'Google');
   });

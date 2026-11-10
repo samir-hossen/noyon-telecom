@@ -8,12 +8,12 @@ function clean(name, brandField, part) {
 }
 
 test('names: abbreviations, typos, casing, separators', () => {
-  assert.deepEqual(clean('RM 8 / 8A / 8A Dual — Charging Port', 'Xiaomi', 'Charging Port'), {
+  assert.deepEqual(clean('RM 8 / 8A / 8A Dual — Charging Logic', 'Xiaomi', 'Charging Logic'), {
     brand: 'Xiaomi',
-    name: 'Xiaomi Redmi 8 / 8A / 8A Dual Charging Port',
+    name: 'Xiaomi Redmi 8 / 8A / 8A Dual Charging Logic',
     compatibleModels: ['Xiaomi Redmi 8', 'Xiaomi Redmi 8A', 'Xiaomi Redmi 8A Dual'],
   });
-  assert.equal(clean('INF HOT 11 / HOT 11S / HOT 11 PLAY — Charging Port', 'Infinix', 'Charging Port').name, 'Infinix Hot 11 / Hot 11S / Hot 11 Play Charging Port');
+  assert.equal(clean('INF HOT 11 / HOT 11S / HOT 11 PLAY — Charging Logic', 'Infinix', 'Charging Logic').name, 'Infinix Hot 11 / Hot 11S / Hot 11 Play Charging Logic');
   assert.deepEqual(clean('Redmi Note 8 / Note 8 Pro / Note 8T — SIM Tray', 'Xiaomi', 'SIM Tray').compatibleModels,
     ['Xiaomi Redmi Note 8', 'Xiaomi Redmi Note 8 Pro', 'Xiaomi Redmi Note 8T']);
   assert.equal(clean('VV Y21 Logic Board', 'Vivo', 'Logic Board').name, 'Vivo Y21 Logic Board');
@@ -28,30 +28,30 @@ test('names: abbreviations, typos, casing, separators', () => {
   assert.equal(clean('iPhone 12 mini Back Glass', 'Apple', 'Back Glass').name, 'iPhone 12 mini Back Glass');
   assert.equal(clean('POCO F2 Pro Back Glass', 'Xiaomi', 'Back Glass').name, 'Xiaomi Poco F2 Pro Back Glass');
   assert.equal(clean('Itel A60 Display', 'itel', 'Display').name, 'Itel A60 Display');
-  const mixed = clean('ITEL POP 8 / Tecno Spark Go 2024 — Charging Port', 'Itel', 'Charging Port');
-  assert.equal(mixed.name, 'Itel Pop 8 / Tecno Spark Go 2024 Charging Port');
+  const mixed = clean('ITEL POP 8 / Tecno Spark Go 2024 — Charging Logic', 'Itel', 'Charging Logic');
+  assert.equal(mixed.name, 'Itel Pop 8 / Tecno Spark Go 2024 Charging Logic');
   assert.deepEqual(mixed.compatibleModels, ['Itel Pop 8', 'Tecno Spark Go 2024']);
   assert.deepEqual(clean('A13 / A23 Display', 'Samsung', 'Display').compatibleModels, ['Samsung Galaxy A13', 'Samsung Galaxy A23']);
 });
 
 test('names: Realme REA code, Core models, follow-ons checked against market data', () => {
-  assert.equal(clean('REA C30 / C30s / C31 — Charging Port', 'Realme', 'Charging Port').name, 'Realme C30 / C30s / C31 Charging Port');
+  assert.equal(clean('REA C30 / C30s / C31 — Charging Logic', 'Realme', 'Charging Logic').name, 'Realme C30 / C30s / C31 Charging Logic');
   assert.equal(clean('A01CORE — SIM Tray', 'Samsung', 'SIM Tray').name, 'Samsung Galaxy A01 Core SIM Tray');
   const known = new Set(['xiaomi redmi a2', 'xiaomi redmi a2+', 'realme c25']);
   const knownModel = (m) => known.has(m.toLowerCase());
-  const { brand, models } = parseExistingName('RM A1 / A1+ / A2 / A2+ — Charging Port', 'Xiaomi');
-  assert.deepEqual(buildName({ brand, models, part: 'Charging Port', knownModel }).compatibleModels,
+  const { brand, models } = parseExistingName('RM A1 / A1+ / A2 / A2+ — Charging Logic', 'Xiaomi');
+  assert.deepEqual(buildName({ brand, models, part: 'Charging Logic', knownModel }).compatibleModels,
     ['Xiaomi Redmi A1', 'Xiaomi Redmi A1+', 'Xiaomi Redmi A2', 'Xiaomi Redmi A2+']);
-  const narzo = parseExistingName('REA Narzo 30A / C25 — Charging Port', 'Realme');
-  assert.deepEqual(buildName({ ...narzo, part: 'Charging Port', knownModel }).compatibleModels, ['Realme Narzo 30A', 'Realme C25']);
+  const narzo = parseExistingName('REA Narzo 30A / C25 — Charging Logic', 'Realme');
+  assert.deepEqual(buildName({ ...narzo, part: 'Charging Logic', knownModel }).compatibleModels, ['Realme Narzo 30A', 'Realme C25']);
 });
 
 test('names: a follow-on that names a brand stays its own model', () => {
-  const a = clean('REA Narzo 20 / REA 7i — Charging Port', 'Realme', 'Charging Port');
-  assert.equal(a.name, 'Realme Narzo 20 / Realme 7i Charging Port');
+  const a = clean('REA Narzo 20 / REA 7i — Charging Logic', 'Realme', 'Charging Logic');
+  assert.equal(a.name, 'Realme Narzo 20 / Realme 7i Charging Logic');
   assert.deepEqual(a.compatibleModels, ['Realme Narzo 20', 'Realme 7i']);
-  const b = clean('REA C1 / OPPO A3S — Charging Port', 'Realme', 'Charging Port');
-  assert.equal(b.name, 'Realme C1 / Oppo A3s Charging Port');
+  const b = clean('REA C1 / OPPO A3S — Charging Logic', 'Realme', 'Charging Logic');
+  assert.equal(b.name, 'Realme C1 / Oppo A3s Charging Logic');
   assert.deepEqual(b.compatibleModels, ['Realme C1', 'Oppo A3s']);
 });
 
@@ -63,7 +63,7 @@ test('names: network variants in brackets', () => {
   assert.equal(b.name, 'Realme 9 4G / 9i SIM Tray');
   assert.deepEqual(b.compatibleModels, ['Realme 9 4G', 'Realme 9i']);
   assert.deepEqual(clean('Vivo Y27 (4G / 5G) / Y28 (4G / 5G) — SIM Tray', 'Vivo', 'SIM Tray').compatibleModels, ['Vivo Y27', 'Vivo Y28']);
-  assert.deepEqual(clean('OP F5 / A73 (2017) — Charging Port', 'Oppo', 'Charging Port').compatibleModels, ['Oppo F5', 'Oppo A73 (2017)']);
+  assert.deepEqual(clean('OP F5 / A73 (2017) — Charging Logic', 'Oppo', 'Charging Logic').compatibleModels, ['Oppo F5', 'Oppo A73 (2017)']);
   assert.deepEqual(clean('POCO M2 / M3 / M4 Pro (4G) / M5 — SIM Tray', 'Xiaomi', 'SIM Tray').compatibleModels,
     ['Xiaomi Poco M2', 'Xiaomi Poco M3', 'Xiaomi Poco M4 Pro 4G', 'Xiaomi Poco M5']);
   assert.equal(clean('Realme 11 (4G) / 11x 5G — SIM Tray', 'Realme', 'SIM Tray').name, 'Realme 11 4G / 11x 5G SIM Tray');

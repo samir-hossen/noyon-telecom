@@ -58,7 +58,7 @@ const blogPosts = [
   },
   {
     slug: 'charging-port-noshto-hoyar-karon',
-    relatedCategories: ['Charging Port', 'Flex'],
+    relatedCategories: ['Charging Logic', 'Flex'],
     relatedSlugs: ['original-vs-copy-battery-chenar-upay'],
     title: 'চার্জিং পোর্ট নষ্ট হওয়ার প্রধান কারণ ও সমাধান',
     metaDescription: 'মোবাইলের চার্জিং পোর্ট কেন নষ্ট হয়, কোন কোন লক্ষণ দেখে বোঝা যায় পোর্ট বদলানো দরকার, আর সার্ভিসিং-এর সময় কী কী খেয়াল রাখবেন।',

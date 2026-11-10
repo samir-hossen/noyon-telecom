@@ -83,7 +83,7 @@ export function fixCasing(text) {
   return text.split(/\s+/).filter(Boolean).map(fixToken).join(' ');
 }
 
-const PART_WORDS = /\s*(?:—|–|-)?\s*\b(display|back glass|charging port|sim tray|logic board|flex)\b\s*$/i;
+const PART_WORDS = /\s*(?:—|–|-)?\s*\b(display|back glass|charging logic|charging port|sim tray|logic board|flex)\b\s*$/i;
 
 // Splits "Redmi 13 / 13C (4G / 5G)" on the slashes outside brackets.
 export function splitModels(text) {
@@ -110,7 +110,7 @@ function withoutBothNetworks(model) {
   return model.replace(/\s*\((?:4G|5G)\s*\/\s*(?:4G|5G)\)/gi, '').trim();
 }
 
-// "INF HOT 11 / HOT 11S / HOT 11 PLAY — Charging Port" -> { brand: 'Infinix',
+// "INF HOT 11 / HOT 11S / HOT 11 PLAY — Charging Logic" -> { brand: 'Infinix',
 // models: ['Hot 11', 'Hot 11s', 'Hot 11 Play'] } (models without the brand).
 export function parseExistingName(name, brandField) {
   let brand = canonicalBrand(brandField);

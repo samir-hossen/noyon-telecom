@@ -326,7 +326,7 @@ function brandOfModel(fullModel, fallback) {
   return BRAND_CANON[first] && !BRAND_CANON[first].includes(' ') ? BRAND_CANON[first] : fallback;
 }
 
-const EXISTING_PART_LABEL = { Display: 'Display', 'Back Glass': 'Back Glass', 'Charging Port': 'Charging Port', 'SIM Tray': 'SIM Tray' };
+const EXISTING_PART_LABEL = { Display: 'Display', 'Back Glass': 'Back Glass', 'Charging Logic': 'Charging Logic', 'SIM Tray': 'SIM Tray' };
 
 function coverageKey(brand, fullModel, label) {
   return `${brand}|${modelKey(fullModel)}|${label}`;

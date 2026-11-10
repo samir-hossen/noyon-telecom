@@ -421,6 +421,15 @@ export async function resolvePage(pathname, { page } = {}) {
   const key = `seo:page:${parts.join('/')}:${p}`;
   return getOrSet(key, 300, async () => {
     const [kind, a, b] = parts;
+    // Preserve every indexed/shared URL from before the owner renamed the
+    // category. The replacement is a permanent redirect, so search engines
+    // transfer signals to the new canonical path instead of seeing a 404.
+    if (kind === 'category' && a === 'charging-port' && !b) {
+      return { status: 301, location: '/category/charging-logic' };
+    }
+    if (kind === 'brand' && a && b === 'charging-port') {
+      return { status: 301, location: `/brand/${a}/charging-logic` };
+    }
     if (kind === 'product' && a && !b) return productPage(a);
     if (kind === 'category' && a && !b) return categoryPage(a, p);
     if (kind === 'brand' && a && !b) return brandPage(a, p);

@@ -48,10 +48,10 @@ const PRODUCTS = [
     warranty: '7 Days Testing Warranty',
   },
   {
-    name: 'Samsung Galaxy A54 Charging Port Flex Cable',
+    name: 'Samsung Galaxy A54 Charging Logic Flex Cable',
     desc: 'USB Type-C charging port flex, direct replacement for Galaxy A54 5G.',
-    categories: ['Charging Port', 'Flex'],
-    category: 'Charging Port',
+    categories: ['Charging Logic', 'Flex'],
+    category: 'Charging Logic',
     images: [],
     img: '',
     price: 520,
