@@ -3127,3 +3127,99 @@ html { font-size: 93.75%; }
   .grid.grid-six::-webkit-scrollbar { display: none; }
   .grid.grid-six > * { scroll-snap-align: start; }
 }
+
+/* ---------- Mobile storefront hierarchy ----------
+   Keep the first screen focused on logo, search and products. Secondary
+   utility copy remains available in the menu/footer instead of consuming
+   scarce phone-height above the catalogue. */
+@media (max-width: 640px) {
+  :root { --gutter: 14px; }
+
+  .nav-topbar { display: none; }
+  .nav-top { padding-top: 9px; padding-bottom: 9px; gap: 8px; }
+  .nav-logo { font-size: 1.22rem; gap: 6px; }
+  .nav-logo-mark { width: 25px; }
+  .nav-mobile-actions { gap: 7px; }
+  .nav-icon-btn { width: 38px; height: 38px; }
+  .nav-hamburger .hamburger { width: 26px; height: 20px; }
+  .hamburger span:nth-child(2) { top: 9px; }
+  .hamburger span:nth-child(3) { top: 18px; }
+  .nav-search-slot .nav-search form { min-height: 43px; padding: 8px 14px; background: #f4f5f7; }
+  .nav-search input { line-height: 1.2; }
+
+  .announcement-bar { width: calc(100% - 28px); margin: 8px auto 6px; }
+  .announcement-text { padding: 5px 0; font-size: 0.7rem; }
+
+  .hero { margin-top: 8px; border-radius: 14px; }
+  .hero-copy { min-height: 180px; padding: 16px 14px 42px !important; }
+  .hero-copy .eyebrow { display: none; }
+  .hero-title { max-width: 82%; font-size: clamp(1.25rem, 6vw, 1.55rem); }
+  .hero-badges { margin-bottom: 9px; }
+  .hero-badge:nth-child(n+3) { display: none; }
+
+  .feature-strip { padding: 10px; margin-top: 10px; gap: 8px; }
+  .feature-strip-item { min-width: 0; gap: 7px; }
+  .feature-strip-item > div span { display: none; }
+  .feature-strip-item strong { font-size: 0.7rem; }
+
+  .part-finder { margin-top: 10px; padding: 12px; }
+  .part-finder-title { font-size: 0.86rem; margin-bottom: 8px; }
+  .part-finder-form { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .part-finder-form select { min-width: 0; min-height: 42px; padding: 7px 8px; font-size: 0.78rem; }
+  .part-finder-form button { grid-column: 1 / -1; min-height: 42px; padding: 8px 12px; }
+
+  .section { padding-top: 20px; padding-bottom: 20px; }
+  .section-head { margin-bottom: 13px; gap: 10px; }
+  .section-title { font-size: 1.13rem; line-height: 1.2; }
+  .section-link { font-size: 0.76rem; }
+
+  .category-grid { display: flex; gap: 9px; overflow-x: auto; margin: 0 -14px; padding: 0 14px 5px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .category-grid::-webkit-scrollbar { display: none; }
+  .category-tile { flex: 0 0 86px; min-height: 102px; padding: 10px 5px; scroll-snap-align: start; }
+  .category-tile-photo { width: 48px; height: 48px; }
+  .category-tile-name { font-size: 0.68rem; }
+
+  .grid { gap: 9px; }
+  .grid.grid-six { grid-auto-columns: 47%; gap: 10px; margin: 0 -14px; padding-left: 14px; padding-right: 14px; scroll-padding-left: 14px; }
+  .card { border-radius: 14px; box-shadow: 0 2px 8px rgba(20, 20, 26, 0.05); }
+  .card-img { aspect-ratio: 1 / 0.92; }
+  .card-img img { padding: 8px; object-fit: contain; background: #fff; }
+  .card-cat { display: none; }
+  .card-body { padding: 10px; gap: 6px; }
+  .card-name { font-size: 0.84rem; line-height: 1.3; }
+  .card-price .now { font-size: 0.98rem; }
+  .card-cta { min-height: 40px; margin-top: 7px; padding: 8px 6px; font-size: 0.72rem; }
+  .card-quote-link { font-size: 0.7rem; }
+
+  /* Three strong brand rows are enough on the phone homepage. Every brand
+     remains one tap away in the Shop by Brand grid directly below. */
+  .brand-product-rail-secondary { display: none; }
+
+  .promo-banner { padding: 16px; gap: 12px; }
+  .promo-banner p { display: none; }
+  .promo-banner strong { margin: 0; font-size: 1rem; }
+  .promo-banner .btn { width: 100%; min-height: 42px; padding: 9px 14px; }
+
+  .pd-grid { padding-top: 10px; gap: 16px; }
+  .breadcrumb-trail { display: none; }
+  .pd-img { border-radius: 14px; }
+  .pd-img > img { padding: 12px; }
+  .pd-thumb-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .pd-thumb-row::-webkit-scrollbar { display: none; }
+  .pd-buybox .pd-title { margin-top: 6px; font-size: 1.34rem; }
+  .pd-price .now { font-size: 1.55rem; }
+  .pd-action-row { display: grid; grid-template-columns: 1fr; }
+  .pd-action-row .btn { width: 100%; min-width: 0; min-height: 44px; }
+  .pd-trust { grid-template-columns: 1fr 1fr; font-size: 0.76rem; gap: 9px; }
+  .pd-trust li:last-child { grid-column: 1 / -1; }
+  .pd-meta-line { font-size: 0.75rem; gap: 6px 14px; }
+  .pd-details { padding-top: 24px; }
+
+  .mobile-bottom-nav { padding-top: 4px; }
+  .mbn-item { min-height: 52px; padding: 4px 2px; font-size: 0.61rem; }
+  .mbn-item svg { width: 21px; height: 21px; }
+
+  .footer { margin-top: 42px; }
+  .store-address-panel { padding: 28px 0; }
+  .footer-main-container { padding-top: 28px; }
+}

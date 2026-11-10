@@ -140,16 +140,16 @@ export default function Home() {
 
       {popular.length > 0 && (
         <section className="section container home-rail defer-section">
-          <div className="section-head"><h2 className="section-title">Most viewed / বেশি দেখা পণ্য</h2><Link to="/shop?sort=popular" className="section-link">{t('home.viewAll')} →</Link></div>
+          <div className="section-head"><h2 className="section-title">{t('home.mostViewed')}</h2><Link to="/shop?sort=popular" className="section-link">{t('home.viewAll')} →</Link></div>
           <div className="grid grid-six">{popular.map((p) => <ProductCard key={p.id} product={p} onAdd={handleAdd} />)}</div>
         </section>
       )}
 
       {/* One row of parts per main brand, each with a link to all of that brand's parts. */}
-      {brandRails.map((rail) => {
+      {brandRails.map((rail, railIndex) => {
         const label = rail.brand === 'Apple' ? 'iPhone' : rail.brand;
         return (
-          <section className="section container home-rail defer-section" key={rail.brand}>
+          <section className={`section container home-rail brand-product-rail defer-section${railIndex >= 3 ? ' brand-product-rail-secondary' : ''}`} key={rail.brand}>
             <div className="section-head">
               <h2 className="section-title">{t('home.brandRail', null, { brand: label })}</h2>
               <Link to={`/brand/${slugify(rail.brand)}`} className="section-link">{t('home.brandRailMore', null, { brand: label })} →</Link>
