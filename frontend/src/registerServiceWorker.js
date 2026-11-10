@@ -35,16 +35,26 @@ export function registerServiceWorker() {
 
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
+      // Never let the browser's HTTP cache hide a newly deployed worker.
+      // Hashed JS/CSS/images remain long-cached; only this tiny version
+      // manifest always checks the network.
+      .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((registration) => {
+        // register() may reuse an existing registration without doing an
+        // immediate byte-for-byte update check. Force one on every full page
+        // load so a returning visitor gets the newest deployment right away.
+        registration.update().catch(() => {});
+
         // A tab left open (or a PWA resumed from the background) would
         // otherwise only check for a new version on a full navigation.
-        // Checking when the tab becomes visible again, plus hourly, means
+        // a long-lived session still picks up a deployment on its own.
+        // Checking when the tab becomes visible again, plus every five
+        // minutes, means a long-lived session picks up a deployment quickly.
         // a long-lived session still picks up a deployment on its own.
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') registration.update().catch(() => {});
         });
-        setInterval(() => registration.update().catch(() => {}), 60 * 60 * 1000);
+        setInterval(() => registration.update().catch(() => {}), 5 * 60 * 1000);
       })
       .catch(() => {
         // Registration can fail legitimately (private browsing modes,

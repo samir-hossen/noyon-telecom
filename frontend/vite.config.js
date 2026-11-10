@@ -14,6 +14,41 @@ export default defineConfig({
     // "stuck on old version" complaints from dealers with the site pinned.
     VitePWA({
       registerType: 'autoUpdate',
+      // Make the generated worker take control as soon as its new precache is
+      // ready, and remove caches left by older builds. registerServiceWorker
+      // reloads an already-open page once on controllerchange.
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/uploads\//, /\.(?:xml|txt)(?:\?|$)/],
+        globIgnores: ['**/Admin-*.js', '**/xlsx-*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/assets/') && url.pathname.endsWith('.js'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'route-chunks',
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => /\/uploads\//.test(url.pathname) || /\.(png|jpg|jpeg|webp|avif|svg)$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
+      },
       // Registration is done by src/registerServiceWorker.js instead of the
       // bare script this would otherwise inject into index.html — see that
       // file for why (the injected one never reloads the page when a new
@@ -37,64 +72,6 @@ export default defineConfig({
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: '/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-      workbox: {
-        // Was previously set to '/offline.html'. vite-plugin-pwa registers
-        // navigateFallback as a cache-only NavigationRoute BEFORE any
-        // runtimeCaching entries (confirmed by inspecting the generated
-        // dist/sw.js), so it unconditionally wins every navigation request
-        // without ever attempting a network fetch. Since only "/" is
-        // actually precached for an SPA like this one, that meant every
-        // direct visit or refresh on any other route (e.g. /shop,
-        // /admin/login) showed "You're offline" even on a completely
-        // normal connection — a runtimeCaching rule for navigation
-        // requests can't fix this, since it's registered after and never
-        // gets reached. 'index.html' (vite-plugin-pwa's own default,
-        // restored explicitly here for clarity) is what an SPA is actually
-        // supposed to fall back to: any navigation not otherwise precached
-        // instantly serves the cached app shell, and React Router then
-        // renders the right page client-side from the URL — this is also
-        // what makes navigation "work offline" in the first place.
-        navigateFallback: 'index.html',
-        // XML, robots and API URLs must reach their real server handlers.
-        navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/uploads\//, /\.(?:xml|txt)(?:\?|$)/],
-        // Admin spreadsheets are only needed after an admin opens them.
-        globIgnores: ['**/Admin-*.js', '**/xlsx-*.js'],
-        runtimeCaching: [
-          {
-            // Never replay cached account data or viewer-specific prices.
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkOnly',
-          },
-          {
-            urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/assets/') && url.pathname.endsWith('.js'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'route-chunks',
-              cacheableResponse: { statuses: [200] },
-              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            },
-          },
-          {
-            // Product photos and uploads rarely change once created, so
-            // cache-first keeps repeat views instant and saves bandwidth.
-            urlPattern: ({ url }) => /\/uploads\//.test(url.pathname) || /\.(png|jpg|jpeg|webp|avif|svg)$/.test(url.pathname),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-cache',
-              cacheableResponse: { statuses: [0, 200] },
-              expiration: { maxEntries: 400, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            },
-          },
-          {
-            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
         ],
       },
     }),
