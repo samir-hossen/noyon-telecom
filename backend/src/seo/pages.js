@@ -195,7 +195,12 @@ async function productPage(slug) {
           ...(row.stock > 0 ? { availability: 'https://schema.org/InStock' } : {}),
           itemCondition: 'https://schema.org/NewCondition',
           eligibleQuantity: { '@type': 'QuantitativeValue', minValue: row.moq || 1 },
-          seller: { '@type': 'Organization', name: 'Noyon Telecom' },
+          seller: {
+            '@type': 'MobilePhoneStore',
+            '@id': `${SITE_URL}/#store`,
+            name: 'Noyon Telecom',
+            url: SITE_URL,
+          },
         },
       }
       : {}),

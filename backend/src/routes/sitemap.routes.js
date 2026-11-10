@@ -77,6 +77,9 @@ const BLOG_SLUGS = [
   'charging-port-noshto-hoyar-karon',
   'mobile-servicing-business-suru-korte-parts-stock',
   'paikari-mobile-parts-kenar-age-7-bishoy',
+  'charging-logic-board-kenar-guide',
+  'mobile-back-glass-model-color-guide',
+  'loudspeaker-vs-ear-speaker-difference',
 ];
 
 export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brands, brandCategoryPairs: allPairs = [], lastmod = {} }) {

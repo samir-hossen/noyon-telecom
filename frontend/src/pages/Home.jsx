@@ -66,6 +66,23 @@ export default function Home() {
           })),
         },
       },
+      {
+        id: 'webpage',
+        data: {
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          '@id': `${window.location.origin}/#webpage`,
+          url: `${window.location.origin}/`,
+          name: 'Wholesale Mobile Phone Spare Parts in Bangladesh',
+          description: 'Wholesale mobile phone spare parts for repair shops and dealers in Bangladesh — displays, back glass, charging logic, SIM trays and more.',
+          isPartOf: { '@id': `${window.location.origin}/#website` },
+          about: { '@id': `${window.location.origin}/#store` },
+          primaryImageOfPage: {
+            '@type': 'ImageObject',
+            url: `${window.location.origin}/images/hero/hero-parts.webp`,
+          },
+        },
+      },
       itemListJsonLd,
     ].filter(Boolean)
   );

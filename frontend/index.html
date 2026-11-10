@@ -85,7 +85,8 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": ["Organization", "Store"],
+        "@type": ["Organization", "MobilePhoneStore"],
+        "@id": "https://noyontelecom.com/#store",
         "name": "Noyon Telecom",
         "url": "https://noyontelecom.com",
         "logo": "https://noyontelecom.com/apple-touch-icon.png",
@@ -117,8 +118,10 @@
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
+        "@id": "https://noyontelecom.com/#website",
         "name": "Noyon Telecom",
         "url": "https://noyontelecom.com",
+        "publisher": { "@id": "https://noyontelecom.com/#store" },
         "potentialAction": {
           "@type": "SearchAction",
           "target": "https://noyontelecom.com/shop?search={search_term_string}",
