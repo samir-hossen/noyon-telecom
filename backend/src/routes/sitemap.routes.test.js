@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPagesSitemapXml, escapeXml } from './sitemap.routes.js';
+import { buildPagesSitemapXml, buildProductsSitemapXml, escapeXml } from './sitemap.routes.js';
 
 test('escapeXml', async (t) => {
   await t.test('escapes all five XML-special characters', () => {
@@ -10,6 +10,16 @@ test('escapeXml', async (t) => {
   await t.test('leaves plain text untouched', () => {
     assert.equal(escapeXml('Samsung Galaxy A16'), 'Samsung Galaxy A16');
   });
+});
+
+test('buildProductsSitemapXml', () => {
+  const xml = buildProductsSitemapXml({
+    siteUrl: 'https://example.com',
+    products: [{ id: 'p1', slug: 'samsung-a16-display', name: 'Samsung A16 Display & Frame', img: 'https://images.example.com/a16.jpg?x=1&y=2', updatedAt: new Date('2026-11-10T00:00:00Z') }],
+  });
+  assert.match(xml, /xmlns:image="http:\/\/www\.google\.com\/schemas\/sitemap-image\/1\.1"/);
+  assert.match(xml, /<image:loc>https:\/\/images\.example\.com\/a16\.jpg\?x=1&amp;y=2<\/image:loc>/);
+  assert.match(xml, /<image:title>Samsung A16 Display &amp; Frame<\/image:title>/);
 });
 
 test('buildPagesSitemapXml', async (t) => {

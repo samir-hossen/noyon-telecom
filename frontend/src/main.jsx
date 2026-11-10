@@ -34,12 +34,24 @@ window.scrollTo(0, 0);
 // delays or blocks scrolling.
 document.addEventListener('touchstart', () => {}, { passive: true });
 
-initAnalytics();
-initMetaPixel();
-initTikTokPixel();
-initErrorTracking();
 initGlobalErrorTracking();
 registerServiceWorker();
+
+// Advertising/error SDKs are useful, but none is needed to render or use the
+// storefront. Start them after the page is interactive so their downloads and
+// JavaScript cannot compete with the hero, navigation or product data.
+const startNonCriticalServices = () => {
+  initAnalytics();
+  initMetaPixel();
+  initTikTokPixel();
+  initErrorTracking();
+};
+const scheduleNonCriticalServices = () => window.setTimeout(() => {
+  if ('requestIdleCallback' in window) window.requestIdleCallback(startNonCriticalServices, { timeout: 2000 });
+  else startNonCriticalServices();
+}, 4000);
+if (document.readyState === 'complete') scheduleNonCriticalServices();
+else window.addEventListener('load', scheduleNonCriticalServices, { once: true });
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

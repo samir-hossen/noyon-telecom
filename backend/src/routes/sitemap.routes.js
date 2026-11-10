@@ -119,6 +119,19 @@ export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brand
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
 }
 
+// Image sitemap data makes newly uploaded catalog photos directly
+// discoverable by Google Images instead of relying only on a crawler finding
+// them after rendering the product page's JavaScript.
+export function buildProductsSitemapXml({ siteUrl, products }) {
+  const urls = products.map((p) => {
+    const image = p.img
+      ? `\n    <image:image>\n      <image:loc>${escapeXml(p.img)}</image:loc>\n      <image:title>${escapeXml(p.name)}</image:title>\n    </image:image>`
+      : '';
+    return `  <url>\n    <loc>${escapeXml(`${siteUrl}${productPath(p)}`)}</loc>\n    <lastmod>${new Date(p.updatedAt || p.createdAt).toISOString()}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>${image}\n  </url>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls}\n</urlset>`;
+}
+
 // Newest product change per category, brand and brand + category.
 async function pageLastmods() {
   const rows = await prisma.$queryRaw`
@@ -181,18 +194,8 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
     // so a newly-added product's URL doesn't wait out the TTL to appear.
     res.set('Cache-Control', 'public, max-age=300');
     const xml = await getOrSet('sitemap:products-xml', 300, async () => {
-      const products = await prisma.product.findMany({ where: storefrontWhere(), select: { id: true, slug: true, name: true, updatedAt: true, createdAt: true } });
-      const urls = products
-        .map(
-          (p) => `  <url>
-    <loc>${SITE_URL}${productPath(p)}</loc>
-    <lastmod>${new Date(p.updatedAt || p.createdAt).toISOString()}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>`
-        )
-        .join('\n');
-      return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+      const products = await prisma.product.findMany({ where: storefrontWhere(), select: { id: true, slug: true, name: true, img: true, updatedAt: true, createdAt: true } });
+      return buildProductsSitemapXml({ siteUrl: SITE_URL, products });
     });
 
     res.set('Content-Type', 'application/xml');

@@ -66,7 +66,13 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
       `,
           // One row of parts per main brand (Apple, Samsung, Xiaomi …).
           loadBrandRails(),
-          prisma.product.findMany({ where: storefrontWhere({ viewCount: { gt: 0 } }), orderBy: buildProductOrderBy('popular'), take }),
+          // A "most viewed" card without a real product photo makes the
+          // newly-photographed catalog look unchanged (and leaves a generic
+          // part placeholder in the homepage's highest-visibility rail).
+          // Keep popularity ordering, but only among products that actually
+          // have an uploaded image. Admin photo uploads invalidate this cache,
+          // so a newly photographed popular item can appear immediately.
+          prisma.product.findMany({ where: storefrontWhere({ viewCount: { gt: 0 }, img: { not: '' } }), orderBy: buildProductOrderBy('popular'), take }),
         ])
     );
 

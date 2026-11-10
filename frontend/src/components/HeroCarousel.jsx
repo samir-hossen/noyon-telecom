@@ -53,7 +53,10 @@ const SLIDES = [
   },
 ];
 
-const AUTO_MS = 5000;
+// Do not replace the page's largest element while Core Web Vitals is still
+// measuring the initial view. This remains a useful carousel cadence but
+// gives the first slide time to settle on slow mobile connections.
+const AUTO_MS = 10000;
 
 // Every slide stays in the DOM — the track just translates the inactive ones
 // out of view — so their CTA links remained fully keyboard-focusable while
@@ -246,8 +249,11 @@ export default function HeroCarousel() {
               </div>
               <div className="hero-img">
                 <img
-                  src={s.img}
-                  srcSet={`${s.img.replace('.webp', '-sm.webp')} 700w, ${s.img} 1400w`}
+                  // A translated/off-screen image is still close enough to the
+                  // viewport for Chrome to fetch despite loading="lazy". Only
+                  // give the active slide a URL, avoiding ~440KB on first load.
+                  src={i === index ? s.img : undefined}
+                  srcSet={i === index ? `${s.img.replace('.webp', '-sm.webp')} 700w, ${s.img} 1400w` : undefined}
                   sizes="(max-width: 900px) 100vw, 600px"
                   alt={s.alt}
                   width="1400"

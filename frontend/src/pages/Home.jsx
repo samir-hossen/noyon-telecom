@@ -123,7 +123,7 @@ export default function Home() {
         <PartFinder />
       </div>
 
-      <section className="section container">
+      <section className="section container defer-section">
         <div className="section-head">
           <h2 className="section-title">{t('home.categories')}</h2>
           <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
@@ -131,7 +131,7 @@ export default function Home() {
         <CategoryGrid />
       </section>
 
-      <section className="section container">
+      <section className="section container defer-section">
         <div className="section-head">
           <h2 className="section-title">{t('home.featuredDisplays')}</h2>
           <Link to="/category/display" className="section-link">{t('home.viewAll')} →</Link>
@@ -144,7 +144,7 @@ export default function Home() {
       </section>
 
       {popular.length > 0 && (
-        <section className="section container home-rail">
+        <section className="section container home-rail defer-section">
           <div className="section-head"><h2 className="section-title">Most viewed / বেশি দেখা পণ্য</h2><Link to="/shop?sort=popular" className="section-link">{t('home.viewAll')} →</Link></div>
           <div className="grid grid-six">{popular.map((p) => <ProductCard key={p.id} product={p} onAdd={handleAdd} />)}</div>
         </section>
@@ -154,7 +154,7 @@ export default function Home() {
       {brandRails.map((rail) => {
         const label = rail.brand === 'Apple' ? 'iPhone' : rail.brand;
         return (
-          <section className="section container home-rail" key={rail.brand}>
+          <section className="section container home-rail defer-section" key={rail.brand}>
             <div className="section-head">
               <h2 className="section-title">{t('home.brandRail', null, { brand: label })}</h2>
               <Link to={`/brand/${slugify(rail.brand)}`} className="section-link">{t('home.brandRailMore', null, { brand: label })} →</Link>
@@ -168,7 +168,7 @@ export default function Home() {
 
       {!loading && deals.length > 0 && <FlashSale products={deals} onAdd={handleAdd} />}
 
-      <section className="section container">
+      <section className="section container defer-section">
         <div className="section-head">
           <h2 className="section-title">{t('home.brands')}</h2>
           <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
@@ -186,7 +186,7 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="section container">
+      <section className="section container defer-section">
         <div className="section-head">
           <h2 className="section-title">{t('home.featured')}</h2>
           <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
@@ -213,7 +213,7 @@ export default function Home() {
           section was rendering its heading and "View all →" link above a
           completely empty grid. */}
       {!loading && newArrivals.length > 0 && (
-        <section className="section container">
+        <section className="section container defer-section">
           <div className="section-head">
             <h2 className="section-title">{t('home.newArrivals')}</h2>
             <Link to="/shop" className="section-link">{t('home.viewAll')} →</Link>
@@ -227,7 +227,7 @@ export default function Home() {
       )}
 
       {!loading && bestSellers.length > 0 && (
-        <section className="section container">
+        <section className="section container defer-section">
           <div className="section-head">
             <h2 className="section-title">{t('home.bestSelling')}</h2>
             <Link to="/shop?sort=rating" className="section-link">{t('home.viewAll')} →</Link>

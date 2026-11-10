@@ -24,11 +24,11 @@
   --sunshine: #ffb400;       /* rating stars accent */
   --navy: #14161a;
 
-  --font-display: 'Poppins', 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-display: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   /* Prices now use the same premium display face as headings instead of a
      playful rounded font — reads as Apple/Samsung-store, not marketplace. */
-  --font-price: 'Poppins', 'Inter', system-ui, sans-serif;
+  --font-price: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   --radius: 20px;             /* signature premium card radius */
   --radius-md: 14px;          /* buttons, inputs, chips */
@@ -63,6 +63,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 img { max-width: 100%; display: block; }
+
+/* Skip layout/paint work for long homepage rails until they approach the
+   viewport. The intrinsic height keeps scrolling stable while Chrome defers
+   the expensive card grids; unsupported browsers simply ignore this. */
+.defer-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 620px;
+}
 a { color: inherit; text-decoration: none; }
 /* Strip the browser's grey bevelled button chrome site-wide. Every styled
    button (.btn, .tab, .faq-question, toggles...) sets its own border and

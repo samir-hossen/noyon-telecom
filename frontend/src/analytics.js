@@ -53,6 +53,10 @@ export function initAnalytics() {
   // read conversions — GA4-only setups never get the conversion attributed
   // back to a specific campaign/ad in the Ads dashboard.
   if (adsId) window.gtag('config', adsId);
+  // Analytics is intentionally initialized after first paint. The route's
+  // usePageMeta effect has already run by then, so record the current page
+  // explicitly; later SPA navigations continue through trackPageview().
+  if (gaId) window.gtag('event', 'page_view', { page_path: `${window.location.pathname}${window.location.search}`, page_title: document.title });
 }
 
 // Fires a Google Ads conversion, separate from the GA4 purchase event above.
