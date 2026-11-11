@@ -6,7 +6,7 @@
   "description": "Noyon Telecom — React (Vite) storefront for wholesale mobile phone spare parts.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generateStaticSeo.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "eslint ."

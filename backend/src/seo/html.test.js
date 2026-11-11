@@ -94,8 +94,15 @@ test('server-rendered product page', async (t) => {
 test('published price shows on the page', () => {
   const model = productModel();
   model.product.price = 1150;
+  model.product.stock = 5;
   const html = renderPage(SHELL, model);
   assert.match(html, /<span class="now">৳1,150<\/span>/);
+  assert.match(html, /<meta property="product:price:amount" content="1150" \/>/);
+  assert.match(html, /<meta property="product:price:currency" content="BDT" \/>/);
+  assert.match(html, /<meta property="product:availability" content="in stock" \/>/);
+  assert.match(html, /<meta property="product:retailer_item_id" content="NT-DIS-VIVO-Y21" \/>/);
+  assert.match(html, /<meta name="twitter:data1" content="৳1,150" \/>/);
+  assert.match(html, /<meta name="twitter:data2" content="In stock" \/>/);
 });
 
 test('several grades: the price range and each grade with its price', () => {
@@ -105,6 +112,7 @@ test('several grades: the price range and each grade with its price', () => {
   const html = renderPage(SHELL, model);
   assert.match(html, /<span class="now">৳999 – ৳1,699<\/span>/);
   assert.match(html, /<li><span>High Quality<\/span> <strong>৳999<\/strong><\/li><li><span>Original<\/span> <strong>৳1,699<\/strong><\/li>/);
+  assert.match(html, /<meta name="twitter:data1" content="From ৳999" \/>/);
   assert.equal(buildProductMetaDescription('Vivo Y21 Display', 999, { from: true }).includes('in Bangladesh from ৳999.'), true);
 });
 

@@ -9,7 +9,7 @@ export default function Blog() {
     'পার্টস কেনাকাটা ও সার্ভিসিং গাইড',
     'মোবাইল স্পেয়ার পার্টস চেনা, পাইকারি কেনা, আর সার্ভিসিং ব্যবসা নিয়ে ব্যবহারিক গাইড — ডিলার, দোকান ও সার্ভিস সেন্টারের জন্য।',
     undefined,
-    '/blog'
+    '/blog/'
   );
 
   return (
@@ -28,7 +28,7 @@ export default function Blog() {
         {posts.map((post) => (
           <Link
             key={post.slug}
-            to={`/blog/${post.slug}`}
+            to={`/blog/${post.slug}/`}
             className="form-panel"
             style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
           >

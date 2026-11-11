@@ -191,6 +191,22 @@ export function renderPage(shell, model) {
     html = setMeta(html, 'property', 'og:image', head.image);
     html = setMeta(html, 'name', 'twitter:image', head.image);
   }
+  if (model.kind === 'product' && model.product) {
+    const product = model.product;
+    const grades = product.qualityOptions || [];
+    const lowestPrice = grades.length ? grades[0]?.price : product.price;
+    html = setMeta(html, 'property', 'og:image:alt', product.name);
+    if (product.sku) html = setMeta(html, 'property', 'product:retailer_item_id', product.sku);
+    html = setMeta(html, 'name', 'twitter:label2', 'Availability');
+    html = setMeta(html, 'name', 'twitter:data2', product.stock > 0 ? 'In stock' : 'Ask for stock');
+    if (product.stock > 0) html = setMeta(html, 'property', 'product:availability', 'in stock');
+    if (lowestPrice) {
+      html = setMeta(html, 'property', 'product:price:amount', Number(lowestPrice));
+      html = setMeta(html, 'property', 'product:price:currency', 'BDT');
+      html = setMeta(html, 'name', 'twitter:label1', 'Price');
+      html = setMeta(html, 'name', 'twitter:data1', grades.length > 1 ? `From ${formatTaka(lowestPrice)}` : formatTaka(lowestPrice));
+    }
+  }
   const extra = [];
   if (head.canonical) {
     extra.push(`<link rel="canonical" href="${escapeHtml(absoluteUrl(head.canonical))}" />`);

@@ -753,7 +753,7 @@ export default function ProductDetail() {
           const guide = getPostForCategory(product.category);
           return guide ? (
             <p style={{ fontSize: '0.85rem' }}>
-              📘 <Link to={`/blog/${guide.slug}`}>{guide.title}</Link>
+              📘 <Link to={`/blog/${guide.slug}/`}>{guide.title}</Link>
             </p>
           ) : null;
         })()}

@@ -24,21 +24,25 @@ export default function BlogPost() {
     post ? post.title : 'গাইড পাওয়া যায়নি',
     post ? post.metaDescription : 'এই গাইডটি খুঁজে পাওয়া যায়নি — অন্য গাইড দেখতে আমাদের ব্লগ পাতায় যান।',
     undefined,
-    post ? `/blog/${post.slug}` : undefined,
+    post ? `/blog/${post.slug}/` : undefined,
     post
       ? [
           {
             id: 'article',
             data: {
               '@context': 'https://schema.org',
-              '@type': 'Article',
+              '@type': 'BlogPosting',
+              '@id': `${origin}/blog/${post.slug}/#article`,
               headline: post.title,
               description: post.metaDescription,
+              inLanguage: 'bn-BD',
               datePublished: post.publishedDate,
               dateModified: post.updatedDate || post.publishedDate,
-              author: { '@type': 'Organization', name: 'Noyon Telecom' },
-              publisher: { '@type': 'Organization', name: 'Noyon Telecom', logo: { '@type': 'ImageObject', url: `${origin}/apple-touch-icon.png` } },
-              mainEntityOfPage: `${origin}/blog/${post.slug}`,
+              author: { '@id': `${origin}/#store` },
+              publisher: { '@id': `${origin}/#store` },
+              isPartOf: { '@id': `${origin}/#website` },
+              mainEntityOfPage: { '@type': 'WebPage', '@id': `${origin}/blog/${post.slug}/` },
+              ...(post.relatedCategories?.length ? { about: post.relatedCategories.map((name) => ({ '@type': 'Thing', name })) } : {}),
             },
           },
           {
@@ -48,8 +52,8 @@ export default function BlogPost() {
               '@type': 'BreadcrumbList',
               itemListElement: [
                 { '@type': 'ListItem', position: 1, name: 'Home', item: origin },
-                { '@type': 'ListItem', position: 2, name: 'গাইড ও টিপস', item: `${origin}/blog` },
-                { '@type': 'ListItem', position: 3, name: post.title, item: `${origin}/blog/${post.slug}` },
+                { '@type': 'ListItem', position: 2, name: 'গাইড ও টিপস', item: `${origin}/blog/` },
+                { '@type': 'ListItem', position: 3, name: post.title, item: `${origin}/blog/${post.slug}/` },
               ],
             },
           },
@@ -65,7 +69,7 @@ export default function BlogPost() {
           <div className="icon">📄</div>
           <h3>গাইডটি খুঁজে পাওয়া যায়নি</h3>
           <p style={{ marginBottom: 24 }}>এই লেখাটি সরিয়ে ফেলা হয়েছে অথবা লিংকটি ভুল।</p>
-          <Link to="/blog" className="btn btn-primary">সব গাইড দেখুন</Link>
+          <Link to="/blog/" className="btn btn-primary">সব গাইড দেখুন</Link>
         </div>
       </div>
     );
@@ -107,7 +111,7 @@ export default function BlogPost() {
               if (!related) return null;
               return (
                 <p key={slug} style={{ marginBottom: 6 }}>
-                  <Link to={`/blog/${related.slug}`}>{related.title}</Link>
+                  <Link to={`/blog/${related.slug}/`}>{related.title}</Link>
                 </p>
               );
             })}
@@ -119,7 +123,7 @@ export default function BlogPost() {
         <p style={{ marginBottom: 16 }}>দরকারি পার্টস খুঁজছেন? পুরো ক্যাটালগ ঘুরে দেখুন।</p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/shop" className="btn btn-berry">ক্যাটালগ দেখুন</Link>
-          <Link to="/blog" className="btn btn-outline">আরও গাইড পড়ুন</Link>
+          <Link to="/blog/" className="btn btn-outline">আরও গাইড পড়ুন</Link>
         </div>
       </div>
     </div>

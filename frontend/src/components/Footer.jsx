@@ -105,7 +105,7 @@ export default function Footer() {
           <div>
             <h4>{t('footer.support')}</h4>
             <p><Link to="/track-order">{t('footer.trackOrder')}</Link></p>
-            <p><Link to="/blog">{t('footer.blog')}</Link></p>
+            <p><Link to="/blog/">{t('footer.blog')}</Link></p>
             <p><Link to="/about">{t('footer.aboutUs')}</Link></p>
             <p><Link to="/request-quote">{t('footer.requestBulkQuote')}</Link></p>
             <p><Link to="/warranty-policy">{t('footer.warrantyReturns')}</Link></p>
