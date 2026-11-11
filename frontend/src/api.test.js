@@ -60,6 +60,14 @@ describe('API request headers', () => {
     expect(options.credentials).toBe('include');
   });
 
+  it('reuses a recent catalogue GET during client-side navigation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ products: [{ id: 'cached' }] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await api.get('/products?cache-test=1');
+    await api.get('/products?cache-test=1');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('POST requests keep JSON and CSRF protection', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ csrfToken: 'test-token' }) })

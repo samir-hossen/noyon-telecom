@@ -33,16 +33,16 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
     setProductCacheControl(req, res);
     const take = 6; // the home rails are 6 across
     // Cache-aside on the raw DB rows only — never on the final response.
-    // These four queries return the exact same rows for every visitor
+    // These queries return the exact same rows for every visitor
     // (dealer pricing is applied per-request below, after this cache read),
     // so caching here can never leak one dealer's price into another
-    // visitor's response. 90s balances "homepage feels current" against
-    // "don't re-run 4 queries for every single hit" — see utils/cache.js
-    // for the invalidation story (admin edits clear this immediately;
-    // checkout deliberately doesn't, by design).
+    // visitor's response. Admin edits clear this immediately. Ten minutes
+    // also lets the scheduled keep-alive warm this expensive multi-query
+    // response before a real shopper needs it; checkout still has an atomic
+    // stock guard, so this display cache cannot oversell an item.
     const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails, popularRows] = await getOrSet(
       'products:home-sections',
-      90,
+      600,
       () =>
         Promise.all([
           // Home rails show products with a real photo (most of the A–Z
@@ -214,14 +214,17 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
     // awaiting its slug backfill) or the human-readable slug (the clean
     // /product/<slug> URL everything now links to) — findFirst+OR rather
     // than two separate queries, since one or the other will usually miss.
-    let product = await prisma.product.findFirst({ where: { OR: [{ id: req.params.id }, { slug: req.params.id }] } });
-    if (!product) {
-      // An old slug from before a rename: answer with the product (the
-      // storefront then switches the URL to `product.slug`; the server-
-      // rendered page sends a real 301).
-      const redirect = await prisma.productSlugRedirect.findUnique({ where: { slug: req.params.id }, include: { product: true } });
-      product = redirect?.product || null;
-    }
+    const product = await getOrSet(`products:detail:${req.params.id}`, 120, async () => {
+      let row = await prisma.product.findFirst({ where: { OR: [{ id: req.params.id }, { slug: req.params.id }] } });
+      if (!row) {
+        // An old slug from before a rename: answer with the product (the
+        // storefront then switches the URL to `product.slug`; the server-
+        // rendered page sends a real 301).
+        const redirect = await prisma.productSlugRedirect.findUnique({ where: { slug: req.params.id }, include: { product: true } });
+        row = redirect?.product || null;
+      }
+      return row;
+    });
     if (!product) return res.status(404).json({ error: 'Product not found' });
     // A draft (not-yet-priced) product is invisible to everyone except an
     // admin previewing it — same 404 as a nonexistent product, so a direct
@@ -243,10 +246,10 @@ router.get('/:id/reviews', async (req, res, next) => {
     // public cache is safe here without any of the Vary/no-store handling
     // the pricing-bearing routes above need.
     res.set('Cache-Control', 'public, max-age=60');
-    const reviews = await prisma.review.findMany({
+    const reviews = await getOrSet(`products:reviews:${req.params.id}`, 60, () => prisma.review.findMany({
       where: { productId: req.params.id },
       orderBy: { createdAt: 'desc' },
-    });
+    }));
     res.json({ reviews: reviews.map(serializeReview) });
   } catch (err) {
     next(err);

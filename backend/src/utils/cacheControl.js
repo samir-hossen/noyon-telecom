@@ -10,9 +10,11 @@
 //   - signed-in requests (any role) always get `no-store` — the response
 //     may contain dealer-specific pricing, so it must never be cached
 //     anywhere, by anyone, at any layer.
-//   - anonymous/guest requests revalidate on every use. The server's own
-//     short in-process cache still prevents repeated database work, while
-//     browsers never pin an old product image URL after an admin upload.
+//   - anonymous/guest responses get a deliberately short browser cache and
+//     a slightly longer shared-cache lifetime. stale-while-revalidate lets
+//     repeat catalogue visits paint immediately while the newest response
+//     is fetched in the background. Product writes change image URLs and
+//     invalidate the server cache, so this never pins an old photo for long.
 //   - Vary: Cookie ensures a cache is never reused across a login/logout
 //     transition on the same browser — the auth cookie's value changes
 //     the moment someone logs in as a dealer, so a cache keyed only by
@@ -23,6 +25,6 @@ export function setProductCacheControl(req, res) {
   if (req.user) {
     res.set('Cache-Control', 'no-store');
   } else {
-    res.set('Cache-Control', 'no-cache, must-revalidate');
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300, stale-if-error=86400');
   }
 }

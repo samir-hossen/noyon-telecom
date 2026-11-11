@@ -118,9 +118,34 @@ async function request(path, options = {}, _isRetry = false) {
 // product through adjacent widgets; one network trip is enough. This is not
 // a stale data cache: the entry disappears as soon as the request finishes.
 const pendingGets = new Map();
+const recentGets = new Map();
+const READ_CACHE_TTL_MS = 20_000;
+let readGeneration = 0;
+
+function clearReadCache() {
+  readGeneration += 1;
+  recentGets.clear();
+  pendingGets.clear();
+}
+
+function canReuseGet(path) {
+  return path.startsWith('/products') || path === '/settings/public' || path === '/banners';
+}
+
 function get(path) {
+  const cached = recentGets.get(path);
+  if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.data);
+  if (cached) recentGets.delete(path);
   if (pendingGets.has(path)) return pendingGets.get(path);
-  const promise = request(path).finally(() => {
+  const startedGeneration = readGeneration;
+  const promise = request(path).then((data) => {
+    // A tiny in-memory cache makes back/forward navigation and repeated
+    // homepage mounts instant without persisting price-bearing data to disk.
+    // Every mutation below clears it, so login/logout/admin edits cannot
+    // reuse a response created for the previous viewer or product state.
+    if (startedGeneration === readGeneration && canReuseGet(path)) recentGets.set(path, { data, expiresAt: Date.now() + READ_CACHE_TTL_MS });
+    return data;
+  }).finally(() => {
     if (pendingGets.get(path) === promise) pendingGets.delete(path);
   });
   pendingGets.set(path, promise);
@@ -129,11 +154,12 @@ function get(path) {
 
 export const api = {
   get,
-  post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
-  put: (path, body) => request(path, { method: 'PUT', body: JSON.stringify(body) }),
-  patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
-  del: (path) => request(path, { method: 'DELETE' }),
+  post: (path, body) => { clearReadCache(); return request(path, { method: 'POST', body: JSON.stringify(body) }); },
+  put: (path, body) => { clearReadCache(); return request(path, { method: 'PUT', body: JSON.stringify(body) }); },
+  patch: (path, body) => { clearReadCache(); return request(path, { method: 'PATCH', body: JSON.stringify(body) }); },
+  del: (path) => { clearReadCache(); return request(path, { method: 'DELETE' }); },
   upload: async (path, file) => {
+    clearReadCache();
     const formData = new FormData();
     formData.append('image', file);
     const token = await ensureCsrfToken();
@@ -146,6 +172,7 @@ export const api = {
   // Uploads several files at once (e.g. a product's image gallery) and
   // returns { urls: [...] } in the same order the files were given.
   uploadMultiple: async (path, files) => {
+    clearReadCache();
     const formData = new FormData();
     [...files].forEach((file) => formData.append('images', file));
     const token = await ensureCsrfToken();
