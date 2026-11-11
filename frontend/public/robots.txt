@@ -6,3 +6,18 @@ Allow: /
 # state because a crawler cannot observe noindex on a disallowed URL.
 
 Sitemap: https://noyontelecom.com/sitemap.xml
+
+# AI search and answer engines may crawl the same public, indexable content.
+# These explicit groups document that choice; the wildcard above already
+# allows them, so this does not weaken any private/admin protection.
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
