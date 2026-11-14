@@ -21,6 +21,18 @@ const router = Router();
 // categories); re-exported here for existing importers.
 export { ALL_CATEGORIES, ALL_BRANDS };
 
+// The homepage finder needs taxonomy only, without product rows or counts.
+router.get('/filters', async (req, res, next) => {
+  try {
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=300');
+    const [categories, brands] = await Promise.all([
+      getOrSet('products:active-categories', 3600, () => getActiveCategories(prisma, ALL_CATEGORIES)),
+      getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
+    ]);
+    res.json({ categories, brands });
+  } catch (err) { next(err); }
+});
+
 // Powers the homepage's five product rails in ONE round trip, with each
 // section computed in the database instead of the frontend fetching the
 // entire catalog and slicing it in JS. That client-side-slice approach
@@ -37,8 +49,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
     // (dealer pricing is applied per-request below, after this cache read),
     // so caching here can never leak one dealer's price into another
     // visitor's response. Admin edits clear this immediately. Ten minutes
-    // also lets the scheduled keep-alive warm this expensive multi-query
-    // response before a real shopper needs it; checkout still has an atomic
+    // avoids repeating these queries for each shopper; checkout has an atomic
     // stock guard, so this display cache cannot oversell an item.
     const [featuredRows, newArrivalRows, bestSellerRows, dealRows, brandRails, popularRows] = await getOrSet(
       'products:home-sections',

@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { storefrontWhere } from './productQuery.js';
+import { BoundedCache } from './cache.js';
 
 export function viewIdentity(req, now = new Date(), secret = process.env.JWT_SECRET) {
   const ua = String(req.headers?.['user-agent'] || '');
@@ -11,26 +12,40 @@ export function viewIdentity(req, now = new Date(), secret = process.env.JWT_SEC
 }
 
 let cleanedDay = '';
+// Separate analytics keys from catalogue entries so busy traffic cannot
+// evict the product data it came to read.
+const countedViews = new BoundedCache({ maxKeys: 2000, maxBytes: 512 * 1024 });
+const pendingViews = new Map();
 export async function recordProductView(db, req) {
   const identity = viewIdentity(req);
   if (!identity) return;
-  const product = await db.product.findFirst({ where: storefrontWhere({ id: String(req.params.id) }), select: { id: true } });
-  if (!product) return;
   const { visitorKey, day } = identity;
-  // One atomic SQL statement: concurrent reloads increment at most once.
-  // Avoid Prisma @updatedAt: a view is not a catalog edit or new arrival.
-  await db.$executeRaw`
-    WITH counted AS (
-      INSERT INTO "ProductView" ("productId", "visitorKey", "day")
-      VALUES (${product.id}, ${visitorKey}, ${day}::date)
-      ON CONFLICT DO NOTHING RETURNING "productId"
-    )
-    UPDATE "Product" SET "viewCount" = "viewCount" + 1
-    WHERE id IN (SELECT "productId" FROM counted)
-  `;
-  if (cleanedDay !== day) {
-    cleanedDay = day;
-    // Deduplication keys only need to survive two days; aggregate counts stay.
-    db.productView.deleteMany({ where: { day: { lt: new Date(Date.parse(day) - 2 * 86400000) } } }).catch(() => { cleanedDay = ''; });
-  }
+  // Database uniqueness remains authoritative across restarts/instances.
+  // The bounded process cache avoids repeated reads/writes for reloads.
+  const key = `${day}:${visitorKey}:${String(req.params.id)}`;
+  if (countedViews.get(key)) return;
+  if (pendingViews.has(key)) return pendingViews.get(key);
+  const pending = Promise.resolve().then(async () => {
+    const product = await db.product.findFirst({ where: storefrontWhere({ id: String(req.params.id) }), select: { id: true } });
+    if (!product) return;
+    // One atomic SQL statement: concurrent reloads increment at most once.
+    // Avoid Prisma @updatedAt: a view is not a catalog edit or new arrival.
+    await db.$executeRaw`
+      WITH counted AS (
+        INSERT INTO "ProductView" ("productId", "visitorKey", "day")
+        VALUES (${product.id}, ${visitorKey}, ${day}::date)
+        ON CONFLICT DO NOTHING RETURNING "productId"
+      )
+      UPDATE "Product" SET "viewCount" = "viewCount" + 1
+      WHERE id IN (SELECT "productId" FROM counted)
+    `;
+    if (cleanedDay !== day) {
+      cleanedDay = day;
+      // Deduplication keys only need to survive two days; aggregate counts stay.
+      db.productView.deleteMany({ where: { day: { lt: new Date(Date.parse(day) - 2 * 86400000) } } }).catch(() => { cleanedDay = ''; });
+    }
+    countedViews.set(key, true, 86400);
+  }).finally(() => { pendingViews.delete(key); });
+  pendingViews.set(key, pending);
+  return pending;
 }

@@ -46,7 +46,7 @@ export default function PartFinder() {
   const [categories, setCategories] = useState(CATEGORIES);
   useEffect(() => {
     let current = true;
-    api.get('/products?limit=1').then((d) => {
+    api.get('/products/filters').then((d) => {
       if (!current) return;
       if (d.brands?.length) setBrands(d.brands);
       if (d.categories?.length) setCategories(d.categories);

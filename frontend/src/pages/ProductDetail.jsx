@@ -166,7 +166,7 @@ export default function ProductDetail() {
       const key = `nt-view:${product.id}`;
       const day = new Date().toISOString().slice(0, 10);
       try { if (sessionStorage.getItem(key) === day) return; } catch { /* storage optional */ }
-      api.post(`/products/${product.id}/view`, {}).then(() => {
+      api.recordProductView(product.id).then(() => {
         try { sessionStorage.setItem(key, day); } catch { /* storage optional */ }
       }).catch(() => {});
     }, 3000);
