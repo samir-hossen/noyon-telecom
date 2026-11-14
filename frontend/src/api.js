@@ -119,7 +119,8 @@ async function request(path, options = {}, _isRetry = false) {
 // a stale data cache: the entry disappears as soon as the request finishes.
 const pendingGets = new Map();
 const recentGets = new Map();
-const READ_CACHE_TTL_MS = 20_000;
+const READ_CACHE_TTL_MS = 60_000;
+const READ_CACHE_MAX_KEYS = 60;
 let readGeneration = 0;
 
 function clearReadCache() {
@@ -134,7 +135,11 @@ function canReuseGet(path) {
 
 function get(path) {
   const cached = recentGets.get(path);
-  if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.data);
+  if (cached && cached.expiresAt > Date.now()) {
+    recentGets.delete(path);
+    recentGets.set(path, cached);
+    return Promise.resolve(cached.data);
+  }
   if (cached) recentGets.delete(path);
   if (pendingGets.has(path)) return pendingGets.get(path);
   const startedGeneration = readGeneration;
@@ -143,7 +148,10 @@ function get(path) {
     // homepage mounts instant without persisting price-bearing data to disk.
     // Every mutation below clears it, so login/logout/admin edits cannot
     // reuse a response created for the previous viewer or product state.
-    if (startedGeneration === readGeneration && canReuseGet(path)) recentGets.set(path, { data, expiresAt: Date.now() + READ_CACHE_TTL_MS });
+    if (startedGeneration === readGeneration && canReuseGet(path)) {
+      recentGets.set(path, { data, expiresAt: Date.now() + READ_CACHE_TTL_MS });
+      while (recentGets.size > READ_CACHE_MAX_KEYS) recentGets.delete(recentGets.keys().next().value);
+    }
     return data;
   }).finally(() => {
     if (pendingGets.get(path) === promise) pendingGets.delete(path);

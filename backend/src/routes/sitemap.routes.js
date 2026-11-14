@@ -39,10 +39,10 @@ async function latestCatalogChange() {
 // sees one host (cross-host sitemaps need both hosts verified).
 router.get('/sitemap-index.xml', async (req, res, next) => {
   try {
-    const lastmod = (await getOrSet('sitemap:latest', 300, latestCatalogChange)).toISOString();
+    const lastmod = (await getOrSet('sitemap:latest', 3600, latestCatalogChange)).toISOString();
     res.set('Content-Type', 'application/xml');
     // Fully public, crawler-facing, never personalized — safe to cache.
-    res.set('Cache-Control', 'public, max-age=300');
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400, stale-if-error=86400');
     const maps = ['sitemap-pages.xml', 'sitemap-products.xml', 'sitemap-models.xml'];
     res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -165,8 +165,8 @@ router.get('/sitemap-pages.xml', async (req, res, next) => {
     // Same public/unpersonalized/short-cache reasoning as sitemap-products.xml
     // below — invalidateProductCache() (admin product writes) clears this
     // too, so a newly active category/brand doesn't wait out the TTL.
-    res.set('Cache-Control', 'public, max-age=300');
-    const xml = await getOrSet('sitemap:pages-xml', 300, async () => {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400, stale-if-error=86400');
+    const xml = await getOrSet('sitemap:pages-xml', 3600, async () => {
       const [categories, brands, brandCategoryPairs, lastmod] = await Promise.all([
         getActiveCategories(prisma, ALL_CATEGORIES),
         getActiveBrands(prisma, ALL_BRANDS),
@@ -195,8 +195,8 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
     // Cache-Control header below, and the same invalidateProductCache()
     // used by admin product writes (see admin.routes.js) clears this too,
     // so a newly-added product's URL doesn't wait out the TTL to appear.
-    res.set('Cache-Control', 'public, max-age=300');
-    const xml = await getOrSet('sitemap:products-xml', 300, async () => {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400, stale-if-error=86400');
+    const xml = await getOrSet('sitemap:products-xml', 3600, async () => {
       const products = await prisma.product.findMany({ where: storefrontWhere(), select: { id: true, slug: true, name: true, img: true, updatedAt: true, createdAt: true } });
       return buildProductsSitemapXml({ siteUrl: SITE_URL, products });
     });
@@ -212,8 +212,8 @@ router.get('/sitemap-products.xml', async (req, res, next) => {
 // single part would just repeat that product page.
 router.get('/sitemap-models.xml', async (req, res, next) => {
   try {
-    res.set('Cache-Control', 'public, max-age=300');
-    const xml = await getOrSet('sitemap:models-xml', 300, async () => {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400, stale-if-error=86400');
+    const xml = await getOrSet('sitemap:models-xml', 3600, async () => {
       const rows = await prisma.$queryRaw`
         SELECT ms AS slug, count(*)::int AS n, max("updatedAt") AS at
         FROM "Product", unnest("modelSlugs") ms

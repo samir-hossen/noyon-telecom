@@ -21,7 +21,5 @@ jobs:
       - name: Ping backend health endpoint
         run: |
           curl -fsS --max-time 30 https://noyon-telecom-api.onrender.com/health
-          # Warm the homepage's database-backed catalogue cache too. /health
-          # alone keeps Node awake but leaves the first real shopper paying
-          # for the most expensive storefront query after its cache expires.
-          curl -fsS --max-time 45 https://noyon-telecom-api.onrender.com/api/products/home-sections > /dev/null
+          # Do not poll database-backed endpoints: Neon can sleep when real
+          # visitors are absent, saving compute hours and network transfer.

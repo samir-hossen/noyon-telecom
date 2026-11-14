@@ -79,4 +79,26 @@ describe('API request headers', () => {
     expect(options.headers['x-csrf-token']).toBe('test-token');
     expect(JSON.parse(options.body)).toEqual({ message: 'test' });
   });
+
+  it('bounds navigation cache and evicts the least recently used response', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ products: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    for (let i = 0; i < 60; i++) await api.get(`/products?bounded=${i}`);
+    await api.get('/products?bounded=0');
+    await api.get('/products?bounded=60');
+    await api.get('/products?bounded=0');
+    expect(fetchMock).toHaveBeenCalledTimes(61);
+    await api.get('/products?bounded=1');
+    expect(fetchMock).toHaveBeenCalledTimes(62);
+  });
+
+  it('does not reuse catalogue data across an account mutation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ csrfToken: 'token', products: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await api.get('/products?viewer-change=1');
+    await api.post('/auth/logout', {});
+    const calls = fetchMock.mock.calls.length;
+    await api.get('/products?viewer-change=1');
+    expect(fetchMock).toHaveBeenCalledTimes(calls + 1);
+  });
 });

@@ -1,30 +1,53 @@
-// Lightweight in-process cache-aside helper for read-heavy, mostly-public
-// catalog endpoints (home-sections, product listing) that would otherwise
-// re-run the same DB query for every single visitor — a homepage getting
-// hit 50 times a minute was previously running the same 4 queries 50 times
-// a minute for identical results.
-//
-// In-memory (node-cache) by design, not Redis — this needs zero external
-// service/credentials, which matters because it can go live today, before
-// SITE_URL/Cloudinary/SMTP/etc. are even configured. The tradeoff: this
-// cache lives inside a single Node process. That's exactly right for a
-// single backend instance (the common case on Railway/Render at this
-// traffic level) but if this ever runs as more than one instance behind a
-// load balancer, each instance keeps its own independent cache — a write on
-// instance A won't invalidate instance B's copy until its TTL naturally
-// expires. If/when that's the setup, swap the get/set/del calls below for
-// an ioredis-backed version; every call site in the routes stays identical
-// (`getOrSet(key, ttlSeconds, fetchFn)` / `invalidateProductCache()`), only
-// this file would change.
-import NodeCache from 'node-cache';
-
-// checkperiod sweeps expired keys in the background every 2 minutes so
-// memory doesn't grow unbounded from one-off keys (e.g. every distinct Shop
-// page filter combination anyone has ever searched for). useClones: false
-// means a cache hit returns the *same* object every caller already treats
-// as read-only (serialized product rows), skipping a wasteful deep-copy on
-// every hit.
-const cache = new NodeCache({ checkperiod: 120, useClones: false });
+// Bounded cache for one backend process. Product edits invalidate fresh and
+// outage-fallback entries together; viewer-specific pricing is applied later.
+// Bound both keys and serialized payload size on the free 512 MB backend.
+// Expired catalogue values can survive briefly for a database outage; they
+// are never used for authentication, checkout or settings.
+export class BoundedCache {
+  constructor({ maxKeys = 2000, maxBytes = 32 * 1024 * 1024, now = Date.now } = {}) {
+    this.entries = new Map();
+    this.bytes = 0;
+    this.maxKeys = maxKeys;
+    this.maxBytes = maxBytes;
+    this.now = now;
+  }
+  get(key, stale = false) {
+    const item = this.entries.get(key);
+    if (!item) return undefined;
+    if (item.staleUntil <= this.now()) { this.del(key); return undefined; }
+    if (!stale && item.freshUntil <= this.now()) return undefined;
+    this.entries.delete(key);
+    this.entries.set(key, item);
+    return item.value;
+  }
+  set(key, value, ttlSeconds = 0, staleSeconds = 0) {
+    const size = Buffer.byteLength(JSON.stringify(value) ?? '') + Buffer.byteLength(key);
+    this.del(key);
+    if (size > this.maxBytes) return false;
+    const freshUntil = ttlSeconds === 0 ? Infinity : this.now() + ttlSeconds * 1000;
+    const item = { value, size, freshUntil, staleUntil: freshUntil + staleSeconds * 1000, retryAt: 0 };
+    this.entries.set(key, item);
+    this.bytes += size;
+    while (this.entries.size > this.maxKeys || this.bytes > this.maxBytes) this.del(this.entries.keys().next().value);
+    return true;
+  }
+  del(key) {
+    const item = this.entries.get(key);
+    if (!item) return;
+    this.bytes -= item.size;
+    this.entries.delete(key);
+  }
+  flushAll() { this.entries.clear(); this.bytes = 0; }
+  cooldown(key) { const item = this.entries.get(key); return item && item.retryAt > this.now(); }
+  defer(key) { const item = this.entries.get(key); if (item) item.retryAt = this.now() + 30_000; }
+}
+const cache = new BoundedCache();
+const isCatalogKey = (key) => /^(products|seo|sitemap|feed):/.test(key);
+export function isTransientDatabaseError(error) {
+  const code = error?.code || error?.meta?.code;
+  return ['P1001', 'P1002', 'P1008', 'P1017', 'P2024', '53000', 'ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED'].includes(code)
+    || ['53000', '57P01', '57P02', '57P03'].includes(error?.meta?.code);
+}
 
 // Coalesce concurrent cold reads. A write invalidates in-flight results too.
 const pending = new Map();
@@ -32,11 +55,20 @@ let generation = 0;
 export async function getOrSet(key, ttlSeconds, fetchFn) {
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
+  const catalog = isCatalogKey(key);
+  const stale = catalog ? cache.get(key, true) : undefined;
+  if (stale !== undefined && cache.cooldown(key)) return stale;
   if (pending.has(key)) return pending.get(key);
   const started = generation;
   const promise = Promise.resolve().then(fetchFn).then((value) => {
-    if (started === generation) cache.set(key, value, ttlSeconds);
+    if (started === generation) cache.set(key, value, ttlSeconds, catalog ? 3600 : 0);
     return value;
+  }).catch((error) => {
+    if (started === generation && stale !== undefined && isTransientDatabaseError(error)) {
+      cache.defer(key);
+      return stale;
+    }
+    throw error;
   }).finally(() => { if (pending.get(key) === promise) pending.delete(key); });
   pending.set(key, promise);
   return promise;
