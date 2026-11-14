@@ -1,5 +1,14 @@
 import { normalizeQualityOptions } from './qualityOptions.js';
 
+// Keep card reads small at the database boundary, including the fields used
+// internally for hidden prices and dealer discounts. Galleries and long
+// descriptions are fetched only by detail/full-product reads.
+export const PRODUCT_CARD_SELECT = Object.freeze(Object.fromEntries([
+  'id', 'slug', 'name', 'category', 'img', 'price', 'priceStatus', 'compareAt',
+  'stock', 'rating', 'reviewCount', 'sku', 'brand', 'moq', 'qualityOptions',
+  'dealerPrice', 'bulkPricing',
+].map((field) => [field, true])));
+
 // Normalizes a Prisma Product row into the exact shape the frontend expects
 // (categories/images come back as JSON columns, but should be plain arrays).
 export function serializeProduct(p) {

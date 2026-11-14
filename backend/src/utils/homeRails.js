@@ -3,6 +3,7 @@
 // photo first, otherwise a different model each day (seeded by the date).
 // The Apple row is shown as "iPhone", so iPhone parts come before iPad ones.
 import prisma from '../prismaClient.js';
+import { PRODUCT_CARD_SELECT } from './serialize.js';
 
 export const HOME_RAIL_BRANDS = ['Apple', 'Samsung', 'Xiaomi', 'Oppo', 'Vivo', 'Realme'];
 export const RAIL_PARTS = ['Display', 'Back Glass', 'Camera', 'Charging Logic', 'Speaker', 'SIM Tray', 'Flex', 'Frame'];
@@ -29,6 +30,6 @@ export async function loadBrandRails(seed = new Date().toISOString().slice(0, 10
     ) t
     WHERE rn = 1
   `;
-  const rows = await prisma.product.findMany({ where: { id: { in: ids.map((r) => r.id) } } });
+  const rows = await prisma.product.findMany({ where: { id: { in: ids.map((r) => r.id) } }, select: PRODUCT_CARD_SELECT });
   return buildRails(rows);
 }
