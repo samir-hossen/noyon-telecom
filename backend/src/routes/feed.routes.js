@@ -78,7 +78,11 @@ router.get('/google-merchant.xml', async (req, res, next) => {
     const xml = await getOrSet('feed:google-merchant-xml', 300, async () => {
       // Merchant Center needs a real price, so only products whose price the
       // owner has published go in — never a hidden draft or ৳0.
-      const products = await prisma.product.findMany({ where: storefrontWhere({ priceStatus: 'published', price: { gt: 0 } }) });
+      const products = await prisma.product.findMany({
+        where: storefrontWhere({ priceStatus: 'published', price: { gt: 0 }, img: { not: '' } }),
+        select: { id: true, slug: true, name: true, desc: true, img: true,
+          stock: true, price: true, brand: true, sku: true, category: true },
+      });
       return buildMerchantFeedXml({ products, siteUrl: SITE_URL });
     });
 

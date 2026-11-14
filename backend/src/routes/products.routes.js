@@ -4,7 +4,7 @@ import { recordProductView } from '../utils/productViews.js';
 import prisma from '../prismaClient.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
-import { serializeProduct, serializeProductCard, serializeReview, withViewerPricing } from '../utils/serialize.js';
+import { serializeProduct, serializeProductCard, serializeReview, withViewerPricing, PRODUCT_CARD_SELECT } from '../utils/serialize.js';
 import { upload, storeUploadedFile } from '../utils/upload.js';
 import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCategories, getActiveBrands, storefrontWhere } from '../utils/productQuery.js';
 import { ALL_CATEGORIES, ALL_BRANDS, DISABLED_CATEGORIES_LOWER, findDisabledCategory } from '../config/catalog.js';
@@ -48,9 +48,9 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           // Home rails show products with a real photo (most of the A–Z
           // catalog has none yet); sellable (in stock + published price)
           // first, never ordered by a hidden draft price.
-          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 }, img: { not: '' } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take }),
-          prisma.product.findMany({ where: storefrontWhere({ img: { not: '' } }), orderBy: { createdAt: 'desc' }, take }),
-          prisma.product.findMany({ where: storefrontWhere({ reviewCount: { gt: 0 } }), orderBy: { rating: 'desc' }, take }),
+          prisma.product.findMany({ where: storefrontWhere({ stock: { gt: 0 }, img: { not: '' } }), orderBy: [{ readyToSell: 'desc' }, { updatedAt: 'desc' }], take, select: PRODUCT_CARD_SELECT }),
+          prisma.product.findMany({ where: storefrontWhere({ img: { not: '' } }), orderBy: { createdAt: 'desc' }, take, select: PRODUCT_CARD_SELECT }),
+          prisma.product.findMany({ where: storefrontWhere({ reviewCount: { gt: 0 } }), orderBy: { rating: 'desc' }, take, select: PRODUCT_CARD_SELECT }),
           // compareAt > price can't be expressed as a plain Prisma `where` filter
           // (it compares two columns on the same row), so this one query stays
           // raw SQL — same pattern already used for the admin analytics
@@ -58,7 +58,9 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           // injection surface. See DEPLOYMENT.md for the recommended partial
           // index once the catalog grows large.
           prisma.$queryRaw`
-        SELECT * FROM "Product"
+        SELECT id, slug, name, category, img, price, "priceStatus", "compareAt",
+          stock, rating, "reviewCount", sku, brand, moq, "qualityOptions",
+          "dealerPrice", "bulkPricing" FROM "Product"
         WHERE "compareAt" IS NOT NULL AND "compareAt" > price AND stock > 0 AND published = true AND "priceStatus" = 'published'
           AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
         ORDER BY ("compareAt" - price) / "compareAt" DESC
@@ -72,7 +74,7 @@ router.get('/home-sections', optionalAuth, async (req, res, next) => {
           // Keep popularity ordering, but only among products that actually
           // have an uploaded image. Admin photo uploads invalidate this cache,
           // so a newly photographed popular item can appear immediately.
-          prisma.product.findMany({ where: storefrontWhere({ viewCount: { gt: 0 }, img: { not: '' } }), orderBy: buildProductOrderBy('popular'), take }),
+          prisma.product.findMany({ where: storefrontWhere({ viewCount: { gt: 0 }, img: { not: '' } }), orderBy: buildProductOrderBy('popular'), take, select: PRODUCT_CARD_SELECT }),
         ])
     );
 
@@ -94,6 +96,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
   try {
     setProductCacheControl(req, res);
     const searchTerm = (req.query.search || '').toString().trim();
+    const card = req.query.card === '1';
+    const projection = card ? { select: PRODUCT_CARD_SELECT } : {};
     const sort = (req.query.sort || '').toString();
     const { page, limit, skip, take } = parsePagination(req.query, { defaultLimit: 12 });
 
@@ -115,7 +119,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       });
       if (searchResult) {
         const { ids, total } = searchResult;
-        const rowsById = new Map((await prisma.product.findMany({ where: { id: { in: ids } } })).map((p) => [p.id, p]));
+        const rowsById = new Map((await prisma.product.findMany({ where: { id: { in: ids } }, ...projection, ...(card ? { select: { ...PRODUCT_CARD_SELECT, categories: true, published: true } } : {}) })).map((p) => [p.id, p]));
         // Meilisearch decided the order (relevance, or an explicit sort);
         // Prisma's `id IN (...)` doesn't preserve that order on its own, so
         // the rows are re-assembled in the order Meilisearch returned.
@@ -150,9 +154,9 @@ router.get('/', optionalAuth, async (req, res, next) => {
     // one keystroke at a time (see Shop.jsx's debounce) means the same
     // handful of query combinations get hit repeatedly within seconds of
     // each other — exactly the case this avoids re-querying for.
-    const cacheKey = `products:list:${JSON.stringify({ where, orderBy, skip, take })}`;
+    const cacheKey = `products:list:${JSON.stringify({ where, orderBy, skip, take, card })}`;
     const [rows, total] = await getOrSet(cacheKey, 45, () =>
-      Promise.all([prisma.product.findMany({ where, orderBy, skip, take }), prisma.product.count({ where })])
+      Promise.all([prisma.product.findMany({ where, orderBy, skip, take, ...projection }), prisma.product.count({ where })])
     );
 
     res.json({

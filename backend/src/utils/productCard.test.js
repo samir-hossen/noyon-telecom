@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { serializeProductCard } from './serialize.js';
+import { serializeProductCard, PRODUCT_CARD_SELECT } from './serialize.js';
 
 const product = {
   id: 'p1', slug: 'phone-display', name: 'Phone Display', category: 'Display',
@@ -35,4 +35,20 @@ test('draft prices and quality prices remain hidden', () => {
   assert.equal(card.retailPrice, null);
   assert.equal(card.compareAt, null);
   assert.deepEqual(card.qualityOptions, []);
+});
+
+test('database projection preserves cards for every viewer and price state', () => {
+  const viewers = [null, { role: 'customer' },
+    { role: 'dealer', dealerStatus: 'pending' },
+    { role: 'dealer', dealerStatus: 'approved', dealerDiscountPercent: 10 }];
+  for (const priceStatus of ['draft', 'published']) {
+    const row = { ...product, priceStatus, compareAt: 1200,
+      bulkPricing: [{ minQty: 1, price: 900 }],
+      qualityOptions: [{ label: 'Original', price: 1000 }] };
+    const projected = Object.fromEntries(Object.keys(PRODUCT_CARD_SELECT).map((key) => [key, row[key]]));
+    for (const viewer of viewers) {
+      assert.deepEqual(serializeProductCard(projected, viewer), serializeProductCard(row, viewer));
+    }
+    assert.ok(JSON.stringify(projected).length < JSON.stringify(row).length / 2);
+  }
 });

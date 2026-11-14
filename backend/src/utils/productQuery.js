@@ -186,11 +186,13 @@ export async function getActiveCategories(prisma, allCategories) {
 // Same idea as getActiveCategories, for the Brand pill row — only brands
 // with at least one published product show as a filter option.
 export async function getActiveBrands(prisma, allBrands) {
-  const rows = await prisma.product.findMany({
-    where: storefrontWhere({ brand: { not: null } }),
-    distinct: ['brand'],
-    select: { brand: true },
-  });
+  // Prisma's distinct can deduplicate in the client, transferring one brand
+  // value for every matching product. SQL DISTINCT returns just the brands.
+  const rows = await prisma.$queryRaw`
+    SELECT DISTINCT brand FROM "Product"
+    WHERE published = true AND brand IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))
+  `;
   const active = new Set(rows.map((r) => r.brand));
   return allBrands.filter((b) => active.has(b));
 }
