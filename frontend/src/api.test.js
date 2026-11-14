@@ -101,4 +101,18 @@ describe('API request headers', () => {
     await api.get('/products?viewer-change=1');
     expect(fetchMock).toHaveBeenCalledTimes(calls + 1);
   });
+
+  it('keeps navigation cache warm after a CSRF-protected product view', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ csrfToken: 'token', products: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await api.get('/products?analytics=1');
+    await api.recordProductView('product-1');
+    const calls = fetchMock.mock.calls.length;
+    const view = fetchMock.mock.calls.find(([url]) => url.endsWith('/products/product-1/view'));
+    expect(view[1].method).toBe('POST');
+    expect(view[1].headers['x-csrf-token']).toBeTruthy();
+    expect(view[1].credentials).toBe('include');
+    await api.get('/products?analytics=1');
+    expect(fetchMock).toHaveBeenCalledTimes(calls);
+  });
 });

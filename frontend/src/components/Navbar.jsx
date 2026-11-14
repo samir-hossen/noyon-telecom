@@ -81,7 +81,7 @@ export default function Navbar() {
     }
     debounceRef.current = setTimeout(async () => {
       try {
-        const data = await api.get(`/products?search=${encodeURIComponent(q.trim())}&limit=6`);
+        const data = await api.get(`/products?search=${encodeURIComponent(q.trim())}&limit=6&card=1`);
         setSuggestions(data.products || []);
         setSuggestOpen(true);
       } catch {
