@@ -129,8 +129,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
         const rows = ids.map((id) => rowsById.get(id)).filter((p) => p && !findDisabledCategory(p.categories));
         return res.json({
           products: rows.map((p) => (req.query.card === '1' ? serializeProductCard(p, req.user) : withViewerPricing(serializeProduct(p), req.user))),
-          categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
-          brands: await getOrSet('products:active-brands', 45, () => getActiveBrands(prisma, ALL_BRANDS)),
+          categories: await getOrSet('products:active-categories', 3600, () => getActiveCategories(prisma, ALL_CATEGORIES)),
+          brands: await getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
           total,
           totalPages: Math.max(1, Math.ceil(total / limit)),
         });
@@ -155,14 +155,14 @@ router.get('/', optionalAuth, async (req, res, next) => {
     // handful of query combinations get hit repeatedly within seconds of
     // each other — exactly the case this avoids re-querying for.
     const cacheKey = `products:list:${JSON.stringify({ where, orderBy, skip, take, card })}`;
-    const [rows, total] = await getOrSet(cacheKey, 45, () =>
+    const [rows, total] = await getOrSet(cacheKey, 300, () =>
       Promise.all([prisma.product.findMany({ where, orderBy, skip, take, ...projection }), prisma.product.count({ where })])
     );
 
     res.json({
       products: rows.map((p) => (req.query.card === '1' ? serializeProductCard(p, req.user) : withViewerPricing(serializeProduct(p), req.user))),
-      categories: await getOrSet('products:active-categories', 45, () => getActiveCategories(prisma, ALL_CATEGORIES)),
-      brands: await getOrSet('products:active-brands', 45, () => getActiveBrands(prisma, ALL_BRANDS)),
+      categories: await getOrSet('products:active-categories', 3600, () => getActiveCategories(prisma, ALL_CATEGORIES)),
+      brands: await getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
     });
@@ -178,9 +178,11 @@ router.get('/model/:slug', optionalAuth, async (req, res, next) => {
     setProductCacheControl(req, res);
     const slug = String(req.params.slug);
     const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 200));
-    const rows = await getOrSet(`products:model:${slug}`, 120, () =>
+    const card = req.query.card === '1';
+    const rows = await getOrSet(`products:model:${slug}:${card ? 'card' : 'full'}`, 600, () =>
       prisma.product.findMany({
         where: storefrontWhere({ modelSlugs: { has: slug } }),
+        ...(card ? { select: { ...PRODUCT_CARD_SELECT, compatibleModels: true } } : {}),
         orderBy: [{ category: 'asc' }, { name: 'asc' }],
         take: 200,
       })
@@ -218,7 +220,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
     // awaiting its slug backfill) or the human-readable slug (the clean
     // /product/<slug> URL everything now links to) — findFirst+OR rather
     // than two separate queries, since one or the other will usually miss.
-    const product = await getOrSet(`products:detail:${req.params.id}`, 120, async () => {
+    const product = await getOrSet(`products:detail:${req.params.id}`, 300, async () => {
       let row = await prisma.product.findFirst({ where: { OR: [{ id: req.params.id }, { slug: req.params.id }] } });
       if (!row) {
         // An old slug from before a rename: answer with the product (the
@@ -250,7 +252,7 @@ router.get('/:id/reviews', async (req, res, next) => {
     // public cache is safe here without any of the Vary/no-store handling
     // the pricing-bearing routes above need.
     res.set('Cache-Control', 'public, max-age=60');
-    const reviews = await getOrSet(`products:reviews:${req.params.id}`, 60, () => prisma.review.findMany({
+    const reviews = await getOrSet(`products:reviews:${req.params.id}`, 300, () => prisma.review.findMany({
       where: { productId: req.params.id },
       orderBy: { createdAt: 'desc' },
     }));

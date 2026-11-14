@@ -75,7 +75,7 @@ router.get('/google-merchant.xml', async (req, res, next) => {
     // Caches the fully-rendered XML (no per-request variation), same
     // invalidateProductCache() as the storefront/sitemap caches.
     res.set('Cache-Control', 'public, max-age=300');
-    const xml = await getOrSet('feed:google-merchant-xml', 300, async () => {
+    const xml = await getOrSet('feed:google-merchant-xml', 3600, async () => {
       // Merchant Center needs a real price, so only products whose price the
       // owner has published go in — never a hidden draft or ৳0.
       const products = await prisma.product.findMany({

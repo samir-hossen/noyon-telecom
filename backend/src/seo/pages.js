@@ -424,7 +424,7 @@ export async function resolvePage(pathname, { page } = {}) {
   const p = pageNumber(page);
   const parts = String(pathname || '').replace(/\/+$/, '').split('/').filter(Boolean).map((s) => decodeURIComponent(s));
   const key = `seo:page:${parts.join('/')}:${p}`;
-  return getOrSet(key, 300, async () => {
+  return getOrSet(key, 900, async () => {
     const [kind, a, b] = parts;
     // Preserve every indexed/shared URL from before the owner renamed the
     // category. The replacement is a permanent redirect, so search engines
