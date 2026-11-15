@@ -175,14 +175,26 @@ router.get('/', optionalAuth, async (req, res, next) => {
     // finds nothing, use pg_trgm to rescue misspelled brand, model and part
     // names (for example "samsang a15 disply").
     if (searchTerm && total === 0) {
-      const fuzzy = await searchProductIdsPostgres({
+      // Similarity ranking is deliberately cached just like the normal
+      // listing query above. Repeated misspellings (or several users typing
+      // the same common typo) therefore do not keep spending Render database
+      // queries/CPU until the five-minute catalogue cache expires. Product
+      // edits already call invalidateProductCache(), which clears this key.
+      const fuzzyCacheKey = `products:fuzzy:${JSON.stringify({
+        query: normalizedSearchTerm.toLowerCase(),
+        category: req.query.category || '',
+        brand: req.query.brand || '',
+        page,
+        limit,
+      })}`;
+      const fuzzy = await getOrSet(fuzzyCacheKey, 300, () => searchProductIdsPostgres({
         prisma,
         query: normalizedSearchTerm,
         category: req.query.category,
         brand: req.query.brand,
         page,
         limit,
-      });
+      }));
       if (fuzzy.total > 0) {
         const fuzzyRowsById = new Map((await prisma.product.findMany({
           where: { id: { in: fuzzy.ids } },
