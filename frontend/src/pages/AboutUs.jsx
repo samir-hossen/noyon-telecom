@@ -33,6 +33,13 @@ export default function AboutUs() {
         </p>
       </div>
 
+      <dl className="form-panel wide" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20, marginBottom: 28 }}>
+        <div><dt style={{ color: '#6b5f59' }}>{t('about.established')}</dt><dd style={{ margin: '5px 0 0', fontWeight: 800 }}>2016</dd></div>
+        <div><dt style={{ color: '#6b5f59' }}>{t('about.proprietor')}</dt><dd style={{ margin: '5px 0 0', fontWeight: 800 }}>MD Noyon Mozumder</dd></div>
+        <div><dt style={{ color: '#6b5f59' }}>{t('about.location')}</dt><dd style={{ margin: '5px 0 0', fontWeight: 800 }}>Gulistan, Dhaka</dd></div>
+        <div><dt style={{ color: '#6b5f59' }}>{t('about.businessType')}</dt><dd style={{ margin: '5px 0 0', fontWeight: 800 }}>{t('about.wholesaleOnly')}</dd></div>
+      </dl>
+
       <div className="cards-3col" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 20, marginBottom: 28 }}>
         <div className="form-panel">
           <h3 style={{ marginBottom: 8 }}>🔧 {t('about.whatWeDo')}</h3>

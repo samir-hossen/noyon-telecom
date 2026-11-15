@@ -196,6 +196,8 @@ ${blogPosts.map((post) => `- [${post.title}](${SITE_URL}/blog/${post.slug}/): ${
 
 ## Business facts
 
+- Established: 2016.
+- Proprietor: MD Noyon Mozumder.
 - Address: 4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan, Dhaka 1000, Bangladesh.
 - Customer service: +880 1560-047377.
 - Hours: Saturday–Thursday, 10:00–19:00 (Asia/Dhaka).
