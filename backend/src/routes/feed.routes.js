@@ -24,6 +24,10 @@ const router = Router();
 // treats a listing disappearing and reappearing as a worse signal than one
 // that stays present with accurate availability.
 export function buildMerchantFeedXml({ products, siteUrl }) {
+  // `sku` is our stock code; `brand` is the compatible PHONE brand, not the
+  // manufacturer of this replacement part. Neither proves an MPN/GTIN or
+  // manufacturer brand. Omit unknown identifiers rather than inventing them
+  // (or asserting identifier_exists=no without supplier confirmation).
   const items = products
     // g:image_link is a required field per Google's feed spec — a
     // product with no photo yet (img is '', see utils/fallbackImage.js
@@ -47,11 +51,8 @@ export function buildMerchantFeedXml({ products, siteUrl }) {
       <g:availability>${p.stock > 0 ? 'in_stock' : 'out_of_stock'}</g:availability>
       <g:price>${p.price.toFixed(2)} BDT</g:price>
       <g:condition>new</g:condition>
-      <g:brand>${escapeXml(p.brand || 'Noyon Telecom')}</g:brand>
-      ${p.sku ? `<g:mpn>${escapeXml(p.sku)}</g:mpn>` : ''}
       <g:product_type>${escapeXml(p.category)}</g:product_type>
       <g:google_product_category>Electronics &gt; Communications &gt; Telephony &gt; Mobile Phone Accessories</g:google_product_category>
-      <g:identifier_exists>${p.sku ? 'yes' : 'no'}</g:identifier_exists>
     </item>`;
     })
     .join('\n');

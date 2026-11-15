@@ -27,6 +27,7 @@ export default function Shop() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [searchFeedback, setSearchFeedback] = useState(null);
   const [retry, setRetry] = useState(0);
   const [seoPage, setSeoPage] = useState(null);
   const { addToCart } = useCart();
@@ -193,6 +194,7 @@ export default function Shop() {
     let current = true;
     setLoading(true);
     setLoadError('');
+    setSearchFeedback(null);
     const q = new URLSearchParams();
     if (category !== 'All') q.set('category', category);
     if (brand !== 'All') q.set('brand', brand);
@@ -211,6 +213,7 @@ export default function Shop() {
         setBrands(d.brands || []);
         setTotal(d.total);
         setTotalPages(d.totalPages);
+        setSearchFeedback({ corrected: d.correctedSearch, fuzzy: d.fuzzy });
       })
       .catch((err) => { if (current) { setProducts([]); setTotal(0); setTotalPages(1); setLoadError(err.message); } })
       .finally(() => {
@@ -360,6 +363,13 @@ export default function Shop() {
           </div>
         </div>
       </div>
+
+      {!loading && !loadError && search && (searchFeedback?.corrected || searchFeedback?.fuzzy) && (
+        <p role="status" style={{ margin: '16px 0', color: '#5b5550', lineHeight: 1.5 }}>
+          {searchFeedback.corrected && t('shop.correctedSearch', null, { search: searchFeedback.corrected })}
+          {searchFeedback.fuzzy && <> {t('shop.similarResults')}</>}
+        </p>
+      )}
 
       {loading ? (
         <div className="grid grid-wide" style={{ paddingBottom: 40 }}>

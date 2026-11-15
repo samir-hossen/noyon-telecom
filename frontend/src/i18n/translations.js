@@ -6,6 +6,8 @@ import { BUSINESS_HOURS } from '../content/businessHours.js';
 
 const translations = {
   en: {
+    'shop.correctedSearch': 'Search understood as “{{search}}”.',
+    'shop.similarResults': 'Showing similar matches. Check the exact model and part before ordering.',
     'nav.home': 'Home',
     'nav.allParts': 'All Parts',
     'nav.display': 'Display',
@@ -821,6 +823,8 @@ const translations = {
     'notFound.backHome': 'Back home',
   },
   bn: {
+    'shop.correctedSearch': '“{{search}}” হিসেবে খোঁজা হয়েছে।',
+    'shop.similarResults': 'কাছাকাছি মিল পাওয়া পণ্য দেখানো হচ্ছে। অর্ডারের আগে সঠিক মডেল ও পার্টস মিলিয়ে নিন।',
     'nav.home': 'হোম',
     'nav.allParts': 'সকল পার্টস',
     'nav.display': 'ডিসপ্লে',

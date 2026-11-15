@@ -267,8 +267,7 @@ export default function ProductDetail() {
                   description: String(product.desc || '').split(/\n\s*\n/)[0] || product.name,
                   ...(productImages.length ? { image: productImages.map((img) => resolveImg(img)) } : {}),
                   sku: product.sku || undefined,
-                  mpn: product.sku || undefined,
-                  brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+                  additionalProperty: product.brand ? [{ '@type': 'PropertyValue', name: 'Compatible phone brand', value: product.brand }] : undefined,
                   category: `Mobile Phone Parts > ${product.category}`,
                   offers: {
                     // Several grades = one AggregateOffer from the cheapest to the dearest.

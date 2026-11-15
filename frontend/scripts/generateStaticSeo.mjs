@@ -6,7 +6,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import blogPosts from '../src/content/blogPosts.js';
-import { GOOGLE_BUSINESS_URL } from '../src/content/businessInfo.js';
+import { GOOGLE_BUSINESS_URL, BUSINESS_ADDRESS_EN, businessPageJsonLd } from '../src/content/businessInfo.js';
+import { BUSINESS_HOURS } from '../src/content/businessHours.js';
+import translations from '../src/i18n/translations.js';
 
 const SITE_URL = 'https://noyontelecom.com';
 const DIST = path.resolve('dist');
@@ -33,6 +35,8 @@ function setMeta(html, attr, name, content) {
 
 function buildHead(base, { title, description, canonical, type = 'article', jsonLd = [] }) {
   let html = base.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+  // These routes never render the home hero; don't download its image here.
+  html = html.replace(/<link\b(?=[^>]*rel="preload")(?=[^>]*as="image")[^>]*>\s*/gi, '');
   html = setMeta(html, 'name', 'description', description);
   html = setMeta(html, 'property', 'og:type', type);
   html = setMeta(html, 'property', 'og:title', title);
@@ -43,7 +47,7 @@ function buildHead(base, { title, description, canonical, type = 'article', json
   html = html.replace(/<link\s+rel="canonical"[^>]*>\s*/i, '');
   const extra = [
     `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
-    ...jsonLd.map((data, index) => `<script type="application/ld+json" id="static-blog-jsonld-${index}">${escapeJsonForHtml(data)}</script>`),
+    ...jsonLd.map((data, index) => `<script type="application/ld+json" data-static-seo id="static-page-jsonld-${index}">${escapeJsonForHtml(data)}</script>`),
   ].join('\n    ');
   return html.replace('</head>', `    ${extra}\n  </head>`);
 }
@@ -100,6 +104,42 @@ function writeRoute(route, html) {
   const target = path.join(DIST, route.replace(/^\//, ''), 'index.html');
   fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.writeFileSync(target, html);
+}
+
+// The business identity must be readable without a JavaScript/API round trip.
+// Reuse the visible page copy and verified business constants; this adds no
+// runtime database queries, background polling or Render server work.
+const t = (key) => escapeHtml(translations.en[key]);
+const businessNav = '<nav aria-label="Main navigation"><a href="/">Home</a> · <a href="/shop">Mobile parts catalog</a> · <a href="/about">About us</a> · <a href="/contact">Contact</a></nav>';
+const aboutSections = [
+  ['about.ourStory', 'about.storyText'],
+  ['about.whatWeDo', 'about.whatWeDoText'],
+  ['about.qualityChecks', 'about.qualityChecksText'],
+  ['about.whoWeServe', 'about.whoWeServeText'],
+];
+const businessBodies = {
+  about: `<header class="page-header"><span class="eyebrow">${t('about.eyebrow')}</span><h1 class="page-title">${t('about.titleTop')} ${t('about.titleEm')}</h1><p>${t('about.intro')}</p></header>
+    <dl class="form-panel wide"><dt>${t('about.established')}</dt><dd>2016</dd><dt>${t('about.proprietor')}</dt><dd>MD Noyon Mozumder</dd><dt>${t('about.location')}</dt><dd>Gulistan, Dhaka</dd><dt>${t('about.businessType')}</dt><dd>${t('about.wholesaleOnly')}</dd></dl>
+    ${aboutSections.map(([heading, body]) => `<section class="form-panel wide"><h2>${t(heading)}</h2><p>${t(body)}</p></section>`).join('\n')}
+    <section class="form-panel wide"><h2>${t('about.whyChooseUs')}</h2><ul>${['Catalog', 'Pricing', 'Delivery', 'Support', 'Warranty'].map((reason) => `<li>${t(`about.reason${reason}`)}</li>`).join('')}</ul></section>
+    <p><a href="/shop">${t('about.browseCatalog')}</a> · <a href="/request-quote">${t('footer.requestBulkQuote')}</a> · <a href="/contact">${t('footer.contactUsLower')}</a></p>`,
+  contact: `<header class="page-header"><span class="eyebrow">${t('contact.eyebrow')}</span><h1 class="page-title">${t('contact.titleTop')} ${t('contact.titleEm')}</h1></header>
+    <section class="form-panel wide"><h2>${t('contact.contactDetails')}</h2>
+    <p><strong>${t('contact.address')}</strong> ${escapeHtml(BUSINESS_ADDRESS_EN)}</p>
+    <p><strong>${t('contact.phone')}</strong> <a href="tel:+8801560047377">+880 1560-047377</a></p>
+    <p><strong>${t('contact.email')}</strong> <a href="mailto:ppyt38835@gmail.com">ppyt38835@gmail.com</a></p>
+    <p><strong>${t('contact.hours')}</strong> ${escapeHtml(BUSINESS_HOURS.labelEn)}</p>
+    <p><a href="${escapeHtml(GOOGLE_BUSINESS_URL)}">${t('contact.openGoogleMaps')}</a></p></section>`,
+};
+for (const page of ['about', 'contact']) {
+  const title = translations.en[`${page}.pageTitle`];
+  const description = translations.en[`${page}.pageMeta`];
+  let html = buildHead(shell, {
+    title: `${title} — Noyon Telecom`, description, canonical: `${SITE_URL}/${page}`, type: 'website',
+    jsonLd: [businessPageJsonLd(page, title, description)],
+  });
+  html = html.replace(/<div id="root">\s*<\/div>/, `<div id="root"><main class="container" style="padding:24px 0 60px">${businessNav}${businessBodies[page]}</main></div>`);
+  writeRoute(`/${page}`, html);
 }
 
 for (const post of blogPosts) {

@@ -110,7 +110,7 @@ function damerauLevenshtein(a, b) {
 
 function autocorrectSearchWord(word) {
   const lower = word.toLowerCase();
-  if (!/^[a-z]{4,}$/.test(lower) || SEARCH_AUTOCORRECT_VOCABULARY.includes(lower)) return word;
+  if (!/^[a-z]{4,24}$/.test(lower) || SEARCH_FILLER_WORDS.has(lower) || SEARCH_AUTOCORRECT_VOCABULARY.includes(lower)) return word;
   const maxDistance = lower.length >= 8 ? 2 : 1;
   let match = null;
   let bestDistance = maxDistance + 1;
@@ -129,7 +129,12 @@ function autocorrectSearchWord(word) {
 }
 
 export function normalizeSearchQuery(value) {
-  let query = String(value || '').trim().replace(/\s+/g, ' ');
+  // Bound work per keystroke, normalize Bengali model digits and punctuation,
+  // and preserve alphanumeric model codes (A15 must never become A16).
+  let query = String(value || '').slice(0, 200).normalize('NFKC')
+    .replace(/[০-৯]/g, (digit) => String(digit.charCodeAt(0) - 0x09e6))
+    .replace(/([\p{L}\p{N}])\s*\+/gu, '$1 plus ')
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
   for (const [pattern, replacement] of SEARCH_PHRASE_ALIASES) query = query.replace(pattern, replacement);
   let words = query.split(' ').map((word) => autocorrectSearchWord(SEARCH_WORD_ALIASES.get(word.toLowerCase()) || word));
   // A typo may have hidden a phrase alias during the first pass (for
@@ -139,7 +144,7 @@ export function normalizeSearchQuery(value) {
   for (const [pattern, replacement] of SEARCH_PHRASE_ALIASES) query = query.replace(pattern, replacement);
   words = query.split(' ');
   const substantiveWords = words.filter((word) => !SEARCH_FILLER_WORDS.has(word.toLowerCase()));
-  return (substantiveWords.length ? substantiveWords : words).join(' ');
+  return (substantiveWords.length ? substantiveWords : words).slice(0, 12).join(' ');
 }
 
 function isConfigured() {
@@ -178,6 +183,7 @@ async function ensureIndexConfigured() {
     // "category=Display" or "brand=Apple" means.
     filterableAttributes: ['category', 'categories', 'brand', 'published', 'stock'],
     sortableAttributes: ['price', 'rating', 'createdAt'],
+    typoTolerance: { disableOnNumbers: true },
   });
   indexEnsured = true;
 }
@@ -287,6 +293,7 @@ export async function searchProductIds({ query, category, brand, page = 1, limit
     sort: sortMap[sort] || undefined, // omitted = Meilisearch's own relevance ranking, which is what we want for an actual search term
     offset: (page - 1) * limit,
     limit,
+    matchingStrategy: 'all',
   });
 
   return {
@@ -304,10 +311,7 @@ export async function searchProductIdsPostgres({ prisma, query, category, brand,
   const normalized = normalizeSearchQuery(query).toLowerCase();
   if (normalized.length < 3) return { ids: [], total: 0, normalizedQuery: normalized };
 
-  // Longer/multi-word searches retain a useful aggregate trigram score even
-  // with two small mistakes; short strings need a stricter threshold to avoid
-  // unrelated models flooding the results.
-  const threshold = normalized.length <= 4 ? 0.38 : normalized.length <= 7 ? 0.28 : 0.2;
+  const words = [...new Set(normalized.split(' ').filter(Boolean))];
   const filters = [
     Prisma.sql`published = true`,
     Prisma.sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))`,
@@ -317,13 +321,32 @@ export async function searchProductIdsPostgres({ prisma, query, category, brand,
   }
   if (brand && brand !== 'All') filters.push(Prisma.sql`lower(brand) = lower(${String(brand)})`);
 
+  // A high whole-query similarity can hide a completely wrong model or part.
+  // Require EVERY word to match. Model codes/numbers and known part/brand
+  // words must be exact tokens; only unknown alphabetic words get a bounded
+  // per-word trigram fallback. Never fuzzy-match A999 to A99 or 13 to 14.
+  const productWords = Prisma.sql`lower(concat_ws(' ', name, sku, brand))`;
+  for (const word of words) {
+    const boundary = `(^|[^[:alnum:]])${word}([^[:alnum:]]|$)`;
+    const exact = Prisma.sql`${productWords} ~ ${boundary}`;
+    if (/\d/.test(word) || word.length < 4 || ['plus', 'pro', 'max', 'ultra', 'mini', 'lite', 'note'].includes(word) || SEARCH_AUTOCORRECT_VOCABULARY.includes(word)) {
+      filters.push(exact);
+    } else {
+      filters.push(Prisma.sql`(${exact} OR EXISTS (
+        SELECT 1 FROM regexp_split_to_table(${productWords}, '[^[:alnum:]]+') AS token
+        WHERE abs(length(token) - ${word.length}) <= ${word.length >= 8 ? 2 : 1}
+          AND similarity(token, ${word}) >= ${word.length >= 8 ? 0.5 : 0.45}
+      ))`);
+    }
+  }
+
   const score = Prisma.sql`GREATEST(
     similarity(lower(name), ${normalized}),
     word_similarity(${normalized}, lower(name)),
     similarity(lower(sku), ${normalized}),
     similarity(lower(brand), ${normalized})
   )`;
-  const where = Prisma.sql`${Prisma.join(filters, ' AND ')} AND ${score} >= ${threshold}`;
+  const where = Prisma.sql`${Prisma.join(filters, ' AND ')}`;
   const offset = (page - 1) * limit;
 
   const [hits, countRows] = await Promise.all([

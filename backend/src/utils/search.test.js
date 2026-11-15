@@ -43,6 +43,26 @@ test('normalizeSearchQuery removes only natural-language filler words', () => {
   assert.equal(normalizeSearchQuery('Samsung A15 ডিসপ্লে দাম বাংলাদেশে'), 'Samsung A15 display');
   assert.equal(normalizeSearchQuery('mobile'), 'mobile');
   assert.equal(normalizeSearchQuery('price'), 'price');
+  assert.equal(normalizeSearchQuery('phone'), 'phone');
+  assert.equal(normalizeSearchQuery('Samsung phone A15 display'), 'Samsung A15 display');
+});
+
+test('Bengali digits, punctuation and plus models keep the intended model', () => {
+  assert.equal(normalizeSearchQuery('স্যামসাং A১৫ ডিসপ্লে?'), 'samsung A15 display');
+  assert.equal(normalizeSearchQuery('আইফোন ১৩ ক্যামেরা'), 'iphone 13 camera');
+  assert.equal(normalizeSearchQuery('Samsung S23+ screen'), 'Samsung S23 plus display');
+  assert.equal(normalizeSearchQuery('Samsung A999 displayz'), 'Samsung A999 display');
+  assert.equal(normalizeSearchQuery('"NT-DIS-IP13"'), 'NT DIS IP13');
+  assert.equal(normalizeSearchQuery('?!'), '');
+});
+
+test('search normalization has bounded work and is stable on the next pass', () => {
+  for (const query of ['opoo A16 charjing port', 'স্যামসাং A১৫ ডিসপ্লে?', 'Samsung S23+ screen']) {
+    const normalized = normalizeSearchQuery(query);
+    assert.equal(normalizeSearchQuery(normalized), normalized);
+  }
+  assert.ok(normalizeSearchQuery('x'.repeat(10000)).length <= 200);
+  assert.ok(normalizeSearchQuery('unknown '.repeat(100)).split(' ').length <= 12);
 });
 
 test('search.js with no MEILISEARCH_HOST configured', async (t) => {

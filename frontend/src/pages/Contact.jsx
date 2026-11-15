@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { BUSINESS_HOURS } from '../content/businessHours.js';
 import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 import { whatsappLink } from '../utils/whatsapp';
-import { BUSINESS_ADDRESS_BN, GOOGLE_BUSINESS_URL } from '../content/businessInfo.js';
+import { BUSINESS_ADDRESS_EN, BUSINESS_ADDRESS_BN, GOOGLE_BUSINESS_URL, businessPageJsonLd } from '../content/businessInfo.js';
 
 // `facebookUrl` is null until the settings fetch below resolves (or stays
 // null forever if it's not configured) — sameAs is only included once it's
@@ -73,14 +73,17 @@ function buildLocalBusinessJsonLd(facebookUrl, whatsappNumber) {
 }
 
 export default function Contact() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { showToast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const { contactEmail, facebookUrl, whatsappNumber } = usePublicSettings();
 
-  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, null, buildLocalBusinessJsonLd(facebookUrl, whatsappNumber));
+  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, '/contact', [
+    buildLocalBusinessJsonLd(facebookUrl, whatsappNumber),
+    { id: 'business-page', data: businessPageJsonLd('contact', t('contact.pageTitle'), t('contact.pageMeta')) },
+  ]);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -111,10 +114,10 @@ export default function Contact() {
       <div className="contact-grid">
         <div className="contact-info">
           <h3>{t('contact.contactDetails')}</h3>
-          {contactEmail && <p><strong>{t('contact.email')}</strong> {contactEmail}</p>}
-          <p><strong>{t('contact.phone')}</strong> +880 1560-047377</p>
+          {contactEmail && <p><strong>{t('contact.email')}</strong> <a href={`mailto:${contactEmail}`}>{contactEmail}</a></p>}
+          <p><strong>{t('contact.phone')}</strong> <a href="tel:+8801560047377">+880 1560-047377</a></p>
           <p><strong>WhatsApp:</strong> <a href={whatsappLink('', whatsappNumber)} target="_blank" rel="noreferrer">+{whatsappNumber}</a></p>
-          <p><strong>{t('contact.address')}</strong> {BUSINESS_ADDRESS_BN}</p>
+          <p><strong>{t('contact.address')}</strong> {lang === 'bn' ? BUSINESS_ADDRESS_BN : BUSINESS_ADDRESS_EN}</p>
           <p><strong>{t('contact.hours')}</strong> {t('contact.hoursValue')}</p>
           <p><a href={GOOGLE_BUSINESS_URL} target="_blank" rel="noreferrer">📍 {t('contact.openGoogleMaps')}</a></p>
           <p style={{ marginTop: 20, fontSize: '0.8rem', color: '#9a8f8a' }}>

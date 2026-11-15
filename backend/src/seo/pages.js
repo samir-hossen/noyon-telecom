@@ -177,8 +177,7 @@ async function productPage(slug) {
     name: row.name,
     description: firstParagraph(row.desc) || row.name,
     sku: row.sku || undefined,
-    mpn: row.sku || undefined,
-    brand: row.brand ? { '@type': 'Brand', name: row.brand } : undefined,
+    additionalProperty: row.brand ? [{ '@type': 'PropertyValue', name: 'Compatible phone brand', value: row.brand }] : undefined,
     category: `Mobile Phone Parts > ${row.category}`,
     ...(images.length ? { image: images } : {}),
     // Only a price the owner has published — never a draft, never ৳0.

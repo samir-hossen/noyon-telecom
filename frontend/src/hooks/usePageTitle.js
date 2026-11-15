@@ -99,6 +99,9 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
   useEffect(() => {
     // Keep server-rendered metadata during loading or temporary API failures.
     if (preserveExisting) return;
+    // Build-time page data belongs only to the initial URL. React supplies
+    // the active route's schema below, including after client navigation.
+    document.querySelectorAll('script[data-static-seo], script[id^="static-blog-jsonld-"]').forEach((node) => node.remove());
     const fullTitle = title ? (exactTitle ? title : title + ' — ' + SITE_NAME) : DEFAULT_TITLE;
     const desc = description || DEFAULT_DESCRIPTION;
     // Drops the query string when a page doesn't pass its own canonicalPath

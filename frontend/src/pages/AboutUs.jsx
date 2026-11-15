@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { useLanguage } from '../context/LanguageContext';
+import { businessPageJsonLd } from '../content/businessInfo.js';
 
 // Everything in double-bracket comments below ([[ EDIT: ... ]]) is a
 // placeholder — swap it for your real numbers/story before going live.
@@ -12,7 +13,9 @@ import { useLanguage } from '../context/LanguageContext';
 // presented as your warehouse) stops trusting everything else on the page.
 export default function AboutUs() {
   const { t } = useLanguage();
-  usePageMeta(t('about.pageTitle'), t('about.pageMeta'));
+  usePageMeta(t('about.pageTitle'), t('about.pageMeta'), undefined, '/about', {
+    id: 'business-page', data: businessPageJsonLd('about', t('about.pageTitle'), t('about.pageMeta')),
+  });
 
   return (
     <div className="container">

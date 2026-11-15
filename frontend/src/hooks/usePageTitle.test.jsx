@@ -40,4 +40,21 @@ describe('usePageMeta canonical/og:url', () => {
     expect(ogUrl).toBe(canonical);
     expect(ogUrl).not.toMatch(/utm_source|fbclid/);
   });
+
+  it('does not leave build-time About/Article schema attached to the next SPA page', () => {
+    const staticSchema = document.createElement('script');
+    staticSchema.type = 'application/ld+json';
+    staticSchema.setAttribute('data-static-seo', '');
+    staticSchema.textContent = JSON.stringify({ '@type': 'AboutPage' });
+    document.head.appendChild(staticSchema);
+    const businessSchema = document.createElement('script');
+    businessSchema.type = 'application/ld+json';
+    businessSchema.id = 'test-global-business';
+    businessSchema.textContent = JSON.stringify({ '@type': 'MobilePhoneStore' });
+    document.head.appendChild(businessSchema);
+    render(<Page title="Shop" canonicalPath="/shop" />);
+    expect(document.querySelector('script[data-static-seo]')).toBeNull();
+    expect(document.getElementById('test-global-business')).not.toBeNull();
+    businessSchema.remove();
+  });
 });

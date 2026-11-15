@@ -37,14 +37,14 @@ test('buildMerchantFeedXml', async (t) => {
     assert.equal(xml.includes('<g:id>p1</g:id>'), false);
   });
 
-  await t.test('sku present -> mpn included and identifier_exists=yes; absent -> the opposite', () => {
+  await t.test('internal stock codes are not manufacturer-assigned identifiers', () => {
     const withSku = buildMerchantFeedXml({ products: [product({ sku: 'NT-DIS-001' })], siteUrl: 'https://example.com' });
-    assert.match(withSku, /<g:mpn>NT-DIS-001<\/g:mpn>/);
-    assert.match(withSku, /<g:identifier_exists>yes<\/g:identifier_exists>/);
+    assert.equal(withSku.includes('<g:mpn>'), false);
+    assert.equal(withSku.includes('<g:identifier_exists>'), false);
 
     const withoutSku = buildMerchantFeedXml({ products: [product({ sku: null })], siteUrl: 'https://example.com' });
     assert.equal(withoutSku.includes('<g:mpn>'), false);
-    assert.match(withoutSku, /<g:identifier_exists>no<\/g:identifier_exists>/);
+    assert.equal(withoutSku.includes('<g:identifier_exists>'), false);
   });
 
   await t.test('g:product_type reflects the real product category, never invented', () => {
@@ -52,9 +52,9 @@ test('buildMerchantFeedXml', async (t) => {
     assert.match(xml, /<g:product_type>Back Glass<\/g:product_type>/);
   });
 
-  await t.test('no brand falls back to the store name, never a fabricated brand', () => {
-    const xml = buildMerchantFeedXml({ products: [product({ brand: null })], siteUrl: 'https://example.com' });
-    assert.match(xml, /<g:brand>Noyon Telecom<\/g:brand>/);
+  await t.test('compatible phone brands and the store name are not claimed as the part manufacturer', () => {
+    const xml = buildMerchantFeedXml({ products: [product({ brand: 'Samsung' }), product({ brand: null })], siteUrl: 'https://example.com' });
+    assert.equal(xml.includes('<g:brand>'), false);
   });
 
   await t.test('special characters in name/description are XML-escaped', () => {

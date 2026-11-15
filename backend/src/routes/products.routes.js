@@ -108,6 +108,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     setProductCacheControl(req, res);
     const searchTerm = (req.query.search || '').toString().trim();
     const normalizedSearchTerm = normalizeSearchQuery(searchTerm);
+    const correctedSearch = normalizedSearchTerm.toLowerCase() !== searchTerm.toLowerCase() ? normalizedSearchTerm : undefined;
     const card = req.query.card === '1';
     const projection = card ? { select: PRODUCT_CARD_SELECT } : {};
     const sort = (req.query.sort || '').toString();
@@ -120,7 +121,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     // path below whenever there's no search term, or MEILISEARCH_HOST
     // isn't configured — see utils/search.js. This route's response shape
     // never changes either way, so the frontend needs no changes at all.
-    if (searchTerm && isSearchEngineEnabled()) {
+    if (normalizedSearchTerm && isSearchEngineEnabled()) {
       const searchResult = await searchProductIds({
         query: normalizedSearchTerm,
         category: req.query.category,
@@ -131,7 +132,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       });
       if (searchResult) {
         const { ids, total } = searchResult;
-        const rowsById = new Map((await prisma.product.findMany({ where: { id: { in: ids } }, ...projection, ...(card ? { select: { ...PRODUCT_CARD_SELECT, categories: true, published: true } } : {}) })).map((p) => [p.id, p]));
+        const rowsById = new Map((await prisma.product.findMany({ where: storefrontWhere({ id: { in: ids } }), ...projection, ...(card ? { select: { ...PRODUCT_CARD_SELECT, categories: true, published: true } } : {}) })).map((p) => [p.id, p]));
         // Meilisearch decided the order (relevance, or an explicit sort);
         // Prisma's `id IN (...)` doesn't preserve that order on its own, so
         // the rows are re-assembled in the order Meilisearch returned.
@@ -145,6 +146,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
           brands: await getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
           total,
           totalPages: Math.max(1, Math.ceil(total / limit)),
+          correctedSearch,
         });
       }
     }
@@ -156,6 +158,8 @@ router.get('/', optionalAuth, async (req, res, next) => {
       status: 'published', // storefront only ever shows published products
       storefront: true, // ...and never a switched-off category (Battery)
     });
+    // Punctuation-only input is not a request to browse the entire catalog.
+    if (searchTerm && !normalizedSearchTerm) where.id = { in: [] };
     const orderBy = buildProductOrderBy(sort || (searchTerm ? '' : 'popular'));
 
     // Same cache-aside approach as /home-sections: `where`/`orderBy`/
@@ -197,7 +201,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       }));
       if (fuzzy.total > 0) {
         const fuzzyRowsById = new Map((await prisma.product.findMany({
-          where: { id: { in: fuzzy.ids } },
+          where: storefrontWhere({ id: { in: fuzzy.ids } }),
           ...projection,
           ...(card ? { select: { ...PRODUCT_CARD_SELECT, categories: true, published: true } } : {}),
         })).map((product) => [product.id, product]));
@@ -208,7 +212,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
           brands: await getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
           total: fuzzy.total,
           totalPages: Math.max(1, Math.ceil(fuzzy.total / limit)),
-          correctedSearch: fuzzy.normalizedQuery !== searchTerm.toLowerCase() ? fuzzy.normalizedQuery : undefined,
+          correctedSearch,
           fuzzy: true,
         });
       }
@@ -220,6 +224,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       brands: await getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
+      correctedSearch,
     });
   } catch (err) {
     next(err);
