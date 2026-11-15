@@ -231,7 +231,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 .lang-switch:hover { background: rgba(255, 255, 255, 0.22); }
 .nav-topbar a, .lang-switch { white-space: nowrap; }
 .lang-switch { flex-shrink: 0; }
-/* On phones the full "(Sat–Thu, 10am–7pm)" made the hotline wrap to two
+/* On phones the full opening-hours label made the hotline wrap to two
    lines and squeezed the language pill until its flag and label stacked.
    Hours are still shown in the homepage feature strip. */
 @media (max-width: 640px) {

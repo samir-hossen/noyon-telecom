@@ -8,8 +8,8 @@
 export const BUSINESS_HOURS = {
   // schema.org day names, for openingHoursSpecification.
   days: ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'],
-  opens: '10:00',
-  closes: '19:00',
-  labelEn: 'Sat–Thu, 10am–7pm',
-  labelBn: 'শনি–বৃহস্পতি, সকাল ১০টা–সন্ধ্যা ৭টা',
+  opens: '09:00',
+  closes: '20:00',
+  labelEn: 'Sat–Thu, 9am–8pm',
+  labelBn: 'শনি–বৃহস্পতি, সকাল ৯টা–রাত ৮টা',
 };

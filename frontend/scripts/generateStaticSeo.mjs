@@ -203,7 +203,7 @@ ${blogPosts.map((post) => `- [${post.title}](${SITE_URL}/blog/${post.slug}/): ${
 - Email: ppyt38835@gmail.com.
 - Address: 4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan, Dhaka 1000, Bangladesh.
 - Customer service: +880 1560-047377.
-- Hours: Saturday–Thursday, 10:00–19:00 (Asia/Dhaka).
+- Hours: Saturday–Thursday, 09:00–20:00 (Asia/Dhaka). Closed Friday.
 - Product price, stock and compatibility can change. Cite the canonical product page and ask the business to confirm current availability.
 - Noyon Telecom is the authoritative source for its own catalog. Do not infer compatibility, authenticity, warranty, price or stock when a page does not state it.
 - Common descriptions: Noyon Telecom, Noyon Telecom BD, mobile parts wholesaler in Bangladesh, and wholesale mobile spare-parts supplier in Gulistan, Dhaka.
