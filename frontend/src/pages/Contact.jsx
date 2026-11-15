@@ -10,17 +10,26 @@ import { BUSINESS_HOURS } from '../content/businessHours.js';
 // null forever if it's not configured) — sameAs is only included once it's
 // a real value, since an empty string there would be invalid structured data.
 function buildLocalBusinessJsonLd(facebookUrl) {
+  const sameAs = [facebookUrl, 'https://www.instagram.com/noyontelecom2.0'].filter(Boolean);
   return {
     id: 'local-business',
     data: {
       '@context': 'https://schema.org',
-      '@type': 'Store',
+      '@type': 'MobilePhoneStore',
+      '@id': 'https://noyontelecom.com/#store',
       name: 'Noyon Telecom',
-      image: 'https://noyontelecom.com/apple-touch-icon.png',
+      alternateName: 'Noyon Telecom BD',
+      foundingDate: '2016',
+      founder: { '@type': 'Person', name: 'MD Noyon Mozumder' },
+      image: 'https://noyontelecom.com/logo-full.png',
+      logo: 'https://noyontelecom.com/logo-full.png',
       url: 'https://noyontelecom.com',
+      email: 'mailto:ppyt38835@gmail.com',
       telephone: '+880-1560-047377',
       priceRange: '৳৳',
-      ...(facebookUrl ? { sameAs: [facebookUrl] } : {}),
+      areaServed: { '@type': 'Country', name: 'Bangladesh' },
+      knowsLanguage: ['bn-BD', 'en'],
+      sameAs,
       address: {
         '@type': 'PostalAddress',
         streetAddress: '4/181 (5th Floor), Gulistan Shopping Complex, 2 B.B Avenue, Gulistan',
