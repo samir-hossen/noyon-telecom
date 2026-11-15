@@ -336,7 +336,7 @@ router.post('/products/bulk', requireCsrf, async (req, res, next) => {
         try {
           await prisma.product.delete({ where: { id: product.id } });
           (Array.isArray(product.images) ? product.images : []).forEach((img) => deleteStoredImage(img));
-          deleteProductFromIndex(product.id).catch((err) => console.error('Meilisearch delete failed:', err.message));
+          deleteProductFromIndex(product.id, product).catch((err) => console.error('Search index delete failed:', err.message));
           done++;
         } catch (err) {
           if (err.code !== 'P2003') throw err;
@@ -494,7 +494,7 @@ router.delete('/products/:id', requireCsrf, async (req, res, next) => {
     }
     await logAdminAction(req.user, 'product.delete', { productId: deleted.id, name: deleted.name });
     invalidateProductCache();
-    deleteProductFromIndex(deleted.id).catch((err) => console.error('Meilisearch delete failed:', err.message));
+    deleteProductFromIndex(deleted.id, deleted).catch((err) => console.error('Search index delete failed:', err.message));
     res.json({});
   } catch (err) {
     next(err);

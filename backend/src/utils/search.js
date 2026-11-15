@@ -24,6 +24,7 @@ import { Meilisearch } from 'meilisearch';
 import { Prisma } from '@prisma/client';
 import { isPricePublished } from './serialize.js';
 import { DISABLED_CATEGORIES_LOWER } from '../config/catalog.js';
+import { queueProductUrlsForIndexNow } from './indexNow.js';
 
 const PRODUCTS_INDEX = 'products';
 
@@ -72,10 +73,71 @@ const SEARCH_FILLER_WORDS = new Set([
   'দাম', 'বাংলাদেশ', 'বাংলাদেশে', 'মোবাইল', 'মোবাইলের', 'পার্ট', 'পার্টস', 'জন্য', 'কিনতে', 'কোথায়', 'কোথায়',
 ]);
 
+// Correct one-character omissions, insertions and adjacent transpositions
+// only against a small, factual vocabulary of brands and part names. This
+// rescues queries such as "ihpone 13 disply" and "opoo a16 charjing" while
+// leaving model codes (A15, C61, 13 Pro Max...) completely untouched. A
+// broad spell-checker would be dangerous here because phone model names are
+// often valid words/codes that are absent from a normal dictionary.
+const SEARCH_AUTOCORRECT_VOCABULARY = [
+  'apple', 'google', 'honor', 'huawei', 'infinix', 'iphone', 'itel', 'motorola', 'nokia', 'nothing', 'oneplus', 'oppo',
+  'pixel', 'realme', 'samsung', 'sony', 'tecno', 'vivo', 'xiaomi',
+  'back', 'camera', 'charging', 'display', 'fingerprint', 'flex', 'frame', 'glass', 'lcd', 'logic', 'loudspeaker',
+  'microphone', 'motherboard', 'oled', 'sim', 'speaker', 'tray',
+];
+
+function damerauLevenshtein(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const matrix = Array.from({ length: rows }, () => Array(cols).fill(0));
+  for (let i = 0; i < rows; i += 1) matrix[i][0] = i;
+  for (let j = 0; j < cols; j += 1) matrix[0][j] = j;
+  for (let i = 1; i < rows; i += 1) {
+    for (let j = 1; j < cols; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      );
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        matrix[i][j] = Math.min(matrix[i][j], matrix[i - 2][j - 2] + cost);
+      }
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+function autocorrectSearchWord(word) {
+  const lower = word.toLowerCase();
+  if (!/^[a-z]{4,}$/.test(lower) || SEARCH_AUTOCORRECT_VOCABULARY.includes(lower)) return word;
+  const maxDistance = lower.length >= 8 ? 2 : 1;
+  let match = null;
+  let bestDistance = maxDistance + 1;
+  for (const candidate of SEARCH_AUTOCORRECT_VOCABULARY) {
+    if (Math.abs(candidate.length - lower.length) > maxDistance) continue;
+    const distance = damerauLevenshtein(lower, candidate);
+    if (distance < bestDistance) {
+      match = candidate;
+      bestDistance = distance;
+    } else if (distance === bestDistance) {
+      // An ambiguous correction is worse than no correction.
+      match = null;
+    }
+  }
+  return bestDistance <= maxDistance ? (match || word) : word;
+}
+
 export function normalizeSearchQuery(value) {
   let query = String(value || '').trim().replace(/\s+/g, ' ');
   for (const [pattern, replacement] of SEARCH_PHRASE_ALIASES) query = query.replace(pattern, replacement);
-  const words = query.split(' ').map((word) => SEARCH_WORD_ALIASES.get(word.toLowerCase()) || word);
+  let words = query.split(' ').map((word) => autocorrectSearchWord(SEARCH_WORD_ALIASES.get(word.toLowerCase()) || word));
+  // A typo may have hidden a phrase alias during the first pass (for
+  // example "charjing port"). Run the factual phrase map once more after
+  // individual words have been corrected.
+  query = words.join(' ');
+  for (const [pattern, replacement] of SEARCH_PHRASE_ALIASES) query = query.replace(pattern, replacement);
+  words = query.split(' ');
   const substantiveWords = words.filter((word) => !SEARCH_FILLER_WORDS.has(word.toLowerCase()));
   return (substantiveWords.length ? substantiveWords : words).join(' ');
 }
@@ -131,6 +193,7 @@ function publicPrice(product) {
 // hiccup must never fail the actual product write, which already succeeded
 // against Postgres, the real source of truth.
 export async function indexProduct(product) {
+  queueProductUrlsForIndexNow([product]);
   const c = getClient();
   if (!c) return;
   await ensureIndexConfigured();
@@ -157,7 +220,8 @@ export async function indexProduct(product) {
 }
 
 // Removes a product from the index — call after delete.
-export async function deleteProductFromIndex(id) {
+export async function deleteProductFromIndex(id, product = null) {
+  if (product) queueProductUrlsForIndexNow([product]);
   const c = getClient();
   if (!c) return;
   await c.index(PRODUCTS_INDEX).deleteDocument(id);
@@ -167,6 +231,7 @@ export async function deleteProductFromIndex(id) {
 // indexing one row at a time would mean one HTTP round-trip per row against
 // the search server on top of the one already happening against Postgres.
 export async function indexProducts(products) {
+  queueProductUrlsForIndexNow(products);
   const c = getClient();
   if (!c || products.length === 0) return;
   await ensureIndexConfigured();

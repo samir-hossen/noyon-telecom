@@ -20,6 +20,16 @@ test('normalizeSearchQuery fixes common customer spellings and catalog aliases',
   assert.equal(normalizeSearchQuery('Samsung S23 charging board'), 'Samsung S23 charging logic');
   assert.equal(normalizeSearchQuery('One Plus 9 screen'), 'oneplus 9 display');
   assert.equal(normalizeSearchQuery('Redmi Note 12 SIM holder'), 'Redmi Note 12 sim tray');
+  assert.equal(normalizeSearchQuery('ihpone 13 disply'), 'iphone 13 display');
+  assert.equal(normalizeSearchQuery('opoo A16 charjing port'), 'oppo A16 charging logic');
+  assert.equal(normalizeSearchQuery('samsng A15 glas'), 'samsung A15 glass');
+  assert.equal(normalizeSearchQuery('motorla G85 camra'), 'motorola G85 camera');
+});
+
+test('normalizeSearchQuery never spell-corrects phone model codes or arbitrary customer words', () => {
+  assert.equal(normalizeSearchQuery('Samsung C61 display'), 'Samsung C61 display');
+  assert.equal(normalizeSearchQuery('Vivo Y20T loudspeaker'), 'Vivo Y20T loudspeaker');
+  assert.equal(normalizeSearchQuery('original quality display'), 'original quality display');
 });
 
 test('normalizeSearchQuery understands Bengali product searches', () => {
