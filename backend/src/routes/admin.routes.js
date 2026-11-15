@@ -1011,6 +1011,8 @@ const ORDER_STATUS_MESSAGES = {
   cancelled: { subject: 'Your order was cancelled', text: 'Your order has been cancelled. If this is unexpected, please contact us and we\u2019ll help sort it out.' },
 };
 
+const GOOGLE_BUSINESS_URL = 'https://www.google.com/maps?cid=13875304182215759800';
+
 // Exported so the Steadfast delivery-status webhook (see
 // routes/webhooks.routes.js) can reuse the same customer email/SMS notice
 // when a courier-reported "delivered" promotes Order.status itself, instead
@@ -1027,7 +1029,7 @@ export async function notifyOrderStatus(order) {
       await sendMail({
         to,
         subject: `${notice.subject} — Noyon Telecom (Order #${shortOrderId})`,
-        text: `${notice.text}\n\nTrack your order: ${trackLink}`,
+        text: `${notice.text}\n\nTrack your order: ${trackLink}${order.status === 'delivered' ? `\n\nShare an honest Google review: ${GOOGLE_BUSINESS_URL}` : ''}`,
       });
     } catch (err) {
       // Never let a mail-provider hiccup block the admin from updating order status.

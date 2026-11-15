@@ -6,6 +6,7 @@ import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { useLanguage } from '../context/LanguageContext';
 import { OrderTracker } from './Orders.jsx';
+import GoogleReviewPrompt from '../components/GoogleReviewPrompt.jsx';
 
 export default function TrackOrder() {
   const { t } = useLanguage();
@@ -89,6 +90,7 @@ export default function TrackOrder() {
               <div style={{ color: 'var(--muted)', marginTop: 4 }}>{t('orderConf.courierTrackingCode', null, { code: order.courierTrackingCode })}</div>
             </div>
           )}
+          {order.status === 'delivered' && <GoogleReviewPrompt compact />}
         </div>
       )}
 

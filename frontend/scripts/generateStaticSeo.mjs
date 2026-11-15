@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import blogPosts from '../src/content/blogPosts.js';
+import { GOOGLE_BUSINESS_URL } from '../src/content/businessInfo.js';
 
 const SITE_URL = 'https://noyontelecom.com';
 const DIST = path.resolve('dist');
@@ -172,6 +173,7 @@ const llms = `# Noyon Telecom
 - [Product catalog](${SITE_URL}/shop)
 - [About the business](${SITE_URL}/about)
 - [Contact and physical address](${SITE_URL}/contact)
+- [Google Business Profile and Maps](${GOOGLE_BUSINESS_URL})
 - [Wholesale quote request](${SITE_URL}/request-quote)
 - [Facebook](https://www.facebook.com/NoyonTelecomBD)
 - [Instagram](https://www.instagram.com/noyontelecom2.0)

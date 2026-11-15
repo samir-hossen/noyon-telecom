@@ -7,12 +7,13 @@ import { useLanguage } from '../context/LanguageContext';
 import { BUSINESS_HOURS } from '../content/businessHours.js';
 import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 import { whatsappLink } from '../utils/whatsapp';
+import { BUSINESS_ADDRESS_BN, GOOGLE_BUSINESS_URL } from '../content/businessInfo.js';
 
 // `facebookUrl` is null until the settings fetch below resolves (or stays
 // null forever if it's not configured) — sameAs is only included once it's
 // a real value, since an empty string there would be invalid structured data.
 function buildLocalBusinessJsonLd(facebookUrl, whatsappNumber) {
-  const sameAs = [facebookUrl, 'https://www.instagram.com/noyontelecom2.0'].filter(Boolean);
+  const sameAs = [GOOGLE_BUSINESS_URL, facebookUrl, 'https://www.instagram.com/noyontelecom2.0'].filter(Boolean);
   return {
     id: 'local-business',
     data: {
@@ -47,6 +48,7 @@ function buildLocalBusinessJsonLd(facebookUrl, whatsappNumber) {
       priceRange: '৳৳',
       areaServed: { '@type': 'Country', name: 'Bangladesh' },
       knowsLanguage: ['bn-BD', 'en'],
+      hasMap: GOOGLE_BUSINESS_URL,
       sameAs,
       address: {
         '@type': 'PostalAddress',
@@ -112,8 +114,9 @@ export default function Contact() {
           {contactEmail && <p><strong>{t('contact.email')}</strong> {contactEmail}</p>}
           <p><strong>{t('contact.phone')}</strong> +880 1560-047377</p>
           <p><strong>WhatsApp:</strong> <a href={whatsappLink('', whatsappNumber)} target="_blank" rel="noreferrer">+{whatsappNumber}</a></p>
-          <p><strong>{t('contact.address')}</strong> ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০</p>
+          <p><strong>{t('contact.address')}</strong> {BUSINESS_ADDRESS_BN}</p>
           <p><strong>{t('contact.hours')}</strong> {t('contact.hoursValue')}</p>
+          <p><a href={GOOGLE_BUSINESS_URL} target="_blank" rel="noreferrer">📍 {t('contact.openGoogleMaps')}</a></p>
           <p style={{ marginTop: 20, fontSize: '0.8rem', color: '#9a8f8a' }}>
             {t('contact.preferChat')}
           </p>

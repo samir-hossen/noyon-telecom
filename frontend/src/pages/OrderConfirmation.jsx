@@ -6,6 +6,7 @@ import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackPurchase } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
+import GoogleReviewPrompt from '../components/GoogleReviewPrompt.jsx';
 
 export default function OrderConfirmation() {
   const { id } = useParams();
@@ -151,6 +152,8 @@ export default function OrderConfirmation() {
             <div style={{ color: 'var(--muted)', marginTop: 4 }}>{t('orderConf.courierTrackingCode', null, { code: order.courierTrackingCode })}</div>
           </div>
         )}
+
+        {order.status === 'delivered' && <GoogleReviewPrompt />}
 
         {!order.userId && (
           <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: 18 }}>

@@ -6,6 +6,7 @@ import { formatPrice } from '../utils/currency';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import GoogleReviewPrompt from '../components/GoogleReviewPrompt.jsx';
 
 const TRACK_STEPS = ['processing', 'shipped', 'delivered'];
 
@@ -208,6 +209,7 @@ export default function Orders() {
               <span>{t('cart.total')}</span>
               <span>{formatPrice(o.total)}</span>
             </div>
+            {o.status === 'delivered' && <GoogleReviewPrompt compact />}
           </div>
         ))}
         {page < totalPages && (

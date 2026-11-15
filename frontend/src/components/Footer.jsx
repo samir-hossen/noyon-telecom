@@ -8,6 +8,7 @@ import { trackWhatsappClick, trackPhoneClick } from '../ecommerce.js';
 import { categoryUrl } from '../utils/taxonomy';
 import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 import { whatsappLink } from '../utils/whatsapp';
+import { BUSINESS_ADDRESS_BN, GOOGLE_BUSINESS_URL } from '../content/businessInfo.js';
 
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
@@ -54,7 +55,7 @@ export default function Footer() {
           </span>
           <h3 className="store-address-heading">{t('footer.instantServiceAddress')}</h3>
           <p className="store-address-text">
-            ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০
+            {BUSINESS_ADDRESS_BN}
           </p>
           <p className="store-address-phone">
             <a href="tel:+8801560047377" onClick={() => trackPhoneClick('footer_address')}>☎ {t('footer.call')} 01560-047377</a>
@@ -67,6 +68,7 @@ export default function Footer() {
             <Link to="/delivery-policy">{t('footer.orderDeliveryPolicy')}</Link>
             <Link to="/refund-policy">{t('footer.returnRefundPolicy')}</Link>
             <Link to="/contact">{t('footer.contactUs')}</Link>
+            <a href={GOOGLE_BUSINESS_URL} target="_blank" rel="noreferrer">{t('footer.googleMaps')}</a>
           </div>
         </div>
       </div>
@@ -88,6 +90,7 @@ export default function Footer() {
             <p>
               {facebookUrl && <a href={facebookUrl} target="_blank" rel="noreferrer">📘 Facebook</a>}
             </p>
+            <p><a href={GOOGLE_BUSINESS_URL} target="_blank" rel="noreferrer">📍 {t('footer.googleBusiness')}</a></p>
           </div>
           <div>
             <h4>{t('footer.shopByCategory')}</h4>
