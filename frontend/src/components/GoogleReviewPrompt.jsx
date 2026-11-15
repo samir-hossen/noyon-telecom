@@ -1,4 +1,4 @@
-import { GOOGLE_BUSINESS_URL } from '../content/businessInfo.js';
+import { GOOGLE_REVIEW_URL } from '../content/businessInfo.js';
 import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function GoogleReviewPrompt({ compact = false }) {
@@ -19,7 +19,7 @@ export default function GoogleReviewPrompt({ compact = false }) {
       <p style={{ color: 'var(--muted)', margin: '6px 0 12px', fontSize: '0.88rem' }}>
         {t('reviews.googleBody')}
       </p>
-      <a className="btn btn-outline" href={GOOGLE_BUSINESS_URL} target="_blank" rel="noreferrer">
+      <a className="btn btn-outline" href={GOOGLE_REVIEW_URL} target="_blank" rel="noreferrer">
         ★ {t('reviews.googleButton')}
       </a>
     </div>
