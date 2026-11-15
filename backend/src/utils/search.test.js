@@ -17,8 +17,22 @@ const { indexProduct, indexProducts, deleteProductFromIndex, searchProductIds, n
 test('normalizeSearchQuery fixes common customer spellings and catalog aliases', () => {
   assert.equal(normalizeSearchQuery('  samsang A15 disply  '), 'samsung A15 display');
   assert.equal(normalizeSearchQuery('iPhone 13 charging port'), 'iPhone 13 charging logic');
+  assert.equal(normalizeSearchQuery('Samsung S23 charging board'), 'Samsung S23 charging logic');
   assert.equal(normalizeSearchQuery('One Plus 9 screen'), 'oneplus 9 display');
   assert.equal(normalizeSearchQuery('Redmi Note 12 SIM holder'), 'Redmi Note 12 sim tray');
+});
+
+test('normalizeSearchQuery understands Bengali product searches', () => {
+  assert.equal(normalizeSearchQuery('স্যামসাং A15 ডিসপ্লে'), 'samsung A15 display');
+  assert.equal(normalizeSearchQuery('আইফোন 13 চার্জিং পোর্ট'), 'iphone 13 charging logic');
+  assert.equal(normalizeSearchQuery('শাওমি ব্যাক গ্লাস'), 'xiaomi back glass');
+});
+
+test('normalizeSearchQuery removes only natural-language filler words', () => {
+  assert.equal(normalizeSearchQuery('display for samsung a15 price in Bangladesh'), 'display samsung a15');
+  assert.equal(normalizeSearchQuery('Samsung A15 ডিসপ্লে দাম বাংলাদেশে'), 'Samsung A15 display');
+  assert.equal(normalizeSearchQuery('mobile'), 'mobile');
+  assert.equal(normalizeSearchQuery('price'), 'price');
 });
 
 test('search.js with no MEILISEARCH_HOST configured', async (t) => {

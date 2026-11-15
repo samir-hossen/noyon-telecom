@@ -35,25 +35,49 @@ let indexEnsured = false;
 // Display here, and the former Charging Port section is now Charging Logic)
 // without turning every query into a bag of loosely-related keywords.
 const SEARCH_PHRASE_ALIASES = [
-  [/\b(?:charging|charger|charge)\s+port\b/gi, 'charging logic'],
+  [/\b(?:charging|charger|charge)\s+(?:port|board|connector|dock|sub\s*board)\b/gi, 'charging logic'],
   [/\bone\s+plus\b/gi, 'oneplus'],
   [/\bback\s+cover\b/gi, 'back glass'],
   [/\bsim\s+(?:holder|slot)\b/gi, 'sim tray'],
+  [/চার্জিং\s+(?:পোর্ট|বোর্ড|লজিক)/gu, 'charging logic'],
+  [/ব্যাক\s+(?:কভার|গ্লাস)/gu, 'back glass'],
+  [/সিম\s+(?:হোল্ডার|স্লট|ট্রে)/gu, 'sim tray'],
 ];
 
 const SEARCH_WORD_ALIASES = new Map([
-  ['screen', 'display'], ['disply', 'display'], ['diplay', 'display'], ['dispaly', 'display'],
+  ['screen', 'display'], ['disple', 'display'], ['disply', 'display'], ['diplay', 'display'], ['dispaly', 'display'],
   ['samsang', 'samsung'], ['samung', 'samsung'], ['sumsung', 'samsung'],
   ['xiomi', 'xiaomi'], ['xaomi', 'xiaomi'], ['xiaome', 'xiaomi'],
   ['realmi', 'realme'], ['oppoo', 'oppo'], ['infinx', 'infinix'],
-  ['camara', 'camera'], ['spekar', 'speaker'], ['loudspekar', 'loudspeaker'],
-  ['chrging', 'charging'], ['chargng', 'charging'], ['logik', 'logic'],
+  ['camara', 'camera'], ['camra', 'camera'], ['spekar', 'speaker'], ['spikar', 'speaker'], ['loudspekar', 'loudspeaker'],
+  ['chrging', 'charging'], ['chargng', 'charging'], ['chargin', 'charging'], ['charjing', 'charging'],
+  ['logik', 'logic'], ['lojic', 'logic'], ['lojik', 'logic'],
+  ['ডিসপ্লে', 'display'], ['স্ক্রিন', 'display'], ['এলসিডি', 'lcd'], ['ওএলইডি', 'oled'], ['ওলেড', 'oled'],
+  ['টাচ', 'touch'], ['ক্যামেরা', 'camera'], ['স্পিকার', 'speaker'], ['মাইক', 'microphone'], ['মাইক্রোফোন', 'microphone'],
+  ['চার্জিং', 'charging'], ['লজিক', 'logic'], ['ব্যাক', 'back'], ['গ্লাস', 'glass'], ['ফ্রেম', 'frame'], ['ফ্লেক্স', 'flex'],
+  ['মাদারবোর্ড', 'motherboard'], ['আইসি', 'ic'], ['সিপিইউ', 'cpu'], ['সিম', 'sim'], ['ট্রে', 'tray'],
+  ['ফিঙ্গারপ্রিন্ট', 'fingerprint'], ['স্যামসাং', 'samsung'], ['আইফোন', 'iphone'], ['অ্যাপল', 'apple'],
+  ['শাওমি', 'xiaomi'], ['জিয়াওমি', 'xiaomi'], ['ভিভো', 'vivo'], ['অপো', 'oppo'], ['রিয়েলমি', 'realme'], ['রিয়েলমি', 'realme'],
+]);
+
+// Customers often paste a natural Google-style query into the store search
+// ("Samsung A15 display price in Bangladesh"). These words express intent,
+// not a model or part, so requiring every one of them to occur in a product
+// name creates a false zero-result and sends the query to the broader fuzzy
+// fallback. Remove them only when a real brand/model/part token remains — a
+// query containing just "mobile" or "price" is left alone rather than being
+// turned into an empty query that would list the whole catalogue.
+const SEARCH_FILLER_WORDS = new Set([
+  'for', 'price', 'prices', 'in', 'bangladesh', 'bd', 'mobile', 'phone', 'part', 'parts', 'buy', 'shop',
+  'দাম', 'বাংলাদেশ', 'বাংলাদেশে', 'মোবাইল', 'মোবাইলের', 'পার্ট', 'পার্টস', 'জন্য', 'কিনতে', 'কোথায়', 'কোথায়',
 ]);
 
 export function normalizeSearchQuery(value) {
   let query = String(value || '').trim().replace(/\s+/g, ' ');
   for (const [pattern, replacement] of SEARCH_PHRASE_ALIASES) query = query.replace(pattern, replacement);
-  return query.split(' ').map((word) => SEARCH_WORD_ALIASES.get(word.toLowerCase()) || word).join(' ');
+  const words = query.split(' ').map((word) => SEARCH_WORD_ALIASES.get(word.toLowerCase()) || word);
+  const substantiveWords = words.filter((word) => !SEARCH_FILLER_WORDS.has(word.toLowerCase()));
+  return (substantiveWords.length ? substantiveWords : words).join(' ');
 }
 
 function isConfigured() {
