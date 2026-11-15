@@ -12,7 +12,14 @@ import assert from 'node:assert/strict';
 // which test pure logic, not real network calls).
 delete process.env.MEILISEARCH_HOST;
 delete process.env.MEILISEARCH_API_KEY;
-const { indexProduct, indexProducts, deleteProductFromIndex, searchProductIds, isSearchEngineEnabled } = await import('./search.js');
+const { indexProduct, indexProducts, deleteProductFromIndex, searchProductIds, normalizeSearchQuery, isSearchEngineEnabled } = await import('./search.js');
+
+test('normalizeSearchQuery fixes common customer spellings and catalog aliases', () => {
+  assert.equal(normalizeSearchQuery('  samsang A15 disply  '), 'samsung A15 display');
+  assert.equal(normalizeSearchQuery('iPhone 13 charging port'), 'iPhone 13 charging logic');
+  assert.equal(normalizeSearchQuery('One Plus 9 screen'), 'oneplus 9 display');
+  assert.equal(normalizeSearchQuery('Redmi Note 12 SIM holder'), 'Redmi Note 12 sim tray');
+});
 
 test('search.js with no MEILISEARCH_HOST configured', async (t) => {
   await t.test('isSearchEngineEnabled() is false', () => {

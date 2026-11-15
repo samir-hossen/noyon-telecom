@@ -21,12 +21,40 @@
 // the catalog and search volume are large enough that shoppers are
 // searching more than browsing categories.
 import { Meilisearch } from 'meilisearch';
+import { Prisma } from '@prisma/client';
 import { isPricePublished } from './serialize.js';
+import { DISABLED_CATEGORIES_LOWER } from '../config/catalog.js';
 
 const PRODUCTS_INDEX = 'products';
 
 let client = null;
 let indexEnsured = false;
+
+// Frequent customer spellings and the shop's own terminology. This is kept
+// deliberately small and factual: it fixes genuine aliases ("screen" means
+// Display here, and the former Charging Port section is now Charging Logic)
+// without turning every query into a bag of loosely-related keywords.
+const SEARCH_PHRASE_ALIASES = [
+  [/\b(?:charging|charger|charge)\s+port\b/gi, 'charging logic'],
+  [/\bone\s+plus\b/gi, 'oneplus'],
+  [/\bback\s+cover\b/gi, 'back glass'],
+  [/\bsim\s+(?:holder|slot)\b/gi, 'sim tray'],
+];
+
+const SEARCH_WORD_ALIASES = new Map([
+  ['screen', 'display'], ['disply', 'display'], ['diplay', 'display'], ['dispaly', 'display'],
+  ['samsang', 'samsung'], ['samung', 'samsung'], ['sumsung', 'samsung'],
+  ['xiomi', 'xiaomi'], ['xaomi', 'xiaomi'], ['xiaome', 'xiaomi'],
+  ['realmi', 'realme'], ['oppoo', 'oppo'], ['infinx', 'infinix'],
+  ['camara', 'camera'], ['spekar', 'speaker'], ['loudspekar', 'loudspeaker'],
+  ['chrging', 'charging'], ['chargng', 'charging'], ['logik', 'logic'],
+]);
+
+export function normalizeSearchQuery(value) {
+  let query = String(value || '').trim().replace(/\s+/g, ' ');
+  for (const [pattern, replacement] of SEARCH_PHRASE_ALIASES) query = query.replace(pattern, replacement);
+  return query.split(' ').map((word) => SEARCH_WORD_ALIASES.get(word.toLowerCase()) || word).join(' ');
+}
 
 function isConfigured() {
   return Boolean(process.env.MEILISEARCH_HOST);
@@ -176,6 +204,51 @@ export async function searchProductIds({ query, category, brand, page = 1, limit
     ids: result.hits.map((h) => h.id),
     total: result.estimatedTotalHits,
   };
+}
+
+// Built-in typo-tolerant fallback for deployments without Meilisearch.
+// pg_trgm is already installed and indexed by the product-search migration.
+// This only runs after the normal exact/index-backed query returns zero rows,
+// so correctly-spelled searches stay on the cheapest path. The returned ids
+// are re-fetched through Prisma by the route, exactly like Meilisearch ids.
+export async function searchProductIdsPostgres({ prisma, query, category, brand, page = 1, limit = 12 }) {
+  const normalized = normalizeSearchQuery(query).toLowerCase();
+  if (normalized.length < 3) return { ids: [], total: 0, normalizedQuery: normalized };
+
+  // Longer/multi-word searches retain a useful aggregate trigram score even
+  // with two small mistakes; short strings need a stricter threshold to avoid
+  // unrelated models flooding the results.
+  const threshold = normalized.length <= 4 ? 0.38 : normalized.length <= 7 ? 0.28 : 0.2;
+  const filters = [
+    Prisma.sql`published = true`,
+    Prisma.sql`NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = ANY(${DISABLED_CATEGORIES_LOWER}))`,
+  ];
+  if (category && category !== 'All') {
+    filters.push(Prisma.sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(categories) c WHERE lower(c) = lower(${String(category)}))`);
+  }
+  if (brand && brand !== 'All') filters.push(Prisma.sql`lower(brand) = lower(${String(brand)})`);
+
+  const score = Prisma.sql`GREATEST(
+    similarity(lower(name), ${normalized}),
+    word_similarity(${normalized}, lower(name)),
+    similarity(lower(sku), ${normalized}),
+    similarity(lower(brand), ${normalized})
+  )`;
+  const where = Prisma.sql`${Prisma.join(filters, ' AND ')} AND ${score} >= ${threshold}`;
+  const offset = (page - 1) * limit;
+
+  const [hits, countRows] = await Promise.all([
+    prisma.$queryRaw(Prisma.sql`
+      SELECT id, ${score} AS score
+      FROM "Product"
+      WHERE ${where}
+      ORDER BY score DESC, "viewCount" DESC, "createdAt" DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `),
+    prisma.$queryRaw(Prisma.sql`SELECT count(*)::int AS total FROM "Product" WHERE ${where}`),
+  ]);
+
+  return { ids: hits.map((row) => row.id), total: countRows[0]?.total || 0, normalizedQuery: normalized };
 }
 
 export { isConfigured as isSearchEngineEnabled };

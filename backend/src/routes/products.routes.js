@@ -10,7 +10,7 @@ import { buildProductWhere, buildProductOrderBy, parsePagination, getActiveCateg
 import { ALL_CATEGORIES, ALL_BRANDS, DISABLED_CATEGORIES_LOWER, findDisabledCategory } from '../config/catalog.js';
 import { setProductCacheControl } from '../utils/cacheControl.js';
 import { getOrSet, invalidateProductCache } from '../utils/cache.js';
-import { searchProductIds, isSearchEngineEnabled } from '../utils/search.js';
+import { searchProductIds, searchProductIdsPostgres, normalizeSearchQuery, isSearchEngineEnabled } from '../utils/search.js';
 import { productSeo } from '../seo/pages.js';
 import { modelSlugsFor } from '../utils/modelSlugs.js';
 import { loadBrandRails } from '../utils/homeRails.js';
@@ -107,6 +107,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
   try {
     setProductCacheControl(req, res);
     const searchTerm = (req.query.search || '').toString().trim();
+    const normalizedSearchTerm = normalizeSearchQuery(searchTerm);
     const card = req.query.card === '1';
     const projection = card ? { select: PRODUCT_CARD_SELECT } : {};
     const sort = (req.query.sort || '').toString();
@@ -121,7 +122,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     // never changes either way, so the frontend needs no changes at all.
     if (searchTerm && isSearchEngineEnabled()) {
       const searchResult = await searchProductIds({
-        query: searchTerm,
+        query: normalizedSearchTerm,
         category: req.query.category,
         brand: req.query.brand,
         page,
@@ -151,7 +152,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const where = buildProductWhere({
       category: req.query.category,
       brand: req.query.brand,
-      search: searchTerm,
+      search: normalizedSearchTerm,
       status: 'published', // storefront only ever shows published products
       storefront: true, // ...and never a switched-off category (Battery)
     });
@@ -169,6 +170,37 @@ router.get('/', optionalAuth, async (req, res, next) => {
     const [rows, total] = await getOrSet(cacheKey, 300, () =>
       Promise.all([prisma.product.findMany({ where, orderBy, skip, take, ...projection }), prisma.product.count({ where })])
     );
+
+    // Exact/alias-aware search is fastest and remains the first choice. If it
+    // finds nothing, use pg_trgm to rescue misspelled brand, model and part
+    // names (for example "samsang a15 disply").
+    if (searchTerm && total === 0) {
+      const fuzzy = await searchProductIdsPostgres({
+        prisma,
+        query: normalizedSearchTerm,
+        category: req.query.category,
+        brand: req.query.brand,
+        page,
+        limit,
+      });
+      if (fuzzy.total > 0) {
+        const fuzzyRowsById = new Map((await prisma.product.findMany({
+          where: { id: { in: fuzzy.ids } },
+          ...projection,
+          ...(card ? { select: { ...PRODUCT_CARD_SELECT, categories: true, published: true } } : {}),
+        })).map((product) => [product.id, product]));
+        const fuzzyRows = fuzzy.ids.map((id) => fuzzyRowsById.get(id)).filter((product) => product && !findDisabledCategory(product.categories));
+        return res.json({
+          products: fuzzyRows.map((product) => (card ? serializeProductCard(product, req.user) : withViewerPricing(serializeProduct(product), req.user))),
+          categories: await getOrSet('products:active-categories', 3600, () => getActiveCategories(prisma, ALL_CATEGORIES)),
+          brands: await getOrSet('products:active-brands', 3600, () => getActiveBrands(prisma, ALL_BRANDS)),
+          total: fuzzy.total,
+          totalPages: Math.max(1, Math.ceil(fuzzy.total / limit)),
+          correctedSearch: fuzzy.normalizedQuery !== searchTerm.toLowerCase() ? fuzzy.normalizedQuery : undefined,
+          fuzzy: true,
+        });
+      }
+    }
 
     res.json({
       products: rows.map((p) => (req.query.card === '1' ? serializeProductCard(p, req.user) : withViewerPricing(serializeProduct(p), req.user))),
