@@ -43,7 +43,7 @@ export default function DeliveryPolicy() {
 
         <h3>{t('delivery.s6Title')}</h3>
         <p>
-          {t('delivery.s6BodyPre')} <Link to="/contact">{t('terms.s10Link')}</Link> {t('delivery.s6BodyPost')}
+          {t('delivery.s6BodyPre')} <Link to="/contact/">{t('terms.s10Link')}</Link> {t('delivery.s6BodyPost')}
         </p>
       </div>
     </div>

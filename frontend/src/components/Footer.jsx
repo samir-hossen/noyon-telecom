@@ -62,12 +62,12 @@ export default function Footer() {
           </p>
 
           <div className="store-address-links">
-            <Link to="/about">{t('footer.aboutUs')}</Link>
+            <Link to="/about/">{t('footer.aboutUs')}</Link>
             <Link to="/privacy-policy">{t('footer.privacyPolicy')}</Link>
             <Link to="/warranty-policy">{t('footer.warrantyPolicy')}</Link>
             <Link to="/delivery-policy">{t('footer.orderDeliveryPolicy')}</Link>
             <Link to="/refund-policy">{t('footer.returnRefundPolicy')}</Link>
-            <Link to="/contact">{t('footer.contactUs')}</Link>
+            <Link to="/contact/">{t('footer.contactUs')}</Link>
             <a href={GOOGLE_BUSINESS_URL} target="_blank" rel="noreferrer">{t('footer.googleMaps')}</a>
           </div>
         </div>
@@ -104,10 +104,10 @@ export default function Footer() {
             <h4>{t('footer.support')}</h4>
             <p><Link to="/track-order">{t('footer.trackOrder')}</Link></p>
             <p><Link to="/blog/">{t('footer.blog')}</Link></p>
-            <p><Link to="/about">{t('footer.aboutUs')}</Link></p>
+            <p><Link to="/about/">{t('footer.aboutUs')}</Link></p>
             <p><Link to="/request-quote">{t('footer.requestBulkQuote')}</Link></p>
             <p><Link to="/warranty-policy">{t('footer.warrantyReturns')}</Link></p>
-            <p><Link to="/contact">{t('footer.contactUsLower')}</Link></p>
+            <p><Link to="/contact/">{t('footer.contactUsLower')}</Link></p>
             <p><Link to="/register">{t('nav.becomeDealer')}</Link></p>
           </div>
           <div>

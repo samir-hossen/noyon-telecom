@@ -13,7 +13,7 @@ import { businessPageJsonLd } from '../content/businessInfo.js';
 // presented as your warehouse) stops trusting everything else on the page.
 export default function AboutUs() {
   const { t } = useLanguage();
-  usePageMeta(t('about.pageTitle'), t('about.pageMeta'), undefined, '/about', {
+  usePageMeta(t('about.pageTitle'), t('about.pageMeta'), undefined, '/about/', {
     id: 'business-page', data: businessPageJsonLd('about', t('about.pageTitle'), t('about.pageMeta')),
   });
 
@@ -87,7 +87,7 @@ export default function AboutUs() {
           <Link to="/request-quote" className="btn btn-outline">
             {t('footer.requestBulkQuote')}
           </Link>
-          <Link to="/contact" className="btn btn-outline">
+          <Link to="/contact/" className="btn btn-outline">
             {t('footer.contactUsLower')}
           </Link>
         </div>

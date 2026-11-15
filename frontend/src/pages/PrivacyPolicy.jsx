@@ -43,7 +43,7 @@ export default function PrivacyPolicy() {
         <h3>{t('privacy.s7Title')}</h3>
         <p>
           {t('privacy.s7BodyPre')}{' '}
-          <Link to="/contact">{t('terms.s10Link')}</Link>.
+          <Link to="/contact/">{t('terms.s10Link')}</Link>.
         </p>
       </div>
     </div>

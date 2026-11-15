@@ -2,7 +2,7 @@
 
 ## Changes in this update
 
-- `/about` and `/contact` previously returned the generic app title, no H1 and no canonical in their initial HTML (live HTTP inspection). Both now have build-time HTML, visible business information, individual titles/descriptions/canonicals, and AboutPage/ContactPage schema linked to the existing store entity. No runtime database calls were added.
+- `/about` and `/contact` previously returned the generic app title, no H1 and no canonical in their initial HTML (live HTTP inspection). Both now have build-time HTML at `/about/` and `/contact/`, visible business information, individual titles/descriptions/canonicals, and AboutPage/ContactPage schema linked to the existing store entity. Live verification showed the static host requires the trailing slash for directory HTML, so internal links and the sitemap use that form. The old SPA URLs still work and canonicalize to the static pages. No runtime database calls or hosting configuration changes were added.
 - Static blog and business pages no longer preload the unused homepage hero image. Their page-specific schema is removed when React navigates to another page, while the shared business identity stays intact.
 - Bengali model digits and punctuation are normalized in site search. `phone` no longer autocorrects to `iphone`. Corrected queries are shown to the customer. Plus-model notation is retained as `plus`.
 - The PostgreSQL typo fallback now requires every query word to match; numeric model codes and known brands/parts are exact tokens. A missing model or unrelated extra word cannot be hidden by a high whole-query similarity score. This is a fallback constraint, not a claim that substring-based normal browsing excludes every related model variant.

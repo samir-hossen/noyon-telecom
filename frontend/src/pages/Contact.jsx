@@ -80,7 +80,7 @@ export default function Contact() {
   const [error, setError] = useState('');
   const { contactEmail, facebookUrl, whatsappNumber } = usePublicSettings();
 
-  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, '/contact', [
+  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, '/contact/', [
     buildLocalBusinessJsonLd(facebookUrl, whatsappNumber),
     { id: 'business-page', data: businessPageJsonLd('contact', t('contact.pageTitle'), t('contact.pageMeta')) },
   ]);

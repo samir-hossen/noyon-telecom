@@ -54,7 +54,7 @@ export default function HomeSeoContent() {
             <Link to="/register">Become a dealer</Link>
             <Link to="/delivery-policy">Delivery information</Link>
             <Link to="/warranty-policy">Warranty policy</Link>
-            <Link to="/contact">Contact Noyon Telecom</Link>
+            <Link to="/contact/">Contact Noyon Telecom</Link>
           </nav>
         </div>
       </div>

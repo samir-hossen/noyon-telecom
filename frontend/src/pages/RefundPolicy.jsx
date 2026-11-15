@@ -23,7 +23,7 @@ export default function RefundPolicy() {
 
         <h3>{t('refund.s2Title')}</h3>
         <ol>
-          <li>{t('refund.s2Step1Pre')} <Link to="/contact">{t('terms.s10Link')}</Link> {t('refund.s2Step1Post')}</li>
+          <li>{t('refund.s2Step1Pre')} <Link to="/contact/">{t('terms.s10Link')}</Link> {t('refund.s2Step1Post')}</li>
           <li>{t('refund.s2Step2')}</li>
           <li>{t('refund.s2Step3')}</li>
           <li>{t('refund.s2Step4')}</li>
@@ -47,7 +47,7 @@ export default function RefundPolicy() {
 
         <h3>{t('refund.s7Title')}</h3>
         <p>
-          {t('refund.s7BodyPre')} <Link to="/contact">{t('terms.s10Link')}</Link> {t('refund.s7BodyPost')}
+          {t('refund.s7BodyPre')} <Link to="/contact/">{t('terms.s10Link')}</Link> {t('refund.s7BodyPost')}
         </p>
       </div>
     </div>

@@ -51,7 +51,7 @@ export default function Terms() {
 
         <h3>{t('terms.s10Title')}</h3>
         <p>
-          {t('terms.s10BodyPre')} <Link to="/contact">{t('terms.s10Link')}</Link>.
+          {t('terms.s10BodyPre')} <Link to="/contact/">{t('terms.s10Link')}</Link>.
         </p>
       </div>
     </div>

@@ -27,7 +27,8 @@ test('buildPagesSitemapXml', async (t) => {
     const xml = buildPagesSitemapXml({ siteUrl: 'https://example.com', categories: [], brands: [] });
     assert.match(xml, /<loc>https:\/\/example\.com\/<\/loc>/);
     assert.match(xml, /<loc>https:\/\/example\.com\/shop<\/loc>/);
-    assert.match(xml, /<loc>https:\/\/example\.com\/about<\/loc>/);
+    assert.match(xml, /<loc>https:\/\/example\.com\/about\/<\/loc>/);
+    assert.match(xml, /<loc>https:\/\/example\.com\/contact\/<\/loc>/);
   });
 
   await t.test('adds one clean-path URL per active category and brand, DB-driven rather than hardcoded', () => {

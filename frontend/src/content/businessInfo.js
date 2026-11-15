@@ -10,8 +10,8 @@ export function businessPageJsonLd(page, title, description) {
   return {
     '@context': 'https://schema.org',
     '@type': page === 'about' ? 'AboutPage' : 'ContactPage',
-    '@id': `https://noyontelecom.com/${page}#page`,
-    url: `https://noyontelecom.com/${page}`,
+    '@id': `https://noyontelecom.com/${page}/#page`,
+    url: `https://noyontelecom.com/${page}/`,
     name: title,
     description,
     isPartOf: { '@id': 'https://noyontelecom.com/#website' },

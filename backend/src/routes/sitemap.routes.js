@@ -102,14 +102,14 @@ export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brand
     // already existed and resolves fine, it just wasn't submitted anywhere,
     // so Google had no way to discover it on its own.
     ...brandCategoryPairs.map((p) => ({ loc: `${siteUrl}/brand/${slugify(p.brand)}/${slugify(p.category)}`, priority: '0.5', lastmod: at(p.lastmod) })),
-    { loc: `${siteUrl}/about`, priority: '0.6' },
+    { loc: `${siteUrl}/about/`, priority: '0.6' },
     { loc: `${siteUrl}/blog/`, priority: '0.7', changefreq: 'weekly' },
     ...BLOG_SLUGS.map((slug) => ({ loc: `${siteUrl}/blog/${slug}/`, priority: '0.6' })),
     { loc: `${siteUrl}/request-quote`, priority: '0.6' },
     // NOT /register: it is an auth/signup utility page, not a search landing
     // page. The frontend gives it a noindex directive and the sitemap must
     // not contradict that by explicitly submitting it for indexing.
-    { loc: `${siteUrl}/contact`, priority: '0.5' },
+    { loc: `${siteUrl}/contact/`, priority: '0.5' },
   ];
   const urls = entries
     .map(

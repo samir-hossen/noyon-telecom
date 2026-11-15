@@ -43,7 +43,7 @@ export default function WarrantyPolicy() {
           {/* {{days}} lands in a different one of these two strings per
               language (English: Post, Bangla: Pre) — passed to both calls
               since an unused interpolation param is a harmless no-op. */}
-          <li>{t('warranty.s4Step1Pre', null, { days: t('warranty.s1Days') })} <Link to="/contact">{t('terms.s10Link')}</Link> {t('warranty.s4Step1Post', null, { days: t('warranty.s1Days') })}</li>
+          <li>{t('warranty.s4Step1Pre', null, { days: t('warranty.s1Days') })} <Link to="/contact/">{t('terms.s10Link')}</Link> {t('warranty.s4Step1Post', null, { days: t('warranty.s1Days') })}</li>
           <li>{t('warranty.s4Step2')}</li>
           <li>{t('warranty.s4Step3')}</li>
         </ol>
@@ -53,7 +53,7 @@ export default function WarrantyPolicy() {
 
         <h3>{t('warranty.s6Title')}</h3>
         <p>
-          {t('warranty.s6BodyPre')} <Link to="/contact">{t('terms.s10Link')}</Link> {t('warranty.s6BodyPost')}
+          {t('warranty.s6BodyPre')} <Link to="/contact/">{t('terms.s10Link')}</Link> {t('warranty.s6BodyPost')}
         </p>
       </div>
     </div>

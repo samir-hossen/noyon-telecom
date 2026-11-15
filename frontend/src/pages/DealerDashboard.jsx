@@ -125,7 +125,7 @@ export default function DealerDashboard() {
         {user?.dealerStatus === 'rejected' && (
           <p className="dealer-status-note">
             {t('dealerDash.rejectedNotePre')}{' '}
-            <Link to="/contact">{t('dealerDash.contactPage')}</Link> {t('dealerDash.rejectedNotePost')}
+            <Link to="/contact/">{t('dealerDash.contactPage')}</Link> {t('dealerDash.rejectedNotePost')}
           </p>
         )}
       </div>
