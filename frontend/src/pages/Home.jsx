@@ -20,6 +20,7 @@ import HomeSeoContent from '../components/HomeSeoContent.jsx';
 export default function Home() {
   const [sections, setSections] = useState({ featured: [], newArrivals: [], bestSellers: [], deals: [], brandRails: [] });
   const [loading, setLoading] = useState(true);
+  const [activeBrand, setActiveBrand] = useState('Apple');
   const { addToCart } = useCart();
   const { showToast } = useToast();
   const { t } = useLanguage();
@@ -117,6 +118,7 @@ export default function Home() {
   }
 
   const { popular = [], featured, newArrivals, bestSellers, deals, brandRails = [] } = sections;
+  const activeBrandRail = brandRails.find((rail) => rail.brand === activeBrand) || brandRails[0];
 
   return (
     <div>
@@ -145,21 +147,39 @@ export default function Home() {
         </section>
       )}
 
-      {/* One row of parts per main brand, each with a link to all of that brand's parts. */}
-      {brandRails.map((rail, railIndex) => {
-        const label = rail.brand === 'Apple' ? 'iPhone' : rail.brand;
-        return (
-          <section className={`section container home-rail brand-product-rail defer-section${railIndex >= 3 ? ' brand-product-rail-secondary' : ''}`} key={rail.brand}>
-            <div className="section-head">
-              <h2 className="section-title">{t('home.brandRail', null, { brand: label })}</h2>
-              <Link to={`/brand/${slugify(rail.brand)}`} className="section-link">{t('home.brandRailMore', null, { brand: label })} →</Link>
-            </div>
-            <div className="grid grid-six">
-              {rail.products.map((p) => <ProductCard key={p.id} product={p} onAdd={handleAdd} />)}
-            </div>
-          </section>
-        );
-      })}
+      {/* All main brands stay one tap away, but only one product row is shown
+          at a time. Six repeated sections made the homepage feel endless and
+          buried deals/featured products far below the fold. */}
+      {activeBrandRail && (
+        <section className="section container home-rail brand-product-rail defer-section">
+          <div className="section-head">
+            <h2 className="section-title">{t('home.partsByBrand')}</h2>
+            <Link to={`/brand/${slugify(activeBrandRail.brand)}`} className="section-link">
+              {t('home.brandRailMore', null, { brand: activeBrandRail.brand === 'Apple' ? 'iPhone' : activeBrandRail.brand })} →
+            </Link>
+          </div>
+          <div className="home-brand-tabs" role="tablist" aria-label={t('home.partsByBrand')}>
+            {brandRails.map((rail) => {
+              const selected = rail.brand === activeBrandRail.brand;
+              return (
+                <button
+                  key={rail.brand}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  className={`home-brand-tab${selected ? ' active' : ''}`}
+                  onClick={() => setActiveBrand(rail.brand)}
+                >
+                  {rail.brand === 'Apple' ? 'iPhone' : rail.brand}
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid grid-six" role="tabpanel">
+            {activeBrandRail.products.map((p) => <ProductCard key={p.id} product={p} onAdd={handleAdd} />)}
+          </div>
+        </section>
+      )}
 
       {!loading && deals.length > 0 && <FlashSale products={deals} onAdd={handleAdd} />}
 

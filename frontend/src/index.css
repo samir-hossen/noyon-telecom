@@ -1180,6 +1180,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
   .support-fab-label { display: none; }
   .support-fab { width: 46px; height: 46px; }
   .support-fab svg { width: 19px; height: 19px; }
+  .support-menu { max-width: calc(100vw - 28px); }
 }
 
 /* ---------- Product detail ---------- */
@@ -2111,6 +2112,33 @@ button { font-family: inherit; cursor: pointer; border: 0; background-color: tra
 
 /* ---------- Brand strip ---------- */
 .brand-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.home-brand-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: -4px 0 18px;
+  padding: 4px 1px 6px;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.home-brand-tabs::-webkit-scrollbar { display: none; }
+.home-brand-tab {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 9px 17px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: color 0.18s var(--ease), background 0.18s var(--ease), border-color 0.18s var(--ease), transform 0.18s var(--ease);
+}
+@media (hover: hover) { .home-brand-tab:hover { border-color: var(--ink); transform: translateY(-1px); } }
+.home-brand-tab.active { background: var(--ink); border-color: var(--ink); color: #fff; }
 .brand-chip {
   background: #fff;
   border: 1px solid var(--line);

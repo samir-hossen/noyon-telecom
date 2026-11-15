@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { trackWhatsappClick } from '../ecommerce.js';
 
@@ -40,12 +40,29 @@ const CHANNELS = [
 
 export default function SupportWidget() {
   const [open, setOpen] = useState(false);
+  const widgetRef = useRef(null);
   const { t } = useLanguage();
 
+  useEffect(() => {
+    if (!open) return undefined;
+    function closeOnOutsideClick(event) {
+      if (!widgetRef.current?.contains(event.target)) setOpen(false);
+    }
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
   return (
-    <div className="support-widget">
+    <div className="support-widget" ref={widgetRef}>
       {open && (
-        <div className="support-menu">
+        <div className="support-menu" id="support-menu" role="dialog" aria-label={t('support.menuTitle')}>
           <div className="support-menu-title">{t('support.menuTitle')}</div>
           {CHANNELS.map((c) => (
             <a
@@ -65,7 +82,13 @@ export default function SupportWidget() {
       )}
       <div className="support-fab-row">
         {!open && <span className="support-fab-label">{t('support.chatWithUs')}</span>}
-        <button className={`support-fab ${open ? 'open' : ''}`} onClick={() => setOpen((o) => !o)} aria-label={t('support.contactSupport')}>
+        <button
+          className={`support-fab ${open ? 'open' : ''}`}
+          onClick={() => setOpen((o) => !o)}
+          aria-label={t('support.contactSupport')}
+          aria-expanded={open}
+          aria-controls="support-menu"
+        >
           {open ? (
             '✕'
           ) : (
