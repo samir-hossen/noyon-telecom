@@ -9,6 +9,7 @@ import { CartProvider } from './context/CartContext.jsx';
 import { WishlistProvider } from './context/WishlistContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { LanguageProvider } from './context/LanguageContext.jsx';
+import { PublicSettingsProvider } from './context/PublicSettingsContext.jsx';
 import { initAnalytics, initErrorTracking, initGlobalErrorTracking } from './analytics.js';
 import { initMetaPixel, initTikTokPixel } from './pixels.js';
 import { registerServiceWorker } from './registerServiceWorker.js';
@@ -62,8 +63,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <CartProvider>
               <WishlistProvider>
                 <ToastProvider>
-                  <PullToRefresh />
-                  <App />
+                  <PublicSettingsProvider>
+                    <PullToRefresh />
+                    <App />
+                  </PublicSettingsProvider>
                 </ToastProvider>
               </WishlistProvider>
             </CartProvider>

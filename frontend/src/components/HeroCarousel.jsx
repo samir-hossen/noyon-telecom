@@ -5,6 +5,8 @@ import { FALLBACK_IMG } from '../utils/fallbackImage';
 import { useLanguage } from '../context/LanguageContext';
 import { trackWhatsappClick } from '../ecommerce.js';
 import { categoryUrl } from '../utils/taxonomy';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
+import { whatsappLink } from '../utils/whatsapp';
 
 // Text fields are translation keys (see i18n/translations.js hero.slideN.*),
 // not literal strings — img/alt/to stay as-is since they're asset paths and
@@ -49,7 +51,7 @@ const SLIDES = [
     alt: 'Cracked phone screen next to the opened phone, ready for a new display',
     stripeKey: 'hero.slide3.stripe',
     cta1: { labelKey: 'hero.slide3.cta1', to: '/shop' },
-    cta2: { labelKey: 'hero.slide3.cta2', to: 'https://wa.me/8801560047377' },
+    cta2: { labelKey: 'hero.slide3.cta2', whatsapp: true },
   },
 ];
 
@@ -84,6 +86,7 @@ function inactiveProps(isInactive) {
 
 export default function HeroCarousel() {
   const { t } = useLanguage();
+  const { whatsappNumber } = usePublicSettings();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const touchStartX = useRef(null);
@@ -206,6 +209,7 @@ export default function HeroCarousel() {
             // <p> with the same class, so the visual style is identical
             // either way.
             const HeadingTag = i === 0 ? 'h1' : 'p';
+            const cta2To = s.cta2.whatsapp ? whatsappLink('', whatsappNumber) : s.cta2.to;
             return (
             <div className="hero-grid" key={i} aria-hidden={i !== index} {...inactiveProps(i !== index)}>
               <div className="hero-copy">
@@ -239,9 +243,9 @@ export default function HeroCarousel() {
                       could never change on hover, and the two border-colour
                       values written for it in index.css were dead code. */}
                   <Link
-                    to={s.cta2.to}
+                    to={cta2To}
                     className="btn btn-outline"
-                    onClick={s.cta2.to.startsWith('https://wa.me') ? () => trackWhatsappClick('hero_carousel') : undefined}
+                    onClick={s.cta2.whatsapp ? () => trackWhatsappClick('hero_carousel') : undefined}
                   >
                     {t(s.cta2.labelKey)}
                   </Link>

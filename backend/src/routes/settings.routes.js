@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDeliveryFee, getOnlinePaymentEnabled, getAnnouncement } from '../utils/settings.js';
+import { getDeliveryFee, getOnlinePaymentEnabled, getAnnouncement, getWhatsappNumber } from '../utils/settings.js';
 
 const router = Router();
 
@@ -10,10 +10,11 @@ const router = Router();
 router.get('/public', async (req, res, next) => {
   try {
     res.set('Cache-Control', 'public, max-age=60');
-    const [deliveryFee, onlinePaymentEnabled, announcement] = await Promise.all([
+    const [deliveryFee, onlinePaymentEnabled, announcement, whatsappNumber] = await Promise.all([
       getDeliveryFee(),
       getOnlinePaymentEnabled(),
       getAnnouncement(),
+      getWhatsappNumber(),
     ]);
     // Lets the Contact page show the real configured support address
     // instead of a hardcoded one baked into frontend source — this is
@@ -29,7 +30,7 @@ router.get('/public', async (req, res, next) => {
     // unset/removed Facebook page should just hide the link entirely rather
     // than ever guess a URL.
     const facebookUrl = process.env.SOCIAL_FACEBOOK_URL || null;
-    res.json({ deliveryFee, onlinePaymentEnabled, announcement, contactEmail, facebookUrl });
+    res.json({ deliveryFee, onlinePaymentEnabled, announcement, whatsappNumber, contactEmail, facebookUrl });
   } catch (err) {
     next(err);
   }

@@ -23,6 +23,11 @@ describe('WhatsApp price/stock links', () => {
   it('has a matching stock message', () => {
     expect(messageOf(stockRequestLink(product))).toContain('এই পার্টসটার স্টক জানতে চাই: Vivo Y21 Display');
   });
+
+  it('routes every generated link to an admin-configured number', () => {
+    expect(priceRequestLink(product, '8801700000000')).toContain('wa.me/8801700000000');
+    expect(stockRequestLink(product, '+880 1700 000000')).toContain('wa.me/8801700000000');
+  });
 });
 
 describe('hasPublicPrice', () => {

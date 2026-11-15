@@ -11,10 +11,12 @@ import { trackWhatsappClick } from '../ecommerce.js';
 import { hasPublicPrice, priceRequestLink, stockRequestLink, quoteRequestPath } from '../utils/whatsapp';
 import { hasQualityOptions, priceRange } from '../utils/quality';
 import PartTile from './PartTile.jsx';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 
 export default function ProductCard({ product, onAdd, imagePriority = false }) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { whatsappNumber } = usePublicSettings();
   const isApprovedDealer = user?.role === 'dealer' && user?.dealerStatus === 'approved';
   // Backend returns `retailPrice` (MRP) alongside a viewer-aware `price` —
   // for approved dealers that's their wholesale rate, which is lower than
@@ -39,7 +41,7 @@ export default function ProductCard({ product, onAdd, imagePriority = false }) {
   // A card that can't be added to the cart (no price yet, or sold out)
   // sends the shopper straight to a WhatsApp chat about this exact part,
   // with the owner's pre-filled message.
-  const whatsappHref = priceUnavailable ? priceRequestLink(product) : outOfStock ? stockRequestLink(product) : null;
+  const whatsappHref = priceUnavailable ? priceRequestLink(product, whatsappNumber) : outOfStock ? stockRequestLink(product, whatsappNumber) : null;
 
   async function handleWishlist(e) {
     e.preventDefault();

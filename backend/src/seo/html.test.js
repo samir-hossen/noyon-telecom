@@ -82,6 +82,12 @@ test('server-rendered product page', async (t) => {
     assert.match(html, /wa\.me\/8801560047377\?text=/);
   });
 
+  await t.test('uses an admin-configured WhatsApp number when supplied', () => {
+    const configured = renderPage(SHELL, productModel(), { whatsappNumber: '8801700000000' });
+    assert.match(configured, /wa\.me\/8801700000000\?text=/);
+    assert.doesNotMatch(configured, /wa\.me\/8801560047377\?text=/);
+  });
+
   await t.test('the React app still loads', () => {
     assert.match(html, /<script type="module" src="\/assets\/index-abc\.js"><\/script>/);
   });

@@ -4,6 +4,7 @@ import prisma from '../prismaClient.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { sendMail } from '../utils/mailer.js';
 import { verifyRecaptcha } from '../utils/recaptcha.js';
+import { DEFAULT_WHATSAPP_NUMBER, getWhatsappNumber } from '../utils/settings.js';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.post('/', contactLimiter, requireCsrf, async (req, res, next) => {
     }
 
     await prisma.contactMessage.create({ data: { name, email, phone: phone.trim(), message: message.trim() } });
+    const whatsappNumber = await getWhatsappNumber().catch(() => DEFAULT_WHATSAPP_NUMBER);
 
     // Fire-and-forget, like the equivalent RFQ notification in
     // quotes.routes.js — the message is already saved, so a down/misconfigured
@@ -48,7 +50,7 @@ router.post('/', contactLimiter, requireCsrf, async (req, res, next) => {
     sendMail({
       to: email,
       subject: "We've received your message — Noyon Telecom",
-      text: `Hi ${name},\n\nThanks for reaching out to Noyon Telecom. We've received your message and will get back to you soon:\n\n"${message}"\n\nIf this is urgent, call or WhatsApp us at +880 1560-047377.\n\n— Noyon Telecom`,
+      text: `Hi ${name},\n\nThanks for reaching out to Noyon Telecom. We've received your message and will get back to you soon:\n\n"${message}"\n\nIf this is urgent, WhatsApp us at +${whatsappNumber}.\n\n— Noyon Telecom`,
     }).catch(() => {});
 
     res.status(201).json({});

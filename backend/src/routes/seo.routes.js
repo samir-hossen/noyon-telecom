@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { resolvePage } from '../seo/pages.js';
 import { getShell, renderPage } from '../seo/html.js';
 import { STOREFRONT_HEADERS } from '../config/storefront.js';
+import { getWhatsappNumber } from '../utils/settings.js';
 
 // Server-rendered catalog pages. On the live site, Render rewrite rules send
 // noyontelecom.com/product/*, /category/*, /brand/* and /model/* here (see
@@ -19,7 +20,7 @@ seoHtmlRouter.get(['/product/:a', '/category/:a', '/brand/:a', '/brand/:a/:b', '
       res.set('Cache-Control', 'public, max-age=3600');
       return res.redirect(301, model.location);
     }
-    const html = renderPage(await getShell(), model);
+    const html = renderPage(await getShell(), model, { whatsappNumber: await getWhatsappNumber() });
     res.set('Cache-Control', model.status === 200 ? 'public, max-age=300' : 'no-store');
     res.status(model.status).type('html').send(html);
   } catch (err) {

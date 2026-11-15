@@ -5,6 +5,7 @@ import { optionalAuth, requireAuth } from '../middleware/auth.js';
 import { requireCsrf } from '../middleware/csrf.js';
 import { sendMail } from '../utils/mailer.js';
 import { verifyTurnstile } from '../utils/turnstile.js';
+import { DEFAULT_WHATSAPP_NUMBER, getWhatsappNumber } from '../utils/settings.js';
 
 const router = Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -72,6 +73,7 @@ router.post('/', quoteLimiter, optionalAuth, requireCsrf, async (req, res, next)
         message: message?.trim() || null,
       },
     });
+    const whatsappNumber = await getWhatsappNumber().catch(() => DEFAULT_WHATSAPP_NUMBER);
 
     // Best-effort notification — a failed email must never block the RFQ
     // from being saved, since the admin panel is the source of truth.
@@ -91,7 +93,7 @@ router.post('/', quoteLimiter, optionalAuth, requireCsrf, async (req, res, next)
       subject: 'Your quote request has been received — Noyon Telecom',
       text: `Hi ${quote.name},\n\nThanks for your quote request for ${cleanItems.length} item(s):\n${cleanItems
         .map((i) => `- ${i.name} x${i.qty}${i.sku ? ` [${i.sku}]` : ''}`)
-        .join('\n')}\n\nWe'll review it and get back to you with pricing soon. If you have questions in the meantime, call or WhatsApp us at +880 1560-047377.\n\n— Noyon Telecom`,
+        .join('\n')}\n\nWe'll review it and get back to you with pricing soon. If you have questions in the meantime, WhatsApp us at +${whatsappNumber}.\n\n— Noyon Telecom`,
     }).catch(() => {});
 
     res.status(201).json({ quote: serializeQuote(quote) });

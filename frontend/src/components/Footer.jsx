@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useToast } from '../context/ToastContext';
@@ -6,6 +6,8 @@ import { useLanguage } from '../context/LanguageContext';
 import CityscapeStrip from './CityscapeStrip.jsx';
 import { trackWhatsappClick, trackPhoneClick } from '../ecommerce.js';
 import { categoryUrl } from '../utils/taxonomy';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
+import { whatsappLink } from '../utils/whatsapp';
 
 // Small inline icons for the trust bar — plain geometric shapes rather than
 // any brand's logo, since these badges describe facts about this business
@@ -24,14 +26,7 @@ export default function Footer() {
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
   const { t } = useLanguage();
-  // Was hardcoded directly in this file's JSX — now config-driven (see
-  // backend SOCIAL_FACEBOOK_URL) so the link can be changed or removed
-  // without a code deploy, and never shows a stale/broken URL if unset.
-  const [facebookUrl, setFacebookUrl] = useState('');
-
-  useEffect(() => {
-    api.get('/settings/public').then((d) => setFacebookUrl(d.facebookUrl || '')).catch(() => {});
-  }, []);
+  const { facebookUrl, whatsappNumber } = usePublicSettings();
 
   async function onSubscribe(e) {
     e.preventDefault();
@@ -88,7 +83,7 @@ export default function Footer() {
               <a href="tel:+8801560047377" onClick={() => trackPhoneClick('footer_hotline')}>📞 {t('footer.hotline')} 01560-047377</a>
             </p>
             <p>
-              <a href="https://wa.me/8801560047377" target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('footer')}>💬 {t('footer.whatsappUsToOrder')}</a>
+              <a href={whatsappLink('', whatsappNumber)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('footer')}>💬 {t('footer.whatsappUsToOrder')}</a>
             </p>
             <p>
               {facebookUrl && <a href={facebookUrl} target="_blank" rel="noreferrer">📘 Facebook</a>}

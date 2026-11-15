@@ -18,6 +18,7 @@ import { categoryUrl, brandUrl, brandCategoryUrl, brandFromSlug } from '../utils
 import { slugify } from '../utils/slug';
 import { hasPublicPrice, priceRequestLink, stockRequestLink, orderRequestLink, quoteRequestPath, whatsappLink } from '../utils/whatsapp';
 import { qualityOptions, priceRange } from '../utils/quality';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 
 const RECENTLY_VIEWED_KEY = 'nt-recently-viewed';
 const RECENTLY_VIEWED_MAX = 8;
@@ -125,6 +126,7 @@ export default function ProductDetail() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { t } = useLanguage();
+  const { whatsappNumber } = usePublicSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -539,7 +541,7 @@ export default function ProductDetail() {
             {priceUnavailable ? (
               <a
                 className="now pd-price-request pd-price-ask"
-                href={priceRequestLink(product)}
+                href={priceRequestLink(product, whatsappNumber)}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => trackWhatsappClick('product_detail_price')}
@@ -577,7 +579,7 @@ export default function ProductDetail() {
               <div className="pd-action-row">
                 <a
                   className="btn pd-whatsapp-btn pd-whatsapp-primary"
-                  href={orderRequestLink(product, selectedGrade)}
+                  href={orderRequestLink(product, selectedGrade, whatsappNumber)}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => {
@@ -602,7 +604,7 @@ export default function ProductDetail() {
 
               {!priceUnavailable && product.stock === 0 && (
                 <p className="pd-stock">
-                  <a href={stockRequestLink(product)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('product_detail_stock')}>
+                  <a href={stockRequestLink(product, whatsappNumber)} target="_blank" rel="noreferrer" onClick={() => trackWhatsappClick('product_detail_stock')}>
                     {t('card.askStock')}
                   </a>
                 </p>
@@ -659,8 +661,8 @@ export default function ProductDetail() {
                 <a
                   className={`btn pd-whatsapp-btn ${priceUnavailable ? 'pd-whatsapp-primary' : 'btn-outline'}`}
                   href={priceUnavailable
-                    ? priceRequestLink(product)
-                    : whatsappLink(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`)}
+                    ? priceRequestLink(product, whatsappNumber)
+                    : whatsappLink(`${t('pd.whatsappMessage', null, { name: product.name, link: `${window.location.origin}${productUrl(product)}` })}${product.sku ? ` (SKU: ${product.sku})` : ''}`, whatsappNumber)}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => {
@@ -692,7 +694,7 @@ export default function ProductDetail() {
               <span>{t('pd.fitHelpText')}</span>
             </div>
             <a
-              href={whatsappLink(t('pd.fitHelpMessage', null, { name: product.name, sku: product.sku || 'N/A', link: `${window.location.origin}${productUrl(product)}` }))}
+              href={whatsappLink(t('pd.fitHelpMessage', null, { name: product.name, sku: product.sku || 'N/A', link: `${window.location.origin}${productUrl(product)}` }), whatsappNumber)}
               target="_blank"
               rel="noreferrer"
               onClick={() => trackWhatsappClick('product_fit_check')}

@@ -9,8 +9,9 @@ export const WHATSAPP_NUMBER = '8801560047377';
 // VITE_SITE_URL is set, so a link sent from any host points at the live site.
 const SITE_ORIGIN = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, '');
 
-export function whatsappLink(text) {
-  return `https://wa.me/${WHATSAPP_NUMBER}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+export function whatsappLink(text, number = WHATSAPP_NUMBER) {
+  const digits = String(number || WHATSAPP_NUMBER).replace(/\D/g, '') || WHATSAPP_NUMBER;
+  return `https://wa.me/${digits}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 }
 
 export function productAbsoluteUrl(product) {
@@ -21,18 +22,18 @@ function productLine(product) {
   return `${product.name}${product.sku ? ` (SKU: ${product.sku})` : ''} — ${productAbsoluteUrl(product)}`;
 }
 
-export function priceRequestLink(product) {
-  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটার পাইকারি দাম জানতে চাই: ${productLine(product)}`);
+export function priceRequestLink(product, number) {
+  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটার পাইকারি দাম জানতে চাই: ${productLine(product)}`, number);
 }
 
 // Order with the chosen grade, e.g. "… — কোয়ালিটি: Original (৳1,699)".
-export function orderRequestLink(product, grade) {
+export function orderRequestLink(product, grade, number) {
   const quality = grade ? ` — কোয়ালিটি: ${grade.label} (৳${Number(grade.price).toLocaleString('en-US')})` : '';
-  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটা অর্ডার করতে চাই: ${product.name}${quality}${product.sku ? ` (SKU: ${product.sku})` : ''} — ${productAbsoluteUrl(product)}`);
+  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটা অর্ডার করতে চাই: ${product.name}${quality}${product.sku ? ` (SKU: ${product.sku})` : ''} — ${productAbsoluteUrl(product)}`, number);
 }
 
-export function stockRequestLink(product) {
-  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটার স্টক জানতে চাই: ${productLine(product)}`);
+export function stockRequestLink(product, number) {
+  return whatsappLink(`আসসালামু আলাইকুম, এই পার্টসটার স্টক জানতে চাই: ${productLine(product)}`, number);
 }
 
 // The API sends `price: null` until the owner publishes a price, so this is

@@ -6,6 +6,7 @@ import { formatPrice } from '../utils/currency';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { ALL_CATEGORIES, ALL_BRANDS, isDisabledCategory } from '../utils/taxonomy';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 
 const emptyForm = {
   name: '', categories: ['Display'], price: '', compareAt: '', stock: '0', images: [], desc: '',
@@ -66,6 +67,7 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const { showToast } = useToast();
+  const { refreshPublicSettings } = usePublicSettings();
 
   const [coupons, setCoupons] = useState([]);
   const [couponForm, setCouponForm] = useState(emptyCoupon);
@@ -107,6 +109,8 @@ export default function Admin() {
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
   const [sslcommerzConfigured, setSslcommerzConfigured] = useState(true); // avoid a false warning flash before load
   const [savingOnlinePayment, setSavingOnlinePayment] = useState(false);
+  const [whatsappNumberInput, setWhatsappNumberInput] = useState('8801560047377');
+  const [savingWhatsappNumber, setSavingWhatsappNumber] = useState(false);
 
   const [announcementText, setAnnouncementText] = useState('');
   const [announcementEnabled, setAnnouncementEnabled] = useState(false);
@@ -334,6 +338,7 @@ export default function Admin() {
       setSslcommerzConfigured(!!d.sslcommerzConfigured);
       setAnnouncementText(d.announcement?.text || '');
       setAnnouncementEnabled(!!d.announcement?.enabled);
+      setWhatsappNumberInput(d.whatsappNumber || '8801560047377');
     }).catch((err) => showToast(err.message, 'error'));
   }
   function loadBanners() {
@@ -422,6 +427,22 @@ export default function Admin() {
       showToast(err.message, 'error');
     } finally {
       setSavingAnnouncement(false);
+    }
+  }
+
+  async function onSaveWhatsappNumber(e) {
+    e.preventDefault();
+    setSavingWhatsappNumber(true);
+    try {
+      const d = await api.put('/admin/settings', { whatsappNumber: whatsappNumberInput });
+      setWhatsappNumberInput(d.whatsappNumber);
+      await refreshPublicSettings({ fresh: true });
+      showToast('WhatsApp sales/order number updated', 'success');
+      loadAuditLogs();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setSavingWhatsappNumber(false);
     }
   }
 
@@ -2231,6 +2252,31 @@ export default function Admin() {
       {tab === 'settings' && (
         <div style={{ paddingBottom: 80, maxWidth: 480 }}>
           <div className="form-panel wide">
+            <h3 style={{ marginBottom: 10 }}>WhatsApp sales &amp; order number</h3>
+            <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '0.85rem' }}>
+              Every customer WhatsApp button—price, stock, product order, support and bulk quotation—opens this
+              number. Save a new number here; no deploy is needed. Use country code, for example 8801XXXXXXXXX.
+            </p>
+            <form onSubmit={onSaveWhatsappNumber}>
+              <div className="field">
+                <label>WhatsApp number</label>
+                <input
+                  required
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={whatsappNumberInput}
+                  onChange={(e) => setWhatsappNumberInput(e.target.value)}
+                  placeholder="8801XXXXXXXXX"
+                />
+              </div>
+              <button className="btn btn-berry" disabled={savingWhatsappNumber}>
+                {savingWhatsappNumber ? 'Saving…' : 'Save WhatsApp number'}
+              </button>
+            </form>
+          </div>
+
+          <div className="form-panel wide" style={{ marginTop: 24 }}>
             <h3 style={{ marginBottom: 10 }}>Delivery charge</h3>
             <p style={{ color: 'var(--muted)', marginBottom: 16, fontSize: '0.85rem' }}>
               Flat delivery fee charged on every order (shown as the shipping estimate in Cart/Checkout, and what's

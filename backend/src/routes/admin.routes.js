@@ -18,7 +18,7 @@ import { generateSecret, secretToQrDataUrl, verifyToken as verifyTotp } from '..
 import { sendMail } from '../utils/mailer.js';
 import { sendSms } from '../utils/sms.js';
 import { invalidateProductCache, cache } from '../utils/cache.js';
-import { getDeliveryFee, setDeliveryFee, getOnlinePaymentEnabled, setOnlinePaymentEnabled, getAnnouncement, setAnnouncement } from '../utils/settings.js';
+import { getDeliveryFee, setDeliveryFee, getOnlinePaymentEnabled, setOnlinePaymentEnabled, getAnnouncement, setAnnouncement, getWhatsappNumber, setWhatsappNumber } from '../utils/settings.js';
 import { isSslcommerzConfigured } from '../utils/sslcommerz.js';
 import { isSteadfastConfigured, createConsignment } from '../utils/steadfast.js';
 import { indexProduct, indexProducts, deleteProductFromIndex } from '../utils/search.js';
@@ -1428,6 +1428,7 @@ router.get('/settings', async (req, res, next) => {
       // would just fail with sslcommerz.js's "not configured yet" error).
       sslcommerzConfigured: isSslcommerzConfigured(),
       announcement: await getAnnouncement(),
+      whatsappNumber: await getWhatsappNumber(),
     });
   } catch (err) {
     next(err);
@@ -1436,7 +1437,7 @@ router.get('/settings', async (req, res, next) => {
 
 router.put('/settings', requireCsrf, async (req, res, next) => {
   try {
-    const { deliveryFee, onlinePaymentEnabled, announcement } = req.body;
+    const { deliveryFee, onlinePaymentEnabled, announcement, whatsappNumber } = req.body;
     const result = {};
     if (deliveryFee !== undefined) {
       result.deliveryFee = await setDeliveryFee(deliveryFee);
@@ -1447,13 +1448,18 @@ router.put('/settings', requireCsrf, async (req, res, next) => {
     if (announcement !== undefined) {
       result.announcement = await setAnnouncement(announcement);
     }
+    if (whatsappNumber !== undefined) {
+      result.whatsappNumber = await setWhatsappNumber(whatsappNumber);
+    }
     if (Object.keys(result).length === 0) {
       return res.status(400).json({ error: 'Nothing to update.' });
     }
     await logAdminAction(req.user, 'settings.update', result);
     res.json(result);
   } catch (err) {
-    if (err.message === 'Delivery fee must be a number.') return res.status(400).json({ error: err.message });
+    if (['Delivery fee must be a number.', 'Enter a valid WhatsApp number with country code.'].includes(err.message)) {
+      return res.status(400).json({ error: err.message });
+    }
     next(err);
   }
 });

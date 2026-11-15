@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { api } from '../api';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
 
 // Admin-editable scrolling notice (delivery/return policy, etc.) — see
 // Admin > Settings. Text lives in the Setting table (utils/settings.js's
@@ -7,15 +6,7 @@ import { api } from '../api';
 // as the online-payment toggle. Renders nothing until it's confirmed both
 // enabled and non-empty, so there's no empty-bar flash on load.
 export default function AnnouncementBar() {
-  const [announcement, setAnnouncement] = useState(null);
-
-  useEffect(() => {
-    let current = true;
-    api.get('/settings/public').then((d) => {
-      if (current) setAnnouncement(d.announcement || null);
-    }).catch(() => {});
-    return () => { current = false; };
-  }, []);
+  const { announcement } = usePublicSettings();
 
   if (!announcement?.enabled || !announcement.text) return null;
 

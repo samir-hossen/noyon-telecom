@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { api, getRecaptchaToken } from '../api';
 import { useToast } from '../context/ToastContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { trackRequestQuote } from '../ecommerce.js';
 import { useLanguage } from '../context/LanguageContext';
 import { BUSINESS_HOURS } from '../content/businessHours.js';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
+import { whatsappLink } from '../utils/whatsapp';
 
 // `facebookUrl` is null until the settings fetch below resolves (or stays
 // null forever if it's not configured) — sameAs is only included once it's
 // a real value, since an empty string there would be invalid structured data.
-function buildLocalBusinessJsonLd(facebookUrl) {
+function buildLocalBusinessJsonLd(facebookUrl, whatsappNumber) {
   const sameAs = [facebookUrl, 'https://www.instagram.com/noyontelecom2.0'].filter(Boolean);
   return {
     id: 'local-business',
@@ -26,6 +28,22 @@ function buildLocalBusinessJsonLd(facebookUrl) {
       url: 'https://noyontelecom.com',
       email: 'mailto:ppyt38835@gmail.com',
       telephone: '+880-1560-047377',
+      contactPoint: [
+        {
+          '@type': 'ContactPoint',
+          telephone: '+880-1560-047377',
+          contactType: 'customer service',
+          areaServed: 'BD',
+          availableLanguage: ['bn-BD', 'en'],
+        },
+        {
+          '@type': 'ContactPoint',
+          url: whatsappLink('', whatsappNumber),
+          contactType: 'sales',
+          areaServed: 'BD',
+          availableLanguage: ['bn-BD', 'en'],
+        },
+      ],
       priceRange: '৳৳',
       areaServed: { '@type': 'Country', name: 'Bangladesh' },
       knowsLanguage: ['bn-BD', 'en'],
@@ -58,20 +76,9 @@ export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  // Both fetched from backend config rather than hardcoded here — email
-  // used to show a personal Gmail address baked straight into frontend
-  // source, and the Facebook URL was duplicated in three separate files.
-  const [contactEmail, setContactEmail] = useState('');
-  const [facebookUrl, setFacebookUrl] = useState('');
+  const { contactEmail, facebookUrl, whatsappNumber } = usePublicSettings();
 
-  useEffect(() => {
-    api.get('/settings/public').then((d) => {
-      setContactEmail(d.contactEmail);
-      setFacebookUrl(d.facebookUrl || '');
-    }).catch(() => {});
-  }, []);
-
-  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, null, buildLocalBusinessJsonLd(facebookUrl));
+  usePageMeta(t('contact.pageTitle'), t('contact.pageMeta'), null, null, buildLocalBusinessJsonLd(facebookUrl, whatsappNumber));
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -104,6 +111,7 @@ export default function Contact() {
           <h3>{t('contact.contactDetails')}</h3>
           {contactEmail && <p><strong>{t('contact.email')}</strong> {contactEmail}</p>}
           <p><strong>{t('contact.phone')}</strong> +880 1560-047377</p>
+          <p><strong>WhatsApp:</strong> <a href={whatsappLink('', whatsappNumber)} target="_blank" rel="noreferrer">+{whatsappNumber}</a></p>
           <p><strong>{t('contact.address')}</strong> ৪/১৮১ (৫ম তলা), গুলিস্তান শপিং কমপ্লেক্স, ২ বি.বি এভিনিউ, গুলিস্তান, ঢাকা-১০০০</p>
           <p><strong>{t('contact.hours')}</strong> {t('contact.hoursValue')}</p>
           <p style={{ marginTop: 20, fontSize: '0.8rem', color: '#9a8f8a' }}>

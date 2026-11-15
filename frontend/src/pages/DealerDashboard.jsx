@@ -7,11 +7,14 @@ import { useLanguage } from '../context/LanguageContext';
 import { usePageMeta } from '../hooks/usePageTitle';
 import { useToast } from '../context/ToastContext';
 import { trackWhatsappClick } from '../ecommerce.js';
+import { usePublicSettings } from '../context/PublicSettingsContext.jsx';
+import { whatsappLink } from '../utils/whatsapp';
 
 export default function DealerDashboard() {
   const { user, setUser } = useAuth();
   const { t } = useLanguage();
   const { showToast } = useToast();
+  const { whatsappNumber } = usePublicSettings();
   const [orders, setOrders] = useState([]);
   const [summary, setSummary] = useState({ count: 0, totalSpent: 0 });
   const [page, setPage] = useState(1);
@@ -199,7 +202,7 @@ export default function DealerDashboard() {
           <p>{t('dealerDash.bulkQuoteSub')}</p>
         </div>
         <a
-          href="https://wa.me/8801560047377?text=Hi%2C%20I%27d%20like%20a%20bulk%20quotation"
+          href={whatsappLink("Hi, I'd like a bulk quotation", whatsappNumber)}
           target="_blank"
           rel="noreferrer"
           onClick={() => trackWhatsappClick('dealer_dashboard')}

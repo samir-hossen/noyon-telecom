@@ -106,11 +106,11 @@ function paginationHtml(model) {
   return `<nav class="pagination">${links.join(' ')}</nav>`;
 }
 
-function productBody(model) {
+function productBody(model, whatsappNumber = WHATSAPP_NUMBER) {
   const p = model.product;
   const img = p.images[0] || partPhotoPath(p.category, p.name, p.slug);
   const photoNote = p.images[0] ? '' : '<p class="pd-photo-note">Representative photo — you get the part for your exact model · <a href="/photo-credits">Photo credits</a></p>';
-  const wa = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(priceRequestMessage({ ...p, url: absoluteUrl(model.head.canonical) }))}`;
+  const wa = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(priceRequestMessage({ ...p, url: absoluteUrl(model.head.canonical) }))}`;
   const specs = [
     p.sku && `<div><span>SKU</span><strong>${escapeHtml(p.sku)}</strong></div>`,
     p.brand && `<div><span>Brand</span><strong>${escapeHtml(p.brand)}</strong></div>`,
@@ -176,7 +176,7 @@ function notFoundBody() {
   return `<div class="container"><div class="empty-state"><h1>Page not found</h1><p>This page does not exist. <a href="/shop">Browse all parts</a>.</p></div></div>`;
 }
 
-export function renderPage(shell, model) {
+export function renderPage(shell, model, { whatsappNumber = WHATSAPP_NUMBER } = {}) {
   const { head } = model;
   // The shared shell preloads the homepage hero, which catalog pages do not use.
   let html = shell.replace(/<link\b(?=[^>]*\brel="preload")(?=[^>]*\bhref="\/images\/hero\/hero-parts\.webp")[^>]*>\s*/i, '');
@@ -216,6 +216,6 @@ export function renderPage(shell, model) {
   for (const block of model.jsonLd || []) extra.push(jsonLdTag(block));
   html = html.replace(/<meta name="robots" content="[^"]*" \/>\n?/i, ''); // the page's own robots tag (if any) replaces the default
   html = html.replace('</head>', () => `    ${extra.join('\n    ')}\n  </head>`);
-  const body = model.kind === 'product' ? productBody(model) : model.kind === 'not-found' ? notFoundBody() : listingBody(model);
+  const body = model.kind === 'product' ? productBody(model, whatsappNumber) : model.kind === 'not-found' ? notFoundBody() : listingBody(model);
   return html.replace(/<div id="root">\s*<\/div>/, () => `<div id="root">${body}</div>`);
 }

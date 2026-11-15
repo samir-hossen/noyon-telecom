@@ -7,6 +7,37 @@ import prisma from '../prismaClient.js';
 import { getOrSet, cache } from './cache.js';
 
 export const DEFAULT_DELIVERY_FEE = 150;
+export const DEFAULT_WHATSAPP_NUMBER = '8801560047377';
+
+// wa.me expects digits only, including the country code. Accept the common
+// Bangladeshi forms an admin is likely to paste, while still allowing a
+// valid international number if the sales inbox moves outside Bangladesh.
+export function normalizeWhatsappNumber(value) {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (/^01\d{9}$/.test(digits)) return `88${digits}`;
+  if (/^1\d{9}$/.test(digits)) return `880${digits}`;
+  if (/^\d{8,15}$/.test(digits)) return digits;
+  return null;
+}
+
+export async function getWhatsappNumber() {
+  return getOrSet('settings:whatsappNumber', 60, async () => {
+    const row = await prisma.setting.findUnique({ where: { key: 'whatsappNumber' } });
+    return normalizeWhatsappNumber(row?.value) || DEFAULT_WHATSAPP_NUMBER;
+  });
+}
+
+export async function setWhatsappNumber(value) {
+  const number = normalizeWhatsappNumber(value);
+  if (!number) throw new Error('Enter a valid WhatsApp number with country code.');
+  await prisma.setting.upsert({
+    where: { key: 'whatsappNumber' },
+    create: { key: 'whatsappNumber', value: number },
+    update: { value: number },
+  });
+  cache.del('settings:whatsappNumber');
+  return number;
+}
 
 export async function getDeliveryFee() {
   const value = await getOrSet('settings:deliveryFee', 300, async () => {
