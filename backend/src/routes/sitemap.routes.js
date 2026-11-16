@@ -110,6 +110,8 @@ export function buildPagesSitemapXml({ siteUrl, categories: allCategories, brand
     // page. The frontend gives it a noindex directive and the sitemap must
     // not contradict that by explicitly submitting it for indexing.
     { loc: `${siteUrl}/contact/`, priority: '0.5' },
+    ...['delivery-policy', 'warranty-policy', 'refund-policy', 'privacy-policy', 'terms']
+      .map((slug) => ({ loc: `${siteUrl}/${slug}/`, priority: '0.3' })),
   ];
   const urls = entries
     .map(

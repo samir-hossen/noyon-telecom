@@ -120,7 +120,12 @@ function notFound() {
 }
 
 function pageNumber(page) {
-  return Math.max(1, parseInt(page, 10) || 1);
+  if (page === undefined || page === '') return 1;
+  if (!/^[1-9]\d*$/.test(String(page))) return null;
+  const number = Number(page);
+  // Prisma's skip is a signed 32-bit integer. Reject malformed/overflow
+  // pagination before hitting PostgreSQL or populating the page cache.
+  return Number.isSafeInteger(number) && (number - 1) * PAGE_SIZE <= 2147483647 ? number : null;
 }
 
 function withPage(path, page) {
@@ -420,8 +425,21 @@ async function modelPage(slug) {
 // Route a public path ("/category/display", "/product/vivo-y21-display")
 // to its page model. Cached briefly; admin product edits clear the cache.
 export async function resolvePage(pathname, { page } = {}) {
-  const p = pageNumber(page);
-  const parts = String(pathname || '').replace(/\/+$/, '').split('/').filter(Boolean).map((s) => decodeURIComponent(s));
+  let p = pageNumber(page);
+  if (p === null) return notFound();
+  let parts;
+  try {
+    parts = String(pathname || '').replace(/\/+$/, '').split('/').filter(Boolean).map((s) => decodeURIComponent(s));
+  } catch {
+    return notFound();
+  }
+  const [kind] = parts;
+  if (!['product', 'category', 'brand', 'model'].includes(kind)
+    || parts.length < 2 || parts.length > (kind === 'brand' ? 3 : 2)
+    || parts.some((part) => part.includes('/') || part.includes('\\') || [...part].some((char) => char.charCodeAt(0) < 32))) return notFound();
+  // These routes have one page; tracking/pagination variants must share
+  // the same cached model instead of causing duplicate database work.
+  if (kind === 'product' || kind === 'model') p = 1;
   const key = `seo:page:${parts.join('/')}:${p}`;
   return getOrSet(key, 900, async () => {
     const [kind, a, b] = parts;

@@ -2,8 +2,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { usePageMeta } from './usePageTitle.js';
 
-function Page({ title, description, image, canonicalPath }) {
-  usePageMeta(title, description, image, canonicalPath);
+function Page({ title, description, image, canonicalPath, options, noindex }) {
+  usePageMeta(title, description, image, canonicalPath, undefined, noindex, options);
   return null;
 }
 
@@ -56,5 +56,40 @@ describe('usePageMeta canonical/og:url', () => {
     expect(document.querySelector('script[data-static-seo]')).toBeNull();
     expect(document.getElementById('test-global-business')).not.toBeNull();
     businessSchema.remove();
+  });
+
+  it('replaces product facts and removes the old price/stock when the next product has none', () => {
+    const meta = (name) => document.querySelector(`meta[property="${name}"], meta[name="${name}"]`)?.content;
+    const { rerender } = render(<Page title="First display" image="https://images.example.com/first.jpg" options={{ ogType: 'product', productMeta: { name: 'First display', sku: 'ONE', price: 1200, priceLabel: '৳1,200', stock: 5 } }} />);
+    expect(meta('product:price:amount')).toBe('1200');
+    expect(meta('product:availability')).toBe('in stock');
+    expect(meta('og:image:width')).toBeUndefined();
+    rerender(<Page title="Second display" options={{ ogType: 'product', productMeta: { name: 'Second display', sku: 'TWO', price: null, stock: 0 } }} />);
+    expect(meta('product:retailer_item_id')).toBe('TWO');
+    expect(meta('product:price:amount')).toBeUndefined();
+    expect(meta('product:price:currency')).toBeUndefined();
+    expect(meta('product:availability')).toBeUndefined();
+    expect(meta('twitter:label1')).toBeUndefined();
+    expect(meta('twitter:data1')).toBeUndefined();
+    expect(meta('twitter:data2')).toBe('Ask for stock');
+    expect(meta('og:image')).toBe(`${window.location.origin}/logo-full.png`);
+    expect(meta('twitter:image')).toBe(meta('og:image'));
+    expect(meta('og:image:alt')).toBe('Noyon Telecom');
+    rerender(<Page title="Contact" canonicalPath="/contact/" />);
+    expect(document.querySelector('meta[property^="product:"]')).toBeNull();
+    expect(meta('twitter:label2')).toBeUndefined();
+    expect(meta('twitter:data2')).toBeUndefined();
+    expect(meta('og:type')).toBe('website');
+  });
+
+  it('preserves SSR metadata during loading and clears a previous noindex on a valid page', () => {
+    const { rerender } = render(<Page title="Server product" image="https://images.example.com/server.jpg" />);
+    rerender(<Page options={{ preserveExisting: true }} />);
+    expect(document.title).toBe('Server product — Noyon Telecom');
+    expect(document.querySelector('meta[property="og:image"]').content).toBe('https://images.example.com/server.jpg');
+    rerender(<Page title="Not found" noindex />);
+    expect(document.querySelector('meta[name="robots"]').content).toContain('noindex');
+    rerender(<Page title="Warranty" />);
+    expect(document.querySelector('meta[name="robots"]')).toBeNull();
   });
 });

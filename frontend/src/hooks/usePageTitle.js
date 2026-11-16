@@ -96,6 +96,7 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
   const exactTitle = Boolean(options.exactTitle);
   const ogType = options.ogType || 'website';
   const preserveExisting = Boolean(options.preserveExisting);
+  const productMeta = options.productMeta;
   useEffect(() => {
     // Keep server-rendered metadata during loading or temporary API failures.
     if (preserveExisting) return;
@@ -123,12 +124,33 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
     // params gets that tracking noise baked into the share preview's URL.
     setMeta('og:url', canonicalUrl, 'property');
     setMeta('og:type', ogType, 'property');
-    if (image) setMeta('og:image', image, 'property');
+    // A new route without a photo must not inherit the previous product's
+    // preview. Image dimensions in index.html belong only to the logo.
+    const shareImage = image || `${SITE_ORIGIN}/logo-full.png`;
+    const imageAlt = image ? (productMeta?.name || title || SITE_NAME) : SITE_NAME;
+    setMeta('og:image', shareImage, 'property');
+    setMeta('og:image:alt', imageAlt, 'property');
+    setOrRemoveMeta('og:image:width', image ? null : '1210', 'property');
+    setOrRemoveMeta('og:image:height', image ? null : '690', 'property');
 
     setMeta('twitter:card', 'summary_large_image');
     setMeta('twitter:title', fullTitle);
     setMeta('twitter:description', desc);
-    if (image) setMeta('twitter:image', image);
+    setMeta('twitter:image', shareImage);
+    setMeta('twitter:image:alt', imageAlt);
+
+    // Replace SSR product facts on SPA navigation, including when the next
+    // product has no published price/stock or the next page is not a product.
+    const item = ogType === 'product' ? productMeta : null;
+    const publicPrice = Number(item?.price) > 0;
+    setOrRemoveMeta('product:retailer_item_id', item?.sku, 'property');
+    setOrRemoveMeta('product:availability', item?.stock > 0 ? 'in stock' : null, 'property');
+    setOrRemoveMeta('product:price:amount', publicPrice ? String(item.price) : null, 'property');
+    setOrRemoveMeta('product:price:currency', publicPrice ? 'BDT' : null, 'property');
+    setOrRemoveMeta('twitter:label1', publicPrice ? 'Price' : null);
+    setOrRemoveMeta('twitter:data1', publicPrice ? item.priceLabel : null);
+    setOrRemoveMeta('twitter:label2', item ? 'Availability' : null);
+    setOrRemoveMeta('twitter:data2', item ? (item.stock > 0 ? 'In stock' : 'Ask for stock') : null);
 
     setCanonical(canonicalUrl);
 
@@ -144,7 +166,7 @@ export function usePageMeta(title, description, image, canonicalPath, jsonLd, no
       if (noindex) setOrRemoveMeta('robots', null);
     };
      
-  }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex, exactTitle, ogType, preserveExisting]);
+  }, [title, description, image, canonicalPath, JSON.stringify(jsonLd), noindex, exactTitle, ogType, preserveExisting, JSON.stringify(productMeta)]);
 }
 
 // Back-compat alias for older call sites that only set a title.

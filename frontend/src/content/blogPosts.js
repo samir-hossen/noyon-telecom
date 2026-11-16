@@ -14,7 +14,7 @@
 const blogPosts = [
   {
     slug: 'oled-vs-lcd-display-kena-guide',
-    relatedCategories: ['OLED', 'LCD', 'Display'],
+    relatedCategories: ['Display'],
     relatedSlugs: ['original-vs-copy-battery-chenar-upay'],
     title: 'OLED নাকি LCD ডিসপ্লে — পাইকারি কেনার আগে যা জানা জরুরি',
     metaDescription: 'OLED ও LCD মোবাইল ডিসপ্লের মধ্যে পার্থক্য, কোনটা কোন ফোনের জন্য উপযুক্ত, আর পাইকারি অর্ডার করার আগে কোয়ালিটি যাচাইয়ের সহজ উপায়।',
@@ -81,7 +81,7 @@ const blogPosts = [
   },
   {
     slug: 'mobile-servicing-business-suru-korte-parts-stock',
-    relatedCategories: ['Display', 'Battery', 'Repair Tools'],
+    relatedCategories: ['Display', 'Charging Logic', 'Back Glass', 'Speaker'],
     relatedSlugs: ['paikari-mobile-parts-kenar-age-7-bishoy'],
     title: 'মোবাইল সার্ভিসিং ব্যবসা শুরু করতে যেসব পার্টস স্টকে রাখা জরুরি',
     metaDescription: 'নতুন মোবাইল সার্ভিসিং সেন্টার বা দোকান শুরু করার সময় কোন কোন পার্টস প্রথমে স্টক করা উচিত — একটা প্র্যাকটিক্যাল চেকলিস্ট।',
@@ -150,7 +150,7 @@ const blogPosts = [
   },
   {
     slug: 'mobile-back-glass-model-color-guide',
-    relatedCategories: ['Back Glass', 'Housing', 'Frame'],
+    relatedCategories: ['Back Glass', 'Frame'],
     relatedSlugs: ['paikari-mobile-parts-kenar-age-7-bishoy', 'mobile-servicing-business-suru-korte-parts-stock'],
     title: 'মোবাইল Back Glass কেনার আগে Model, Color ও Camera Cutout যাচাই',
     metaDescription: 'মোবাইল Back Glass পাইকারি কেনার আগে exact model, color, camera cutout, logo ও adhesive quality মিলিয়ে ভুল পার্টস এড়ানোর গাইড।',
@@ -200,6 +200,26 @@ const blogPosts = [
 
 export function getAllPosts() {
   return blogPosts;
+}
+
+export const BLOG_PAGE = {
+  title: 'পার্টস কেনাকাটা ও সার্ভিসিং গাইড',
+  description: 'মোবাইল স্পেয়ার পার্টস চেনা, পাইকারি কেনা, আর সার্ভিসিং ব্যবসা নিয়ে ব্যবহারিক গাইড — ডিলার, দোকান ও সার্ভিস সেন্টারের জন্য।',
+};
+
+export function blogIndexJsonLd(posts) {
+  return {
+    '@context': 'https://schema.org', '@type': 'CollectionPage',
+    '@id': 'https://noyontelecom.com/blog/', url: 'https://noyontelecom.com/blog/',
+    name: BLOG_PAGE.title, isPartOf: { '@id': 'https://noyontelecom.com/#website' },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: posts.map((post, index) => ({
+        '@type': 'ListItem', position: index + 1,
+        url: `https://noyontelecom.com/blog/${post.slug}/`, name: post.title,
+      })),
+    },
+  };
 }
 
 export function getPostBySlug(slug) {

@@ -52,8 +52,8 @@ export default function HomeSeoContent() {
           </p>
           <nav aria-label="Dealer and customer information">
             <Link to="/register">Become a dealer</Link>
-            <Link to="/delivery-policy">Delivery information</Link>
-            <Link to="/warranty-policy">Warranty policy</Link>
+            <Link to="/delivery-policy/">Delivery information</Link>
+            <Link to="/warranty-policy/">Warranty policy</Link>
             <Link to="/contact/">Contact Noyon Telecom</Link>
           </nav>
         </div>

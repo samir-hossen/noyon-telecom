@@ -1,4 +1,28 @@
-# SEO and search verification — 15 November 2026
+# SEO and search verification — 16 November 2026
+
+## Follow-up improvements — 16 November
+
+- Delivery, warranty, refund, privacy and terms pages previously returned the generic app shell before JavaScript. They now have build-time HTML at their trailing-slash URLs, individual titles/descriptions/canonicals, one H1, H2 sections, readable policy text and WebPage schema connected to the store entity. React and the static generator share the same translations and policy outline. Existing promises and original update dates are preserved.
+- Footer/home policy links, the XML sitemap and the factual `llms.txt` map use those canonical URLs. There are no new runtime catalog fetches or background jobs for these pages. `llms.txt` is a convenience map, not an AI ranking signal or guaranteed recommendation mechanism.
+- Guide pages show a linked Noyon Telecom byline and their actual publication date. Static HTML now includes links to related categories. OLED/LCD, Housing and Repair Tools links were replaced with relevant stocked categories after checking the live `/api/products/filters` response. The disabled battery category remains hidden.
+- The guide index uses the same title, description, ordering and CollectionPage/ItemList schema before and after JavaScript. Article pages retain the `article` Open Graph type after React loads.
+- Client navigation replaces product share-image, price, SKU and stock metadata. A price-hidden product no longer inherits a previously viewed product's price; non-product pages clear product facts. Product photos no longer inherit the logo's image dimensions. A fallback description asks customers to confirm unknown stock instead of claiming it is sold out.
+- Malformed paths, unsupported path depth and invalid/overflow pagination return a noindex 404 page model before database work. Product/model pagination variants reuse one cached page model. Existing charging-port redirects remain intact.
+
+### Follow-up validation
+
+- Frontend: 57 tests passed; production build and lint passed. Tests cover navigation metadata, both policy languages/duration substitutions, and generated HTML without a catalog server.
+- Backend: 356 tests passed, 1 optional PostgreSQL integration test skipped. Lint passed. URL validation tests were rerun after the final lint correction.
+- Production output checked for one H1 per new policy page, the correct canonical, visible text, parseable JSON-LD and absence of the unused hero preload. Each policy HTML file is approximately 10–11 KB before compression.
+- `render.yaml`, API cache settings, service-worker configuration and server-limit settings were not changed. No production products, prices, stock, orders or accounts were modified.
+- Browser screenshot automation could not launch in this environment; no new visual/mobile-speed measurement is claimed. Existing policy text sizing is retained, with semantic H2 headings.
+
+### Technical scope still open
+
+- The homepage and generic `/shop` still depend on JavaScript for their body content. Product/category/brand/model routes already use server-rendered HTML. Full homepage/shop prerendering needs a separate document-routing design: changing the shared `index.html` alone would inject home content into other SPA fallback routes and the backend shell. This update preserves the owner's existing Render routing/cache configuration rather than making that unsafe shortcut.
+- Public directory publication, Search Console indexing, Merchant Center acceptance, real product identifiers/photographs and independent recommendations still require the evidence listed below. Successful builds or HTTP responses are not proof of a Google ranking or AI recommendation.
+
+## Previous verified improvements — 15 November
 
 ## Changes in this update
 

@@ -60,7 +60,7 @@ function buildMetaDescription(product, t) {
   // publishes a price, and a hidden price is never stated anywhere.
   const priceUnavailable = !hasPublicPrice(product);
   const priceText = priceUnavailable ? '' : `at ${formatPrice(product.price)} `;
-  const stockText = product.stock > 0 ? 'In stock.' : 'Currently out of stock.';
+  const stockText = product.stock > 0 ? 'In stock.' : 'Contact us to confirm stock.';
   const detail = product.desc ? truncateAtWordBoundary(product.desc, 90) : t('pd.metaFallback', null, { category: product.category });
   return `Buy ${product.name} ${priceText}in Bangladesh. ${detail} ${stockText} Order from Noyon Telecom.`;
 }
@@ -306,7 +306,13 @@ export default function ProductDetail() {
     // link, etc) — without this, a dead product URL kept whatever meta the
     // previously-viewed page left behind and was never marked non-indexable.
     missingProduct,
-    { exactTitle: Boolean(product?.seo?.title), ogType: product ? 'product' : 'website', preserveExisting: !product && !missingProduct }
+    {
+      exactTitle: Boolean(product?.seo?.title), ogType: product ? 'product' : 'website', preserveExisting: !product && !missingProduct,
+      productMeta: product ? {
+        name: product.name, sku: product.sku, price: product.price, stock: product.stock,
+        priceLabel: hasPublicPrice(product) ? `${qualityOptions(product).length > 1 ? 'From ' : ''}${formatPrice(product.price)}` : undefined,
+      } : undefined,
+    }
   );
 
   if (loadError) {

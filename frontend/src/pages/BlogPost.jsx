@@ -59,7 +59,8 @@ export default function BlogPost() {
           },
         ]
       : undefined,
-    !post
+    !post,
+    { ogType: post ? 'article' : 'website' }
   );
 
   if (!post) {
@@ -81,7 +82,8 @@ export default function BlogPost() {
         <span className="eyebrow">গাইড ও টিপস</span>
         <h1 className="page-title" style={{ fontSize: '1.7rem' }}>{post.title}</h1>
         <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
-          {new Date(post.publishedDate).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}
+          লেখা: <Link to="/about/">Noyon Telecom</Link> · প্রকাশিত: <time dateTime={post.publishedDate}>{new Date(post.publishedDate).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+          {post.updatedDate && post.updatedDate !== post.publishedDate && <> · হালনাগাদ: <time dateTime={post.updatedDate}>{new Date(post.updatedDate).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}</time></>}
         </div>
       </div>
 

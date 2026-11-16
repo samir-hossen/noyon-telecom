@@ -66,6 +66,15 @@ test('server-rendered product page', async (t) => {
     assert.match(html, /<img[^>]*alt="Vivo Y21 Display"[^>]*fetchpriority="high"/);
   });
 
+  await t.test('does not apply the logo dimensions to a product share photo', () => {
+    const shell = SHELL.replace('</head>', '<meta property="og:image:width" content="1210" /><meta property="og:image:height" content="690" /></head>');
+    const model = productModel();
+    model.head.image = 'https://images.example.com/display.jpg';
+    const html = renderPage(shell, model);
+    assert.match(html, /og:image" content="https:\/\/images\.example\.com\/display.jpg/);
+    assert.doesNotMatch(html, /og:image:(width|height)/);
+  });
+
   await t.test('H1, description and the "other parts" links are in the HTML, inside #root', () => {
     assert.match(html, /<div id="root"><div class="container">/);
     assert.match(html, /<h1 class="pd-title">Vivo Y21 Display Price in Bangladesh<\/h1>/);

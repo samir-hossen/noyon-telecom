@@ -190,6 +190,8 @@ export function renderPage(shell, model, { whatsappNumber = WHATSAPP_NUMBER } = 
   if (head.image) {
     html = setMeta(html, 'property', 'og:image', head.image);
     html = setMeta(html, 'name', 'twitter:image', head.image);
+    // The shared shell's dimensions describe the logo, not this photo.
+    html = html.replace(/<meta\b(?=[^>]*property="og:image:(?:width|height)")[^>]*>\s*/gi, '');
   }
   if (model.kind === 'product' && model.product) {
     const product = model.product;

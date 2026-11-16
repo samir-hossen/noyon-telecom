@@ -5,10 +5,12 @@
 // article text and BlogPosting schema with zero runtime/server cost.
 import fs from 'node:fs';
 import path from 'node:path';
-import blogPosts from '../src/content/blogPosts.js';
+import blogPosts, { BLOG_PAGE, blogIndexJsonLd } from '../src/content/blogPosts.js';
 import { GOOGLE_BUSINESS_URL, BUSINESS_ADDRESS_EN, businessPageJsonLd } from '../src/content/businessInfo.js';
 import { BUSINESS_HOURS } from '../src/content/businessHours.js';
 import translations from '../src/i18n/translations.js';
+import { POLICY_PAGES, policyPageContent, policyPageJsonLd } from '../src/content/policyPages.js';
+import { categoryUrl, isDisabledCategory } from '../src/utils/taxonomy.js';
 
 const SITE_URL = 'https://noyontelecom.com';
 const DIST = path.resolve('dist');
@@ -91,10 +93,12 @@ function articleLd(post) {
 
 function articleBody(post) {
   const related = (post.relatedSlugs || []).map((slug) => blogPosts.find((candidate) => candidate.slug === slug)).filter(Boolean);
+  const categories = (post.relatedCategories || []).filter((name) => !isDisabledCategory(name));
   return `<main class="container" style="padding-bottom:60px">
     <nav class="breadcrumb-trail" aria-label="Breadcrumb"><a href="/">Home</a> <span>/</span> <a href="/blog/">গাইড ও টিপস</a> <span>/</span> <span aria-current="page">${escapeHtml(post.title)}</span></nav>
-    <header class="page-header"><span class="eyebrow">গাইড ও টিপস</span><h1 class="page-title">${escapeHtml(post.title)}</h1><time datetime="${escapeHtml(post.publishedDate)}">${escapeHtml(post.publishedDate)}</time></header>
-    <article class="form-panel wide" style="max-width:760px">${post.content.map(blockHtml).join('\n')}</article>
+    <header class="page-header"><span class="eyebrow">গাইড ও টিপস</span><h1 class="page-title">${escapeHtml(post.title)}</h1><p>লেখা: <a href="/about/">Noyon Telecom</a> · প্রকাশিত: <time datetime="${escapeHtml(post.publishedDate)}">${escapeHtml(post.publishedDate)}</time>${post.updatedDate && post.updatedDate !== post.publishedDate ? ` · হালনাগাদ: <time datetime="${escapeHtml(post.updatedDate)}">${escapeHtml(post.updatedDate)}</time>` : ''}</p></header>
+    <article class="form-panel wide" style="max-width:760px">${post.content.map(blockHtml).join('\n')}
+    ${categories.length ? `<nav aria-label="Related categories"><h2>সংশ্লিষ্ট ক্যাটাগরি</h2><ul>${categories.map((name) => `<li><a href="${escapeHtml(categoryUrl(name))}">${escapeHtml(name)}</a></li>`).join('')}</ul></nav>` : ''}</article>
     ${related.length ? `<aside class="form-panel wide" style="max-width:760px;margin-top:20px"><h2>আরও পড়ুন</h2><ul>${related.map((item) => `<li><a href="/blog/${escapeHtml(item.slug)}/">${escapeHtml(item.title)}</a></li>`).join('')}</ul></aside>` : ''}
     <p style="max-width:760px;margin-top:20px"><a href="/shop">মোবাইল পার্টস ক্যাটালগ দেখুন</a> · <a href="/blog/">সব গাইড পড়ুন</a></p>
   </main>`;
@@ -142,10 +146,28 @@ for (const page of ['about', 'contact']) {
   writeRoute(`/${page}`, html);
 }
 
+// Serve the same published policy text before JavaScript runs. The outline
+// and translations are shared with React, without fetching the catalog.
+function policyInline(parts) {
+  return parts.map((part, index) => `${index > 0 && part.text !== '.' ? ' ' : ''}${part.href ? `<a href="${escapeHtml(part.href)}">${escapeHtml(part.text)}</a>` : escapeHtml(part.text)}`).join('');
+}
+for (const key of Object.keys(POLICY_PAGES)) {
+  const page = policyPageContent(key, (name) => translations.en[name]);
+  const sections = page.sections.map((section) => `<section><h2>${escapeHtml(section.title)}</h2>${section.blocks.map((block) => block.type === 'p'
+    ? `<p>${policyInline(block.parts)}</p>`
+    : `<${block.type}>${block.items.map((parts) => `<li>${policyInline(parts)}</li>`).join('')}</${block.type}>`).join('')}</section>`).join('\n');
+  let html = buildHead(shell, {
+    title: `${page.title} — Noyon Telecom`, description: page.description,
+    canonical: `${SITE_URL}${page.path}`, type: 'website', jsonLd: [policyPageJsonLd(page)],
+  });
+  html = html.replace(/<div id="root">\s*<\/div>/, `<div id="root"><main class="container" style="padding:24px 0 60px">${businessNav}<header class="page-header"><span class="eyebrow">${t('terms.legal')}</span><h1 class="page-title">${escapeHtml(page.title)}</h1></header><div class="legal-content"><p><em>${escapeHtml(page.updated)}</em></p>${sections}</div></main></div>`);
+  writeRoute(page.path, html);
+}
+
 for (const post of blogPosts) {
   const canonical = `${SITE_URL}/blog/${post.slug}/`;
   let html = buildHead(shell, {
-    title: post.title,
+    title: `${post.title} — Noyon Telecom`,
     description: post.metaDescription,
     canonical,
     jsonLd: [articleLd(post), breadcrumbLd(post)],
@@ -154,22 +176,11 @@ for (const post of blogPosts) {
   writeRoute(`/blog/${post.slug}`, html);
 }
 
-const blogDescription = 'মোবাইল ফোন পার্টস, ডিসপ্লে, চার্জিং লজিক, ব্যাক গ্লাস ও সার্ভিসিং ব্যবসার ব্যবহারিক বাংলা গাইড।';
+const blogDescription = BLOG_PAGE.description;
 const blogUrl = `${SITE_URL}/blog/`;
-const blogListLd = {
-  '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  '@id': blogUrl,
-  name: 'মোবাইল পার্টস গাইড ও টিপস',
-  url: blogUrl,
-  isPartOf: { '@id': `${SITE_URL}/#website` },
-  mainEntity: {
-    '@type': 'ItemList',
-    itemListElement: blogPosts.map((post, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE_URL}/blog/${post.slug}/`, name: post.title })),
-  },
-};
-let blogHtml = buildHead(shell, { title: 'মোবাইল পার্টস গাইড ও টিপস | Noyon Telecom', description: blogDescription, canonical: blogUrl, type: 'website', jsonLd: [blogListLd] });
-blogHtml = blogHtml.replace(/<div id="root">\s*<\/div>/, `<div id="root"><main class="container" style="padding-bottom:60px"><header class="page-header"><h1 class="page-title">মোবাইল পার্টস গাইড ও টিপস</h1><p>${escapeHtml(blogDescription)}</p></header><ul class="ssr-product-list">${blogPosts.map((post) => `<li><a href="/blog/${escapeHtml(post.slug)}/">${escapeHtml(post.title)}</a><p>${escapeHtml(post.excerpt)}</p></li>`).join('')}</ul></main></div>`);
+const sortedPosts = [...blogPosts].sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
+let blogHtml = buildHead(shell, { title: `${BLOG_PAGE.title} — Noyon Telecom`, description: blogDescription, canonical: blogUrl, type: 'website', jsonLd: [blogIndexJsonLd(sortedPosts)] });
+blogHtml = blogHtml.replace(/<div id="root">\s*<\/div>/, `<div id="root"><main class="container" style="padding-bottom:60px"><header class="page-header"><h1 class="page-title">${escapeHtml(BLOG_PAGE.title)}</h1><p>${escapeHtml(blogDescription)}</p></header><ul class="ssr-product-list">${sortedPosts.map((post) => `<li><h2><a href="/blog/${escapeHtml(post.slug)}/">${escapeHtml(post.title)}</a></h2><p>${escapeHtml(post.excerpt)}</p></li>`).join('')}</ul></main></div>`);
 writeRoute('/blog', blogHtml);
 
 // RSS gives search/answer engines and legitimate aggregators a lightweight,
@@ -237,6 +248,13 @@ ${blogPosts.map((post) => `- [${post.title}](${SITE_URL}/blog/${post.slug}/): ${
 - [XML sitemap](${SITE_URL}/sitemap.xml)
 - [Guide RSS feed](${SITE_URL}/blog/feed.xml)
 - [Google Merchant product feed](${SITE_URL}/google-merchant.xml)
+
+## Customer policies
+
+${Object.keys(POLICY_PAGES).map((key) => {
+  const page = policyPageContent(key, (name) => translations.en[name]);
+  return `- [${page.title}](${SITE_URL}${page.path})`;
+}).join('\n')}
 
 ## Business facts
 

@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../hooks/usePageTitle';
-import { getAllPosts } from '../content/blogPosts';
+import { getAllPosts, BLOG_PAGE, blogIndexJsonLd } from '../content/blogPosts';
 
 export default function Blog() {
   const posts = [...getAllPosts()].sort((a, b) => new Date(b.publishedDate) - new Date(a.publishedDate));
 
   usePageMeta(
-    'পার্টস কেনাকাটা ও সার্ভিসিং গাইড',
-    'মোবাইল স্পেয়ার পার্টস চেনা, পাইকারি কেনা, আর সার্ভিসিং ব্যবসা নিয়ে ব্যবহারিক গাইড — ডিলার, দোকান ও সার্ভিস সেন্টারের জন্য।',
+    BLOG_PAGE.title,
+    BLOG_PAGE.description,
     undefined,
-    '/blog/'
+    '/blog/',
+    { id: 'blog-index', data: blogIndexJsonLd(posts) }
   );
 
   return (
@@ -35,7 +36,7 @@ export default function Blog() {
             <div style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 8 }}>
               {new Date(post.publishedDate).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
-            <h3 style={{ marginBottom: 8, lineHeight: 1.4 }}>{post.title}</h3>
+            <h2 style={{ marginBottom: 8, lineHeight: 1.4, fontSize: '1.2rem' }}>{post.title}</h2>
             <p style={{ color: '#6b5f59', lineHeight: 1.6 }}>{post.excerpt}</p>
           </Link>
         ))}
