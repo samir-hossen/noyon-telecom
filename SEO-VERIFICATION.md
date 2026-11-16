@@ -14,6 +14,7 @@
 - Frontend: 57 tests passed; production build and lint passed. Tests cover navigation metadata, both policy languages/duration substitutions, and generated HTML without a catalog server.
 - Backend: 356 tests passed, 1 optional PostgreSQL integration test skipped. Lint passed. URL validation tests were rerun after the final lint correction.
 - Production output checked for one H1 per new policy page, the correct canonical, visible text, parseable JSON-LD and absence of the unused hero preload. Each policy HTML file is approximately 10–11 KB before compression.
+- After deploying code commit `8feca69`, all five policy URLs, the guide index and a representative guide returned HTTP 200 with the expected canonical, one H1 and valid JSON-LD. The live sitemap contains all five policy URLs. The deployed frontend bundle contains the metadata reset. The live SEO API returns a noindex 404 page model for overflow pagination, while `/category/display?page=2` still returns HTTP 200 with its own page-2 title and canonical.
 - `render.yaml`, API cache settings, service-worker configuration and server-limit settings were not changed. No production products, prices, stock, orders or accounts were modified.
 - Browser screenshot automation could not launch in this environment; no new visual/mobile-speed measurement is claimed. Existing policy text sizing is retained, with semantic H2 headings.
 
@@ -21,6 +22,7 @@
 
 - The homepage and generic `/shop` still depend on JavaScript for their body content. Product/category/brand/model routes already use server-rendered HTML. Full homepage/shop prerendering needs a separate document-routing design: changing the shared `index.html` alone would inject home content into other SPA fallback routes and the backend shell. This update preserves the owner's existing Render routing/cache configuration rather than making that unsafe shortcut.
 - Public directory publication, Search Console indexing, Merchant Center acceptance, real product identifiers/photographs and independent recommendations still require the evidence listed below. Successful builds or HTTP responses are not proof of a Google ranking or AI recommendation.
+- Public web searches for Noyon Telecom with FindInBD and MobileDokan did not yield a verifiable listing in this check. This does not prove a listing is absent; no published backlink is claimed without its actual public URL.
 
 ## Previous verified improvements — 15 November
 
